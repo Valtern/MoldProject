@@ -250,7 +250,7 @@ function App() {
       case 'rooms':
         return <RoomsPage availableRooms={availableRooms} onRoomSelect={handleRoomSelect} />;
       case 'devices':
-        return <DevicesPage />;
+        return <DevicesPage availableRooms={availableRooms} />;
       case 'reports':
         return <ReportsPage />;
       case 'settings':
