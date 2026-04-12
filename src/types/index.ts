@@ -32,4 +32,5 @@ export interface RoomData {
   lightLevel: GaugeData;
   humidityHistory: HumidityDataPoint[];
   appliances: ApplianceControl[];
+  deviceID: string;
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Sidebar } from '@/components/Sidebar';
 import { StatusBanner } from '@/components/StatusBanner';
@@ -10,131 +10,7 @@ import { RoomsPage } from '@/pages/RoomsPage';
 import { DevicesPage } from '@/pages/DevicesPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
-import type { RoomData, HumidityDataPoint } from '@/types';
-
-// Generate mock humidity data for 24 hours
-function generateHumidityData(baseHumidity: number): HumidityDataPoint[] {
-  const data: HumidityDataPoint[] = [];
-
-  for (let i = 0; i <= 24; i++) {
-    const hour = i % 24;
-    const time = `${hour.toString().padStart(2, '0')}:00`;
-    const timeFactor = Math.sin((hour - 6) * Math.PI / 12) * 12;
-    const randomFactor = (Math.random() - 0.5) * 8;
-    const humidity = Math.max(30, Math.min(80, Math.round(baseHumidity + timeFactor + randomFactor)));
-    data.push({ time, humidity });
-  }
-
-  return data;
-}
-
-// Mock data for all rooms
-const roomsData: Record<string, RoomData> = {
-  'living-room': {
-    name: 'Living Room',
-    status: 'safe',
-    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    temperature: { value: 22, min: 0, max: 50, unit: '°C', label: 'Temperature', caption: 'Comfortable' },
-    humidity: { value: 48, min: 0, max: 100, unit: '%', label: 'Humidity', caption: 'Optimal' },
-    lightLevel: { value: 320, min: 0, max: 1000, unit: 'lux', label: 'Light Level', caption: 'Well-lit' },
-    humidityHistory: generateHumidityData(48),
-    appliances: [
-      { id: 'fan', name: 'Exhaust Fan', icon: 'fan', state: 'auto' },
-      { id: 'dehumidifier', name: 'Dehumidifier', icon: 'dehumidifier', state: 'auto' },
-    ],
-  },
-  'master-bedroom': {
-    name: 'Master Bedroom',
-    status: 'safe',
-    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    temperature: { value: 21, min: 0, max: 50, unit: '°C', label: 'Temperature', caption: 'Comfortable' },
-    humidity: { value: 45, min: 0, max: 100, unit: '%', label: 'Humidity', caption: 'Optimal' },
-    lightLevel: { value: 180, min: 0, max: 1000, unit: 'lux', label: 'Light Level', caption: 'Moderate' },
-    humidityHistory: generateHumidityData(45),
-    appliances: [
-      { id: 'fan', name: 'Exhaust Fan', icon: 'fan', state: 'auto' },
-      { id: 'dehumidifier', name: 'Dehumidifier', icon: 'dehumidifier', state: 'auto' },
-    ],
-  },
-  'kitchen': {
-    name: 'Kitchen',
-    status: 'safe',
-    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    temperature: { value: 23, min: 0, max: 50, unit: '°C', label: 'Temperature', caption: 'Warm' },
-    humidity: { value: 52, min: 0, max: 100, unit: '%', label: 'Humidity', caption: 'Optimal' },
-    lightLevel: { value: 450, min: 0, max: 1000, unit: 'lux', label: 'Light Level', caption: 'Bright' },
-    humidityHistory: generateHumidityData(52),
-    appliances: [
-      { id: 'fan', name: 'Range Hood Fan', icon: 'fan', state: 'auto' },
-      { id: 'dehumidifier', name: 'Dehumidifier', icon: 'dehumidifier', state: 'auto' },
-    ],
-  },
-  'master-bathroom': {
-    name: 'Master Bathroom',
-    status: 'safe',
-    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    temperature: { value: 24, min: 0, max: 50, unit: '°C', label: 'Temperature', caption: 'Warm' },
-    humidity: { value: 58, min: 0, max: 100, unit: '%', label: 'Humidity', caption: 'Optimal' },
-    lightLevel: { value: 280, min: 0, max: 1000, unit: 'lux', label: 'Light Level', caption: 'Well-lit' },
-    humidityHistory: generateHumidityData(58),
-    appliances: [
-      { id: 'fan', name: 'Exhaust Fan', icon: 'fan', state: 'auto' },
-      { id: 'dehumidifier', name: 'Dehumidifier', icon: 'dehumidifier', state: 'manual-on' },
-    ],
-  },
-  'guest-bedroom': {
-    name: 'Guest Bedroom',
-    status: 'safe',
-    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    temperature: { value: 20, min: 0, max: 50, unit: '°C', label: 'Temperature', caption: 'Cool' },
-    humidity: { value: 42, min: 0, max: 100, unit: '%', label: 'Humidity', caption: 'Dry' },
-    lightLevel: { value: 150, min: 0, max: 1000, unit: 'lux', label: 'Light Level', caption: 'Dim' },
-    humidityHistory: generateHumidityData(42),
-    appliances: [
-      { id: 'fan', name: 'Exhaust Fan', icon: 'fan', state: 'auto' },
-      { id: 'dehumidifier', name: 'Dehumidifier', icon: 'dehumidifier', state: 'auto' },
-    ],
-  },
-  'basement': {
-    name: 'Basement',
-    status: 'critical',
-    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    temperature: { value: 18, min: 0, max: 50, unit: '°C', label: 'Temperature', caption: 'Cool' },
-    humidity: { value: 78, min: 0, max: 100, unit: '%', label: 'Humidity', caption: 'Critical' },
-    lightLevel: { value: 80, min: 0, max: 1000, unit: 'lux', label: 'Light Level', caption: 'Dim' },
-    humidityHistory: generateHumidityData(78),
-    appliances: [
-      { id: 'fan', name: 'Exhaust Fan', icon: 'fan', state: 'manual-on' },
-      { id: 'dehumidifier', name: 'Dehumidifier', icon: 'dehumidifier', state: 'manual-on' },
-    ],
-  },
-  'garage': {
-    name: 'Garage',
-    status: 'warning',
-    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    temperature: { value: 19, min: 0, max: 50, unit: '°C', label: 'Temperature', caption: 'Cool' },
-    humidity: { value: 65, min: 0, max: 100, unit: '%', label: 'Humidity', caption: 'Elevated' },
-    lightLevel: { value: 200, min: 0, max: 1000, unit: 'lux', label: 'Light Level', caption: 'Moderate' },
-    humidityHistory: generateHumidityData(65),
-    appliances: [
-      { id: 'fan', name: 'Ventilation Fan', icon: 'fan', state: 'auto' },
-      { id: 'dehumidifier', name: 'Dehumidifier', icon: 'dehumidifier', state: 'auto' },
-    ],
-  },
-  'office': {
-    name: 'Office',
-    status: 'safe',
-    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    temperature: { value: 22, min: 0, max: 50, unit: '°C', label: 'Temperature', caption: 'Comfortable' },
-    humidity: { value: 47, min: 0, max: 100, unit: '%', label: 'Humidity', caption: 'Optimal' },
-    lightLevel: { value: 380, min: 0, max: 1000, unit: 'lux', label: 'Light Level', caption: 'Well-lit' },
-    humidityHistory: generateHumidityData(47),
-    appliances: [
-      { id: 'fan', name: 'Exhaust Fan', icon: 'fan', state: 'auto' },
-      { id: 'dehumidifier', name: 'Dehumidifier', icon: 'dehumidifier', state: 'auto' },
-    ],
-  },
-};
+import type { RoomData } from '@/types';
 
 // Navigation context to share between Sidebar and App
 export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings';
@@ -182,13 +58,13 @@ function DashboardPage({
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Humidity Chart - takes 2/3 width on large screens */}
         <div className="lg:col-span-2">
-          <HumidityChart data={roomData.humidityHistory} />
+          <HumidityChart data={roomData.humidityHistory || []} />
         </div>
 
         {/* Appliance Control Panel - takes 1/3 width on large screens */}
         <div className="lg:col-span-1">
           <ApplianceControlPanel
-            appliances={roomData.appliances}
+            appliances={roomData.appliances || []}
             onStateChange={onApplianceStateChange}
           />
         </div>
@@ -199,50 +75,117 @@ function DashboardPage({
 
 function App() {
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
-  const [roomData, setRoomData] = useState<RoomData>(roomsData['living-room']);
+  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
+  const [roomData, setRoomData] = useState<RoomData | null>(null);
+
+  // Listen to available rooms from Devices collection
+  useEffect(() => {
+    const devicesRef = collection(db, 'Devices');
+    const unsubscribe = onSnapshot(devicesRef, (snapshot) => {
+      const rooms = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAvailableRooms(rooms);
+      
+      // If we don't have a roomData selected yet, default to the first room
+      if (rooms.length > 0) {
+        setRoomData((prev) => {
+          if (!prev || !rooms.find(r => r.id === prev.id)) {
+            // Re-hydrate the core schema locally to prevent undefined prop errors
+            const freshRoom = rooms[0];
+            return {
+              id: freshRoom.id,
+              name: freshRoom.name,
+              deviceID: freshRoom.deviceID,
+              safeLimit: freshRoom.safeLimit,
+              criticalLimit: freshRoom.criticalLimit,
+              status: 'safe',
+              lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              temperature: { value: 0, min: 0, max: 50, unit: '°C', label: 'Temperature', caption: 'Pending' },
+              humidity: { value: 0, min: 0, max: 100, unit: '%', label: 'Humidity', caption: 'Pending' },
+              lightLevel: { value: 0, min: 0, max: 1000, unit: 'lux', label: 'Light Level', caption: 'Pending' },
+              humidityHistory: [],
+              appliances: freshRoom.appliances || [],
+            } as any;
+          }
+          return prev;
+        });
+      } else {
+        setRoomData(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Handle room selection from Rooms page
   const handleRoomSelect = useCallback((roomId: string) => {
-    const selectedRoom = roomsData[roomId];
+    const selectedRoom = availableRooms.find(r => r.id === roomId);
     if (selectedRoom) {
-      setRoomData(selectedRoom);
+      setRoomData({
+        id: selectedRoom.id,
+        name: selectedRoom.name,
+        deviceID: selectedRoom.deviceID,
+        safeLimit: selectedRoom.safeLimit,
+        criticalLimit: selectedRoom.criticalLimit,
+        status: 'safe',
+        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        temperature: { value: 0, min: 0, max: 50, unit: '°C', label: 'Temperature', caption: 'Pending' },
+        humidity: { value: 0, min: 0, max: 100, unit: '%', label: 'Humidity', caption: 'Pending' },
+        lightLevel: { value: 0, min: 0, max: 1000, unit: 'lux', label: 'Light Level', caption: 'Pending' },
+        humidityHistory: [],
+        appliances: selectedRoom.appliances || [],
+      } as any);
       setCurrentPage('dashboard');
     }
-  }, []);
+  }, [availableRooms]);
 
   // Handle appliance state changes
   const handleApplianceStateChange = useCallback((id: string, turnOn: boolean) => {
-    setRoomData((prev) => ({
-      ...prev,
-      appliances: prev.appliances.map((app) =>
-        app.id === id
-          ? { ...app, state: turnOn ? 'manual-on' : 'manual-off' }
-          : app
-      ),
-    }));
+    setRoomData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        appliances: prev.appliances.map((app) =>
+          app.id === id
+            ? { ...app, state: turnOn ? 'manual-on' : 'manual-off' }
+            : app
+        ),
+      };
+    });
   }, []);
 
-  // Listen to real-time updates from Firestore
+  // Listen to real-time updates from Firestore for the selected room
   useEffect(() => {
-    if (currentPage !== 'dashboard') return;
+    if (currentPage !== 'dashboard' || !roomData?.deviceID) return;
 
     const sensorLogsRef = collection(db, 'SensorLogs');
-    const q = query(sensorLogsRef, orderBy('timestamp', 'desc'), limit(1));
+    const q = query(
+      sensorLogsRef,
+      where('deviceID', '==', roomData.deviceID),
+      orderBy('timestamp', 'desc'),
+      limit(1)
+    );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
         const data = snapshot.docs[0].data();
         
         setRoomData((prev) => {
-          // Fallback to previous values if fields are missing in DB
+          if (!prev) return prev;
+          
           const newTemp = data.temperature ?? prev.temperature.value;
           const newHumidity = data.humidity ?? prev.humidity.value;
           const newLight = data.lightLevel ?? prev.lightLevel.value;
 
+          const safeLimit = (prev as any).safeLimit ?? 60;
+          const criticalLimit = (prev as any).criticalLimit ?? 85;
+
           let newStatus: 'safe' | 'warning' | 'critical' = 'safe';
-          if (newHumidity > 70) {
+          if (newHumidity >= criticalLimit) {
             newStatus = 'critical';
-          } else if (newHumidity > 60) {
+          } else if (newHumidity >= safeLimit) {
             newStatus = 'warning';
           }
 
@@ -263,7 +206,7 @@ function App() {
             humidity: {
               ...prev.humidity,
               value: Math.round(newHumidity),
-              caption: newHumidity < 40 ? 'Dry' : newHumidity > 60 ? 'Humid' : 'Optimal',
+              caption: newHumidity < 40 ? 'Dry' : newHumidity >= safeLimit ? 'Humid' : 'Optimal',
             },
             lightLevel: {
               ...prev.lightLevel,
@@ -276,12 +219,28 @@ function App() {
     });
 
     return () => unsubscribe();
-  }, [currentPage]);
+  }, [currentPage, roomData?.deviceID]);
 
   // Render current page
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
+        if (!roomData) {
+          return (
+            <div className="p-6 max-w-6xl mx-auto flex items-center justify-center min-h-[50vh]">
+              <div className="text-center space-y-4">
+                <h2 className="text-2xl font-medium text-zinc-100">Welcome to MoldyBase</h2>
+                <p className="text-zinc-400">Please add a room to begin monitoring.</p>
+                <button
+                  onClick={() => setCurrentPage('rooms')}
+                  className="px-4 py-2 bg-emerald-500 text-white rounded font-medium hover:bg-emerald-600 transition-colors"
+                >
+                  Manage Rooms
+                </button>
+              </div>
+            </div>
+          );
+        }
         return (
           <DashboardPage
             roomData={roomData}
@@ -289,7 +248,7 @@ function App() {
           />
         );
       case 'rooms':
-        return <RoomsPage onRoomSelect={handleRoomSelect} />;
+        return <RoomsPage availableRooms={availableRooms} onRoomSelect={handleRoomSelect} />;
       case 'devices':
         return <DevicesPage />;
       case 'reports':
@@ -297,12 +256,12 @@ function App() {
       case 'settings':
         return <SettingsPage />;
       default:
-        return (
+        return roomData ? (
           <DashboardPage
             roomData={roomData}
             onApplianceStateChange={handleApplianceStateChange}
           />
-        );
+        ) : null;
     }
   };
 
