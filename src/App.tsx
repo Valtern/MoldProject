@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { Sidebar } from '@/components/Sidebar';
 import { StatusBanner } from '@/components/StatusBanner';
 import { StatCard } from '@/components/StatCard';
@@ -220,51 +222,60 @@ function App() {
     }));
   }, []);
 
-  // Simulate real-time updates (only on dashboard)
+  // Listen to real-time updates from Firestore
   useEffect(() => {
     if (currentPage !== 'dashboard') return;
 
-    const interval = setInterval(() => {
-      setRoomData((prev) => {
-        const tempVariation = (Math.random() - 0.5) * 0.3;
-        const humidityVariation = (Math.random() - 0.5) * 1.2;
-        const lightVariation = (Math.random() - 0.5) * 15;
+    const sensorLogsRef = collection(db, 'SensorLogs');
+    const q = query(sensorLogsRef, orderBy('timestamp', 'desc'), limit(1));
 
-        const newTemp = Math.max(15, Math.min(35, prev.temperature.value + tempVariation));
-        const newHumidity = Math.max(30, Math.min(80, prev.humidity.value + humidityVariation));
-        const newLight = Math.max(0, Math.min(1000, prev.lightLevel.value + lightVariation));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        const data = snapshot.docs[0].data();
+        
+        setRoomData((prev) => {
+          // Fallback to previous values if fields are missing in DB
+          const newTemp = data.temperature ?? prev.temperature.value;
+          const newHumidity = data.humidity ?? prev.humidity.value;
+          const newLight = data.lightLevel ?? prev.lightLevel.value;
 
-        let newStatus: 'safe' | 'warning' | 'critical' = 'safe';
-        if (newHumidity > 70) {
-          newStatus = 'critical';
-        } else if (newHumidity > 60) {
-          newStatus = 'warning';
-        }
+          let newStatus: 'safe' | 'warning' | 'critical' = 'safe';
+          if (newHumidity > 70) {
+            newStatus = 'critical';
+          } else if (newHumidity > 60) {
+            newStatus = 'warning';
+          }
 
-        return {
-          ...prev,
-          status: newStatus,
-          lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          temperature: {
-            ...prev.temperature,
-            value: Math.round(newTemp * 10) / 10,
-            caption: newTemp < 18 ? 'Cool' : newTemp > 26 ? 'Warm' : 'Comfortable',
-          },
-          humidity: {
-            ...prev.humidity,
-            value: Math.round(newHumidity),
-            caption: newHumidity < 40 ? 'Dry' : newHumidity > 60 ? 'Humid' : 'Optimal',
-          },
-          lightLevel: {
-            ...prev.lightLevel,
-            value: Math.round(newLight),
-            caption: newLight < 100 ? 'Dim' : newLight > 500 ? 'Bright' : 'Moderate',
-          },
-        };
-      });
-    }, 5000);
+          let formattedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          if (data.timestamp?.toDate) {
+             formattedTime = data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          }
 
-    return () => clearInterval(interval);
+          return {
+            ...prev,
+            status: newStatus,
+            lastUpdated: formattedTime,
+            temperature: {
+              ...prev.temperature,
+              value: Math.round(newTemp * 10) / 10,
+              caption: newTemp < 18 ? 'Cool' : newTemp > 26 ? 'Warm' : 'Comfortable',
+            },
+            humidity: {
+              ...prev.humidity,
+              value: Math.round(newHumidity),
+              caption: newHumidity < 40 ? 'Dry' : newHumidity > 60 ? 'Humid' : 'Optimal',
+            },
+            lightLevel: {
+              ...prev.lightLevel,
+              value: Math.round(newLight),
+              caption: newLight < 100 ? 'Dim' : newLight > 500 ? 'Bright' : 'Moderate',
+            },
+          };
+        });
+      }
+    });
+
+    return () => unsubscribe();
   }, [currentPage]);
 
   // Render current page
