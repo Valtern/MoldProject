@@ -61,9 +61,9 @@ export function ApplianceControlPanel({ appliances, onStateChange }: ApplianceCo
   return (
     <div
       ref={containerRef}
-      className="bg-zinc-900 border border-zinc-800 rounded-lg p-5"
+      className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5"
     >
-      <h2 className="text-sm font-medium text-zinc-400 mb-4">
+      <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">
         Appliance Control
       </h2>
 
@@ -78,14 +78,14 @@ export function ApplianceControlPanel({ appliances, onStateChange }: ApplianceCo
               className="flex items-center justify-between py-2"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-md bg-zinc-800 flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-zinc-400" strokeWidth={2} />
+                <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" strokeWidth={2} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-zinc-100">
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                     {appliance.name}
                   </p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     {stateLabels[appliance.state]}
                   </p>
                 </div>
@@ -100,8 +100,8 @@ export function ApplianceControlPanel({ appliances, onStateChange }: ApplianceCo
         })}
       </div>
 
-      <div className="mt-4 pt-3 border-t border-zinc-800">
-        <p className="text-xs text-zinc-500">
+      <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Controls respond to the selected room
         </p>
       </div>

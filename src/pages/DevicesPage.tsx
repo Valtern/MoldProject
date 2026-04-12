@@ -8,12 +8,12 @@ const wifiConfig = {
   Good: { icon: Wifi, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
   Fair: { icon: Wifi, color: 'text-amber-500', bg: 'bg-amber-500/10' },
   Poor: { icon: Wifi, color: 'text-orange-500', bg: 'bg-orange-500/10' },
-  Offline: { icon: AlertCircle, color: 'text-zinc-500', bg: 'bg-zinc-800' },
+  Offline: { icon: AlertCircle, color: 'text-zinc-500 dark:text-zinc-400', bg: 'bg-zinc-100 dark:bg-zinc-800' },
 };
 
 const statusConfig = {
   online: { label: 'Online', className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
-  offline: { label: 'Offline', className: 'bg-zinc-800 text-zinc-500 border-zinc-700' },
+  offline: { label: 'Offline', className: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700' },
   warning: { label: 'Unstable', className: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
 };
 
@@ -91,17 +91,17 @@ function DeviceTableRow({ room }: { room: any }) {
   const stat = statusConfig[status];
 
   return (
-    <tr className="border-b border-zinc-800 last:border-b-0 hover:bg-zinc-800/50 transition-colors">
+    <tr className="border-b border-zinc-200 dark:border-zinc-800 last:border-b-0 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors">
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-zinc-800 flex items-center justify-center">
-            <span className="text-xs font-mono text-zinc-400">IoT</span>
+          <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+            <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">IoT</span>
           </div>
-          <span className="font-medium text-zinc-100">{room.deviceID || 'Unassigned'}</span>
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">{room.deviceID || 'Unassigned'}</span>
         </div>
       </td>
       <td className="px-4 py-3.5">
-        <span className="text-sm text-zinc-400">{room.name}</span>
+        <span className="text-sm text-zinc-500 dark:text-zinc-400">{room.name}</span>
       </td>
       <td className="px-4 py-3.5">
         {latestLog ? (
@@ -117,13 +117,13 @@ function DeviceTableRow({ room }: { room: any }) {
       </td>
       <td className="px-4 py-3.5">
         {latestLog ? (
-          <div className="flex items-center gap-3 text-zinc-400">
+          <div className="flex items-center gap-3 text-zinc-500 dark:text-zinc-400">
             <div className="flex items-center gap-1">
-              <Thermometer className="w-3.5 h-3.5 text-zinc-500" />
+              <Thermometer className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
               <span className="text-sm">{latestLog.temperature ?? '--'}°C</span>
             </div>
             <div className="flex items-center gap-1">
-              <Droplets className="w-3.5 h-3.5 text-zinc-500" />
+              <Droplets className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
               <span className="text-sm">{latestLog.humidity ?? '--'}%</span>
             </div>
           </div>
@@ -155,35 +155,35 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
     <div className="p-6 max-w-6xl mx-auto">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-zinc-100">Devices</h1>
-        <p className="text-sm text-zinc-500 mt-1">
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Devices</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
           Monitor hardware health and connectivity status
         </p>
       </div>
 
       {availableRooms.length === 0 ? (
-        <div className="text-center py-12 border border-zinc-800 rounded-lg border-dashed">
-          <p className="text-zinc-500">No devices configured yet. Please add a room to track devices.</p>
+        <div className="text-center py-12 border border-zinc-200 dark:border-zinc-800 rounded-lg border-dashed">
+          <p className="text-zinc-500 dark:text-zinc-400">No devices configured yet. Please add a room to track devices.</p>
         </div>
       ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
           <table className="w-full">
             {/* Table Header */}
             <thead>
-              <tr className="bg-zinc-950 border-b border-zinc-800">
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">
+              <tr className="bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
+                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Device ID
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Assigned Room
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Wi-Fi Signal
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Sensors
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Status
                 </th>
               </tr>
@@ -204,15 +204,15 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
          <div className="mt-4 flex items-center gap-6 text-sm">
            <div className="flex items-center gap-2">
              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-             <span className="text-zinc-400">Online (&lt; 5m)</span>
+             <span className="text-zinc-500 dark:text-zinc-400">Online (&lt; 5m)</span>
            </div>
            <div className="flex items-center gap-2">
              <span className="w-2 h-2 rounded-full bg-amber-500" />
-             <span className="text-zinc-400">Unstable (5-15m)</span>
+             <span className="text-zinc-500 dark:text-zinc-400">Unstable (5-15m)</span>
            </div>
            <div className="flex items-center gap-2">
              <span className="w-2 h-2 rounded-full bg-zinc-500" />
-             <span className="text-zinc-400">Offline (&gt; 15m)</span>
+             <span className="text-zinc-500 dark:text-zinc-400">Offline (&gt; 15m)</span>
            </div>
          </div>
       )}

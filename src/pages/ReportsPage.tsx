@@ -44,8 +44,8 @@ export function ReportsPage() {
   }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 shadow-lg">
-          <p className="text-zinc-500 text-xs mb-1">January {label}</p>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 shadow-lg">
+          <p className="text-zinc-500 dark:text-zinc-400 text-xs mb-1">January {label}</p>
           <p className="text-emerald-500 text-sm font-medium">
             {payload[0].value} hours above limit
           </p>
@@ -59,55 +59,55 @@ export function ReportsPage() {
     <div className="p-6 max-w-6xl mx-auto">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-zinc-100">Reports</h1>
-        <p className="text-sm text-zinc-500 mt-1">
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Reports</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
           Historical analysis and predictive insights
         </p>
       </div>
 
       {/* Date Range Selector */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 mb-6">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 mb-6">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-zinc-500" />
-            <span className="text-sm text-zinc-400">Date Range</span>
+            <Calendar className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">Date Range</span>
           </div>
           <div className="flex items-center gap-3">
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-zinc-950 border border-zinc-800 rounded-md px-3 py-1.5 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
+              className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
             />
-            <span className="text-zinc-500">to</span>
+            <span className="text-zinc-500 dark:text-zinc-400">to</span>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-zinc-950 border border-zinc-800 rounded-md px-3 py-1.5 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
+              className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
             />
           </div>
         </div>
       </div>
 
       {/* Bar Chart */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 mb-6">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-medium text-zinc-400">
+          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
             Hours Above Safe Humidity Limit
           </h2>
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="text-zinc-500">Normal</span>
+              <span className="text-zinc-500 dark:text-zinc-400">Normal</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-500" />
-              <span className="text-zinc-500">Elevated</span>
+              <span className="text-zinc-500 dark:text-zinc-400">Elevated</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-red-500" />
-              <span className="text-zinc-500">Critical</span>
+              <span className="text-zinc-500 dark:text-zinc-400">Critical</span>
             </div>
           </div>
         </div>
@@ -147,26 +147,26 @@ export function ReportsPage() {
       </div>
 
       {/* Analytics Summary */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-4 h-4 text-emerald-500" />
-          <h2 className="text-sm font-medium text-zinc-100">Analytics Summary</h2>
+          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Analytics Summary</h2>
         </div>
 
         <div className="space-y-4">
           {/* Key Metrics */}
-          <div className="grid grid-cols-3 gap-4 pb-4 border-b border-zinc-800">
+          <div className="grid grid-cols-3 gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
             <div>
-              <p className="text-2xl font-semibold text-zinc-100">{totalHoursAbove}</p>
-              <p className="text-xs text-zinc-500 mt-1">Total hours above limit</p>
+              <p className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">{totalHoursAbove}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Total hours above limit</p>
             </div>
             <div>
               <p className="text-2xl font-semibold text-amber-500">{highRiskDays}</p>
-              <p className="text-xs text-zinc-500 mt-1">High-risk days</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">High-risk days</p>
             </div>
             <div>
               <p className="text-2xl font-semibold text-emerald-500">{Math.round((1 - highRiskDays / 30) * 100)}%</p>
-              <p className="text-xs text-zinc-500 mt-1">Safe days percentage</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Safe days percentage</p>
             </div>
           </div>
 
@@ -174,7 +174,7 @@ export function ReportsPage() {
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm text-zinc-300 leading-relaxed">
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
                 The bathroom humidity stayed dangerously high for <span className="text-amber-500 font-medium">40 hours total</span> last month. 
                 Predictive model indicates a <span className="text-red-500 font-medium">high probability of mold growth</span> if conditions persist. 
                 Recommend increasing ventilation and checking for leaks.

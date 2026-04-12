@@ -1,53 +1,88 @@
-import { useState } from 'react';
-import { Copy, Check, Mail, Bell, Key, Sliders } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Sliders, Bell, Mail, Monitor, Moon, Sun } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import { toast } from 'sonner';
+import { useTheme } from 'next-themes';
 
 export function SettingsPage() {
-  const [safeHumidityLimit, setSafeHumidityLimit] = useState('60');
-  const [criticalHumidityLimit, setCriticalHumidityLimit] = useState('70');
-  const [email, setEmail] = useState('admin@example.com');
-  const [alertsEnabled, setAlertsEnabled] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [safeHumidityLimit, setSafeHumidityLimit] = useState<number | string>(60);
+  const [criticalHumidityLimit, setCriticalHumidityLimit] = useState<number | string>(85);
+  const [alertEmail, setAlertEmail] = useState<string>('');
+  const [alertsEnabled, setAlertsEnabled] = useState<boolean>(false);
 
-  const apiKey = 'sk-moldguard-7f8a9b2c3d4e5f6g7h8i9j0k1l2m3n4o';
+  const { theme, setTheme } = useTheme();
 
-  const handleCopyApiKey = () => {
-    navigator.clipboard.writeText(apiKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  useEffect(() => {
+    const globalRef = doc(db, 'Settings', 'global');
+    
+    // Check if doc exists first before subscribing, to initialize if missing
+    getDoc(globalRef).then((snapshot) => {
+      if (!snapshot.exists()) {
+        setDoc(globalRef, {
+          safeHumidityLimit: 60,
+          criticalHumidityLimit: 85,
+          alertEmail: '',
+          alertsEnabled: false
+        }, { merge: true });
+      }
+    });
 
-  const handleSave = () => {
-    // Simulate save action
-    alert('Settings saved successfully!');
+    const unsubscribe = onSnapshot(globalRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        setSafeHumidityLimit(data.safeHumidityLimit ?? 60);
+        setCriticalHumidityLimit(data.criticalHumidityLimit ?? 85);
+        setAlertEmail(data.alertEmail ?? '');
+        setAlertsEnabled(data.alertsEnabled ?? false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      await setDoc(doc(db, 'Settings', 'global'), {
+        safeHumidityLimit: Number(safeHumidityLimit),
+        criticalHumidityLimit: Number(criticalHumidityLimit),
+        alertEmail,
+        alertsEnabled
+      }, { merge: true });
+      toast.success('Settings saved successfully!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to save settings.');
+    }
   };
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-zinc-100">Settings</h1>
-        <p className="text-sm text-zinc-500 mt-1">
-          Configure thresholds, alerts, and system integration
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Settings</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          Configure thresholds, alerts, and system appearance
         </p>
       </div>
 
       {/* Threshold Configuration */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 mb-4">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 mb-4">
         <div className="flex items-center gap-2 mb-4">
           <Sliders className="w-4 h-4 text-emerald-500" />
-          <h2 className="text-sm font-medium text-zinc-100">Threshold Configuration</h2>
+          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Threshold Configuration</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-zinc-500 mb-2">
+            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
               Safe Humidity Limit (%)
             </label>
             <input
               type="number"
               value={safeHumidityLimit}
               onChange={(e) => setSafeHumidityLimit(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
               min="0"
               max="100"
             />
@@ -57,14 +92,14 @@ export function SettingsPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-zinc-500 mb-2">
+            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
               Critical Humidity Limit (%)
             </label>
             <input
               type="number"
               value={criticalHumidityLimit}
               onChange={(e) => setCriticalHumidityLimit(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20"
               min="0"
               max="100"
             />
@@ -76,33 +111,33 @@ export function SettingsPage() {
       </div>
 
       {/* Alert Preferences */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 mb-4">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 mb-4">
         <div className="flex items-center gap-2 mb-4">
           <Bell className="w-4 h-4 text-emerald-500" />
-          <h2 className="text-sm font-medium text-zinc-100">Alert Preferences</h2>
+          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Alert Preferences</h2>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs text-zinc-500 mb-2">
+            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
               Email Address for Alerts
             </label>
             <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-zinc-500 absolute ml-3" />
+              <Mail className="w-4 h-4 text-zinc-500 dark:text-zinc-400 absolute ml-3" />
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={alertEmail}
+                onChange={(e) => setAlertEmail(e.target.value)}
                 placeholder="Enter email address"
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-md pl-10 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md pl-10 pr-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
               />
             </div>
           </div>
 
           <div className="flex items-center justify-between pt-2">
             <div>
-              <p className="text-sm text-zinc-100">Enable Email Alerts</p>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-sm text-zinc-900 dark:text-zinc-100">Enable Email Alerts</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                 Receive automated mold warnings via email
               </p>
             </div>
@@ -126,51 +161,43 @@ export function SettingsPage() {
         </div>
       </div>
 
-      {/* System Integration */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 mb-6">
+      {/* Appearance */}
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <Key className="w-4 h-4 text-emerald-500" />
-          <h2 className="text-sm font-medium text-zinc-100">System Integration</h2>
+          <Monitor className="w-4 h-4 text-emerald-500" />
+          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Appearance</h2>
         </div>
 
-        <div>
-          <label className="block text-xs text-zinc-500 mb-2">
-            API Key
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              type="password"
-              value={apiKey}
-              readOnly
-              className="flex-1 bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-500 font-mono"
-            />
-            <button
-              onClick={handleCopyApiKey}
-              className={`
-                flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium
-                transition-colors duration-150
-                ${copied
-                  ? 'bg-emerald-500/10 text-emerald-500'
-                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200'
-                }
-              `}
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  <span>Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  <span>Copy</span>
-                </>
-              )}
-            </button>
-          </div>
-          <p className="text-xs text-zinc-600 mt-1.5">
-            Use this key to integrate with external systems and services
-          </p>
+        <div className="grid grid-cols-3 gap-3">
+          <button
+            onClick={() => setTheme('light')}
+            className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all ${
+              theme === 'light' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-500 dark:text-zinc-400 hover:border-zinc-700'
+            }`}
+          >
+            <Sun className="w-6 h-6 mb-2" />
+            <span className="text-sm font-medium">Light</span>
+          </button>
+          
+          <button
+            onClick={() => setTheme('dark')}
+            className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all ${
+              theme === 'dark' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-500 dark:text-zinc-400 hover:border-zinc-700'
+            }`}
+          >
+            <Moon className="w-6 h-6 mb-2" />
+            <span className="text-sm font-medium">Dark</span>
+          </button>
+
+          <button
+            onClick={() => setTheme('system')}
+            className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all ${
+              theme === 'system' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-500 dark:text-zinc-400 hover:border-zinc-700'
+            }`}
+          >
+            <Monitor className="w-6 h-6 mb-2" />
+            <span className="text-sm font-medium">System</span>
+          </button>
         </div>
       </div>
 

@@ -39,8 +39,8 @@ export function HumidityChart({ data }: HumidityChartProps) {
   }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 shadow-lg">
-          <p className="text-zinc-500 text-xs mb-1">{label}</p>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 shadow-lg">
+          <p className="text-zinc-500 dark:text-zinc-400 text-xs mb-1">{label}</p>
           <p className="text-emerald-500 text-sm font-medium">
             {payload[0].value}%
           </p>
@@ -53,15 +53,15 @@ export function HumidityChart({ data }: HumidityChartProps) {
   return (
     <div
       ref={containerRef}
-      className="bg-zinc-900 border border-zinc-800 rounded-lg p-5"
+      className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5"
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-medium text-zinc-400">
+        <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
           Humidity — Last 24 Hours
         </h2>
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          <span className="text-xs text-zinc-500">Safe range 40-60%</span>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">Safe range 40-60%</span>
         </div>
       </div>
 
