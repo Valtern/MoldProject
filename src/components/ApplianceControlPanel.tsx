@@ -61,7 +61,7 @@ export function ApplianceControlPanel({ appliances, onStateChange }: ApplianceCo
   return (
     <div
       ref={containerRef}
-      className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5"
+      className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-5"
     >
       <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">
         Appliance Control
@@ -100,7 +100,7 @@ export function ApplianceControlPanel({ appliances, onStateChange }: ApplianceCo
         })}
       </div>
 
-      <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+      <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/5">
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Controls respond to the selected room
         </p>

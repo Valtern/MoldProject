@@ -93,7 +93,7 @@ function DeviceTableRow({ room }: { room: any }) {
   const stat = statusConfig[status];
 
   return (
-    <tr className="border-b border-zinc-200 dark:border-zinc-800 last:border-b-0 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors">
+    <tr className="border-b border-slate-200/60 dark:border-white/5 last:border-b-0 hover:bg-slate-50 dark:hover:bg-zinc-800/40 transition-colors">
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
@@ -154,7 +154,7 @@ interface DevicesPageProps {
 
 export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto transition-all">
       {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Devices</h1>
@@ -164,15 +164,15 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
       </div>
 
       {availableRooms.length === 0 ? (
-        <div className="text-center py-12 border border-zinc-200 dark:border-zinc-800 rounded-lg border-dashed">
+        <div className="text-center py-12 border border-slate-200/60 dark:border-zinc-800 rounded-lg border-dashed">
           <p className="text-zinc-500 dark:text-zinc-400">No devices configured yet. Please add a room to track devices.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
+        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg overflow-hidden">
           <table className="w-full">
             {/* Table Header */}
             <thead>
-              <tr className="bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
+              <tr className="bg-slate-50/80 dark:bg-zinc-900/60 border-b border-slate-200/60 dark:border-white/5">
                 <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Device ID
                 </th>

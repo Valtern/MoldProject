@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Sidebar } from '@/components/Sidebar';
@@ -23,7 +23,7 @@ function DashboardPage({
   onApplianceStateChange: (id: string, turnOn: boolean) => void;
 }) {
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto transition-all">
       {/* Status Banner */}
       <section className="mb-6">
         <StatusBanner
@@ -35,7 +35,7 @@ function DashboardPage({
 
       {/* Stats Row */}
       <section className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 2xl:grid-cols-3 gap-4 lg:gap-6 2xl:gap-8 transition-all">
           <StatCard
             data={roomData.temperature}
             index={0}
@@ -55,9 +55,9 @@ function DashboardPage({
       </section>
 
       {/* Chart and Control Panel Row */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Humidity Chart - takes 2/3 width on large screens */}
-        <div className="lg:col-span-2">
+      <section className="grid grid-cols-1 lg:grid-cols-3 2xl:grid-cols-4 gap-4 lg:gap-6 2xl:gap-8 transition-all">
+        {/* Humidity Chart - takes 2/3 width on large screens, more on 4K */}
+        <div className="lg:col-span-2 2xl:col-span-3">
           <HumidityChart deviceID={roomData.deviceID} />
         </div>
 
@@ -77,6 +77,36 @@ function App() {
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
   const [availableRooms, setAvailableRooms] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<RoomData | null>(null);
+
+  // ── Ripple wave system (direct DOM injection) ──
+  const lastRippleTime = useRef(0);
+
+  useEffect(() => {
+    const spawnRipple = (e: MouseEvent) => {
+      // Check if ripple is disabled via settings
+      if (localStorage.getItem('moldguard-ripple-disabled') === 'true') return;
+
+      const now = Date.now();
+      if (now - lastRippleTime.current < 800) return;
+      lastRippleTime.current = now;
+
+      const el = document.createElement('div');
+      el.className = 'ripple-ring';
+      el.style.left = e.clientX + 'px';
+      el.style.top = e.clientY + 'px';
+      el.style.zIndex = '99999';
+      document.body.appendChild(el);
+
+      // Remove after animation
+      const cleanup = () => { if (el.parentNode) el.remove(); };
+      el.addEventListener('animationend', cleanup);
+      setTimeout(cleanup, 7500);
+    };
+
+    // Use capture phase on window — fires before anything can stop it
+    window.addEventListener('click', spawnRipple, true);
+    return () => window.removeEventListener('click', spawnRipple, true);
+  }, []);
 
   // Listen to available rooms from Devices collection
   useEffect(() => {
@@ -246,13 +276,13 @@ function App() {
       case 'dashboard':
         if (!roomData) {
           return (
-            <div className="p-6 max-w-6xl mx-auto flex items-center justify-center min-h-[50vh]">
-              <div className="text-center space-y-4">
-                <h2 className="text-2xl font-medium text-zinc-900 dark:text-zinc-100">Welcome to MoldyBase</h2>
-                <p className="text-zinc-500 dark:text-zinc-400">Please add a room to begin monitoring.</p>
+            <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto flex items-center justify-center min-h-[50vh]">
+              <div className="text-center space-y-4 2xl:space-y-6">
+                <h2 className="text-2xl 2xl:text-4xl font-medium text-zinc-900 dark:text-zinc-100">Welcome to MoldyBase</h2>
+                <p className="text-zinc-500 text-base 2xl:text-lg dark:text-zinc-400">Please add a room to begin monitoring.</p>
                 <button
                   onClick={() => setCurrentPage('rooms')}
-                  className="px-4 py-2 bg-emerald-500 text-white rounded font-medium hover:bg-emerald-600 transition-colors"
+                  className="px-4 py-2 2xl:px-8 2xl:py-4 2xl:text-lg bg-emerald-500 text-white rounded font-medium hover:bg-emerald-600 transition-colors"
                 >
                   Manage Rooms
                 </button>
@@ -285,12 +315,74 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 relative overflow-hidden font-sans selection:bg-emerald-500/30">
+      
+      {/* ══ Layer 1: Mesh Gradient (CSS radial — no blur artifacts) ══ */}
+      <div 
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background: [
+            // Primary emerald wash — top-left quadrant
+            'radial-gradient(ellipse 60% 50% at 10% 10%, rgba(16,185,129,0.12) 0%, transparent 70%)',
+            // Teal bio-luminescence — center-right
+            'radial-gradient(ellipse 40% 60% at 75% 45%, rgba(20,184,166,0.08) 0%, transparent 60%)',
+            // Warm amber accent — bottom-left (humidity warmth)
+            'radial-gradient(ellipse 50% 40% at 20% 85%, rgba(245,158,11,0.06) 0%, transparent 60%)',
+            // Cool slate wash — top-right corner
+            'radial-gradient(ellipse 45% 35% at 90% 15%, rgba(100,116,139,0.07) 0%, transparent 55%)',
+            // Deep emerald pulse — bottom-right (scanner origin)
+            'radial-gradient(ellipse 35% 45% at 80% 80%, rgba(5,150,105,0.1) 0%, transparent 50%)',
+          ].join(', ')
+        }}
+      />
+
+      {/* ══ Layer 2: Dot-grid microscope reticle ══ */}
+      <div className="pointer-events-none fixed inset-0 z-0 bg-dot-grid text-slate-300/[0.12] dark:text-white/[0.03]" />
+
+      {/* ══ Layer 3: Film grain texture ══ */}
+      <div 
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.025] dark:opacity-[0.03] mix-blend-overlay"
+        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }}
+      />
+
+      {/* ══ Layer 4: Floating spore particles ══ */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        {/* Large spores */}
+        <div className="absolute w-2 h-2 rounded-full bg-emerald-500/20 dark:bg-emerald-400/15 top-[15%] left-[12%]" style={{ animation: 'spore-drift-1 18s ease-in-out infinite' }} />
+        <div className="absolute w-3 h-3 rounded-full bg-teal-500/15 dark:bg-teal-400/10 top-[60%] left-[70%]" style={{ animation: 'spore-drift-2 22s ease-in-out infinite' }} />
+        <div className="absolute w-2.5 h-2.5 rounded-full bg-emerald-600/15 dark:bg-emerald-500/10 top-[40%] left-[45%]" style={{ animation: 'spore-drift-3 25s ease-in-out infinite' }} />
+        
+        {/* Medium spores */}
+        <div className="absolute w-1.5 h-1.5 rounded-full bg-teal-400/20 dark:bg-teal-300/10 top-[80%] left-[25%]" style={{ animation: 'spore-drift-2 20s ease-in-out infinite 3s' }} />
+        <div className="absolute w-1.5 h-1.5 rounded-full bg-emerald-400/15 dark:bg-emerald-300/10 top-[25%] left-[85%]" style={{ animation: 'spore-drift-1 24s ease-in-out infinite 5s' }} />
+        <div className="absolute w-2 h-2 rounded-full bg-amber-400/10 dark:bg-amber-300/8 top-[70%] left-[50%]" style={{ animation: 'spore-drift-3 19s ease-in-out infinite 2s' }} />
+        
+        {/* Small spores — micro dust */}
+        <div className="absolute w-1 h-1 rounded-full bg-emerald-500/25 dark:bg-emerald-400/15 top-[35%] left-[22%]" style={{ animation: 'spore-drift-3 16s ease-in-out infinite 1s' }} />
+        <div className="absolute w-1 h-1 rounded-full bg-slate-400/20 dark:bg-slate-300/10 top-[55%] left-[38%]" style={{ animation: 'spore-drift-1 21s ease-in-out infinite 4s' }} />
+        <div className="absolute w-1 h-1 rounded-full bg-teal-500/20 dark:bg-teal-400/12 top-[18%] left-[60%]" style={{ animation: 'spore-drift-2 17s ease-in-out infinite 6s' }} />
+        <div className="absolute w-0.5 h-0.5 rounded-full bg-emerald-400/30 dark:bg-emerald-300/15 top-[45%] left-[78%]" style={{ animation: 'spore-drift-1 23s ease-in-out infinite 7s' }} />
+      </div>
+
+      {/* ══ Layer 5: Scanner pulse ring (emanates from bottom-right) ══ */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div 
+          className="absolute left-[75%] top-[85%] w-[800px] h-[800px] rounded-full border border-emerald-500/10 dark:border-emerald-400/8"
+          style={{ animation: 'scanner-pulse 8s ease-out infinite', opacity: 0 }}
+        />
+        <div 
+          className="absolute left-[75%] top-[85%] w-[800px] h-[800px] rounded-full border border-teal-500/8 dark:border-teal-400/5"
+          style={{ animation: 'scanner-pulse 8s ease-out infinite 4s', opacity: 0 }}
+        />
+      </div>
+
       {/* Sidebar */}
-      <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+      <div className="relative z-50">
+        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+      </div>
 
       {/* Main Content */}
-      <main className="ml-56 min-h-screen">
+      <main className="ml-56 min-h-screen relative z-10 text-slate-900 dark:text-zinc-100">
         {renderPage()}
       </main>
     </div>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import {
   AreaChart,
   Area,
@@ -11,7 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import type { HumidityDataPoint } from '@/types';
+
 
 interface HumidityChartProps {
   deviceID?: string;
@@ -124,7 +124,7 @@ export function HumidityChart({ deviceID }: HumidityChartProps) {
   }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 shadow-lg">
+        <div className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-lg border border-slate-200/60 dark:border-white/10 rounded-md px-3 py-2 shadow-xl">
           <p className="text-zinc-500 dark:text-zinc-400 text-xs mb-1">{label}</p>
           <p className="text-emerald-500 text-sm font-medium">
             {payload[0].value}%
@@ -138,7 +138,7 @@ export function HumidityChart({ deviceID }: HumidityChartProps) {
   return (
     <div
       ref={containerRef}
-      className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5"
+      className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-5"
     >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">

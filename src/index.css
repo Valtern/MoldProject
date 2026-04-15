@@ -112,6 +112,71 @@
   fill: url(#emeraldGradient);
 }
 
+/* === Bio-Lab Background System === */
+
+/* Floating spore particles - slow organic drift */
+@keyframes spore-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.15; }
+  25% { transform: translate(30px, -40px) scale(1.1); opacity: 0.25; }
+  50% { transform: translate(-20px, -70px) scale(0.9); opacity: 0.15; }
+  75% { transform: translate(40px, -30px) scale(1.05); opacity: 0.2; }
+}
+
+@keyframes spore-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.1; }
+  33% { transform: translate(-40px, -50px) scale(1.15); opacity: 0.2; }
+  66% { transform: translate(25px, -80px) scale(0.85); opacity: 0.12; }
+}
+
+@keyframes spore-drift-3 {
+  0%, 100% { transform: translate(0, 0); opacity: 0.08; }
+  50% { transform: translate(50px, -60px); opacity: 0.18; }
+}
+
+/* Scanner pulse - radar-like ring */
+@keyframes scanner-pulse {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  10% { opacity: 0.12; }
+  70% { opacity: 0.05; }
+  100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+}
+
+/* Click ripple wave — uses transform:scale for GPU acceleration */
+@keyframes ripple-wave {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(15);
+    opacity: 0;
+  }
+}
+
+.ripple-ring {
+  position: fixed;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 2px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 40px 8px rgba(16, 185, 129, 0.08);
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: ripple-wave 7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Light grey ripple in dark mode */
+.dark .ripple-ring {
+  border-color: rgba(200, 210, 220, 0.25);
+  box-shadow: 0 0 40px 8px rgba(200, 210, 220, 0.06);
+}
+
+/* Dot-grid microscope reticle */
+.bg-dot-grid {
+  background-image: radial-gradient(circle, currentColor 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,

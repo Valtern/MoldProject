@@ -144,8 +144,8 @@ export function ReportsPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto transition-all">
+      <div className="grid grid-cols-1 xl:grid-cols-3 3xl:grid-cols-4 gap-6 2xl:gap-8 transition-all">
         
         {/* Left Column: Predictive Alerts Sidebar (xl:col-span-1) */}
         <div className="xl:col-span-1 flex flex-col gap-4">
@@ -155,7 +155,7 @@ export function ReportsPage() {
           </div>
           
           {alerts.length === 0 ? (
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-8 flex flex-col items-center justify-center text-center">
+            <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-8 flex flex-col items-center justify-center text-center">
               <ShieldCheck className="w-8 h-8 text-emerald-500 mb-3" />
               <p className="text-zinc-900 dark:text-zinc-100 font-medium">No active risks</p>
               <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">Our predictive models indicate all rooms are perfectly safe.</p>
@@ -165,7 +165,7 @@ export function ReportsPage() {
               {alerts.map((alert) => (
                 <div 
                   key={alert.id}
-                  className={`bg-white dark:bg-zinc-900 border rounded-lg p-4 transition-colors ${
+                  className={`bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border shadow-lg dark:shadow-xl rounded-lg p-4 transition-colors ${
                     alert.riskLevel === 'High' 
                       ? 'border-red-500/50' 
                       : 'border-amber-500/30'
@@ -194,7 +194,7 @@ export function ReportsPage() {
                     </div>
                   </div>
                   {alert.averageHumidity && (
-                     <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-sm">
+                     <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-zinc-800 flex items-center justify-between text-sm">
                        <span className="text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
                          <Droplets className="w-3.5 h-3.5" /> Avg Humidity
                        </span>
@@ -209,8 +209,8 @@ export function ReportsPage() {
           )}
         </div>
 
-        {/* Right Column: Main View (xl:col-span-2) */}
-        <div className="xl:col-span-2 flex flex-col gap-6">
+        {/* Right Column: Main View (xl:col-span-2, 3xl:col-span-3) */}
+        <div className="xl:col-span-2 3xl:col-span-3 flex flex-col gap-6 2xl:gap-8">
           
           {/* Top: Page Header & Filter */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -220,14 +220,14 @@ export function ReportsPage() {
                 Historical analysis and predictive insights
               </p>
             </div>
-            <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg">
+            <div className="flex bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 p-1 rounded-lg">
               {(['24h', '7d', '30d'] as const).map((range) => (
                 <button
                   key={range}
                   onClick={() => setTimeframe(range)}
                   className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
                     timeframe === range
-                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
+                      ? 'bg-slate-200/80 dark:bg-zinc-700/80 text-slate-900 dark:text-zinc-100 shadow-sm'
                       : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-300'
                   }`}
                 >
@@ -238,7 +238,7 @@ export function ReportsPage() {
           </div>
 
           {/* Middle: Historical Bar Chart */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5">
+          <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
                 <Activity className="w-4 h-4" /> Trend Aggregation ({timeframe})
@@ -335,15 +335,15 @@ export function ReportsPage() {
               <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100">Global Stream</h2>
             </div>
             
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden shadow-sm">
+            <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg overflow-hidden">
               {recentActivity.length === 0 ? (
                  <div className="p-8 text-center text-zinc-500 dark:text-zinc-400 text-sm">
                    Waiting for IoT hardware data limit(10)...
                  </div>
               ) : (
-                 <div className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                 <div className="divide-y divide-slate-200/60 dark:divide-zinc-800/50">
                    {recentActivity.map((log) => (
-                     <div key={log.id} className="p-4 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                     <div key={log.id} className="p-4 flex items-center justify-between hover:bg-slate-50/60 dark:hover:bg-zinc-800/50 transition-colors">
                        <div className="flex items-center gap-3">
                          <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
                            <Zap className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />

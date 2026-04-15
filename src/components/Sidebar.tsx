@@ -29,14 +29,14 @@ interface SidebarProps {
 
 export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
   return (
-    <aside className="fixed left-0 top-0 h-full w-56 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 z-50 flex flex-col">
+    <aside className="fixed left-0 top-0 h-full w-56 bg-white/70 dark:bg-zinc-950/40 backdrop-blur-xl border-r border-slate-200/60 dark:border-white/5 z-50 flex flex-col">
       {/* Logo */}
-      <div className="px-4 py-4 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="px-4 py-4 border-b border-slate-200/60 dark:border-white/5">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-md bg-emerald-500/10 flex items-center justify-center">
             <Shield className="w-4 h-4 text-emerald-500" strokeWidth={2} />
           </div>
-          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
             MoldGuard
           </span>
         </div>
@@ -57,8 +57,8 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
                     w-full flex items-center gap-3 px-3 py-2 rounded-md
                     transition-colors duration-150
                     ${isActive
-                      ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'
+                      ? 'bg-slate-200/80 dark:bg-zinc-800/60 text-slate-900 dark:text-zinc-100 shadow-sm'
+                      : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800/30'
                     }
                   `}
                 >
@@ -72,8 +72,8 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
       </nav>
 
       {/* Version */}
-      <div className="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800">
-        <p className="text-xs text-zinc-600">v2.4.0</p>
+      <div className="px-4 py-3 border-t border-slate-200/60 dark:border-white/5">
+        <p className="text-xs text-slate-400 dark:text-zinc-600">v2.4.0</p>
       </div>
     </aside>
   );

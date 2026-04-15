@@ -59,7 +59,7 @@ export function StatCard({ data, index, status = 'safe' }: StatCardProps) {
   return (
     <div
       ref={cardRef}
-      className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 flex flex-col justify-between h-32"
+      className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-5 flex flex-col justify-between h-32"
     >
       {/* Label - top left */}
       <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">

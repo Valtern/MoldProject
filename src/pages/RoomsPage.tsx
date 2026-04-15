@@ -71,8 +71,8 @@ function RoomCard({ room, onRoomSelect, openEdit, handleDelete, onStatusUpdate }
       onClick={() => onRoomSelect(room.id)}
       className="
         group
-        bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 text-left cursor-pointer
-        transition-all duration-150 hover:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/50
+        bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 text-left cursor-pointer
+        transition-all duration-150 hover:border-slate-300 dark:hover:border-white/20 hover:bg-white/80 dark:hover:bg-zinc-800/60
         focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50
         relative
       "
@@ -246,7 +246,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
   const criticalCount = statuses.filter(s => s === 'critical').length;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto transition-all">
       {/* Page Header */}
       <div className="mb-6 flex justify-between items-center">
         <div>
@@ -353,7 +353,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
           <p className="text-zinc-500 dark:text-zinc-400">No rooms configured yet.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4 2xl:gap-6 transition-all">
           {availableRooms.map((room) => (
             <RoomCard
               key={room.id}
@@ -369,15 +369,15 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
 
       {/* Summary Stats */}
       <div className="mt-6 grid grid-cols-3 gap-4 max-w-md">
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 text-center">
+        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 text-center">
           <p className="text-2xl font-semibold text-emerald-500">{safeCount}</p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Safe</p>
         </div>
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 text-center">
+        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 text-center">
           <p className="text-2xl font-semibold text-amber-500">{warningCount}</p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Warning</p>
         </div>
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 text-center">
+        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 text-center">
           <p className="text-2xl font-semibold text-red-500">{criticalCount}</p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Critical</p>
         </div>
