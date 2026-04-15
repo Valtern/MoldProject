@@ -2,9 +2,10 @@
 
 A complete smart home monitoring environment designed to track humidity and temperature across multiple rooms dynamically, predicting and alerting users to critical mold risks before they become a hazard. 
 
-This project is broken into two distinct environments:
+This project is broken into three distinct environments:
 1. **The React/Vite Frontend Dashboard** 
 2. **The Node.js Watchdog Alert Worker**
+3. **The Node.js ESP32 IoT Middleware Bridge**
 
 ---
 
@@ -58,3 +59,36 @@ The script will announce:
 `[Watchdog Loaded] Listening to real-time events.`
 
 It will silently monitor all incoming Firebase sensor logs and send alerts to the `alertEmail` configured globally in your Dashboard Settings.
+
+---
+
+## 3. ESP32 IoT Middleware Bridge
+
+Since ESP32 devices cannot securely interface with Firebase Firestore directly using native client SDKs without tremendous overhead, we run a lightweight Node.js Express server to act as a secure intermediary layer. 
+
+The ESP32 posts simple JSON payloads over HTTP to this server. The server rigorously sanitizes the IoT payloads using strict `zod` schemas, verifies your Pre-Shared Key (PSK), and gracefully pushes secure timestamps and clean data up to Firebase using the Admin SDK.
+
+### Installation
+Navigate into the middleware folder:
+```bash
+cd esp32-middleware
+npm install
+```
+
+### Configuring Server Security Properties
+To authenticate your ESP32 microcontrollers and allow server-side database writes, you must provide your security variables:
+
+1. Copy the `.env.example` file and rename it to `.env`.
+   ```bash
+   cp .env.example .env
+   ```
+2. Open your new `.env` file and configure your API parameters:
+   * **`ESP32_API_KEY`**: Invent a secure Pre-Shared Key string. This exact string must be programmed into your ESP32 C++ code inside the `x-esp32-api-key` HTTP POST header block.
+   * **`GOOGLE_APPLICATION_CREDENTIALS`**: Go to your Firebase Project Dashboard -> Project Settings -> Service Accounts -> "Generate New Private Key". Download the JSON file to your server and provide the absolute path.
+
+### Running the Middleware
+With your environment secured, launch the Express bridge server:
+```bash
+npm run dev
+```
+The server defaults to port 3000 to listen for incoming ESP32 hardware payloads natively.
