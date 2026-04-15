@@ -82,7 +82,7 @@ function App() {
   useEffect(() => {
     const devicesRef = collection(db, 'Devices');
     const unsubscribe = onSnapshot(devicesRef, (snapshot) => {
-      const rooms = snapshot.docs.map(doc => ({
+      const rooms: any[] = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
@@ -114,6 +114,8 @@ function App() {
       } else {
         setRoomData(null);
       }
+    }, (error) => {
+      console.error('[App] Devices listener error:', error);
     });
 
     return () => unsubscribe();
@@ -231,6 +233,8 @@ function App() {
           };
         });
       }
+    }, (error) => {
+      console.error('[App] SensorLogs listener error:', error);
     });
 
     return () => unsubscribe();

@@ -3,8 +3,8 @@ import { AlertTriangle, Activity, Clock, ShieldCheck, Thermometer, Droplets, Zap
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -28,6 +28,8 @@ export function ReportsPage() {
     const unsubscribeAlerts = onSnapshot(qAlerts, (snapshot) => {
       const parsedAlerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setAlerts(parsedAlerts);
+    }, (error) => {
+      console.error('[Reports] Alerts listener error:', error);
     });
 
     // 2. Recent Activity Subscriber
@@ -37,6 +39,8 @@ export function ReportsPage() {
     const unsubscribeLogs = onSnapshot(qLogs, (snapshot) => {
       const parsedLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setRecentActivity(parsedLogs);
+    }, (error) => {
+      console.error('[Reports] Activity listener error:', error);
     });
 
     return () => {
@@ -91,6 +95,8 @@ export function ReportsPage() {
       }));
 
       setChartData(aggregated);
+    }, (error) => {
+      console.error('[Reports] Chart listener error:', error);
     });
 
     return () => unsubscribe();
@@ -257,7 +263,17 @@ export function ReportsPage() {
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                  <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="humidityGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="tempGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.1} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                     <XAxis 
                       dataKey="timeLabel" 
@@ -267,15 +283,46 @@ export function ReportsPage() {
                       axisLine={{ stroke: '#27272a' }} 
                     />
                     <YAxis 
+                      yAxisId="humidity"
                       stroke="#3f3f46" 
                       tick={{ fill: '#71717a', fontSize: 11 }} 
                       tickLine={false} 
-                      axisLine={{ stroke: '#27272a' }} 
+                      axisLine={{ stroke: '#27272a' }}
+                      domain={[0, 100]}
                     />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: '#27272a', opacity: 0.4 }} />
-                    <Bar dataKey="humidity" fill="#10b981" radius={[2, 2, 0, 0]} animationDuration={800} />
-                    <Bar dataKey="temperature" fill="#f59e0b" radius={[2, 2, 0, 0]} animationDuration={800} />
-                  </BarChart>
+                    <YAxis 
+                      yAxisId="temp"
+                      orientation="right"
+                      stroke="#3f3f46" 
+                      tick={{ fill: '#71717a', fontSize: 11 }} 
+                      tickLine={false} 
+                      axisLine={{ stroke: '#27272a' }}
+                      domain={[0, 50]}
+                    />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#3f3f46', strokeDasharray: '3 3' }} />
+                    <Area
+                      yAxisId="humidity"
+                      type="monotone"
+                      dataKey="humidity"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      fill="url(#humidityGradient)"
+                      dot={false}
+                      activeDot={{ r: 4, fill: '#10b981', stroke: '#18181b', strokeWidth: 2 }}
+                      animationDuration={800}
+                    />
+                    <Area
+                      yAxisId="temp"
+                      type="monotone"
+                      dataKey="temperature"
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                      fill="url(#tempGradient)"
+                      dot={false}
+                      activeDot={{ r: 4, fill: '#f59e0b', stroke: '#18181b', strokeWidth: 2 }}
+                      animationDuration={800}
+                    />
+                  </AreaChart>
                 </ResponsiveContainer>
               )}
             </div>

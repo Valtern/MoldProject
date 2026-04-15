@@ -39,6 +39,8 @@ function DeviceTableRow({ room }: { room: any }) {
       } else {
         setLatestLog(null);
       }
+    }, (error) => {
+      console.error('[DevicesPage] Listener error for', room.deviceID, ':', error);
     });
 
     return () => unsubscribe();

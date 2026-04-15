@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Thermometer, Droplets, Wifi, ChevronRight, Plus, Pencil, Trash2, X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { db } from '@/lib/firebase';
@@ -21,20 +21,14 @@ function RoomCard({ room, onRoomSelect, openEdit, handleDelete, onStatusUpdate }
   const [currentStatus, setCurrentStatus] = useState<string>('waiting');
 
   useEffect(() => {
-    if (onStatusUpdate) {
-      onStatusUpdate(room.id, currentStatus);
-    }
-  }, [currentStatus, room.id, onStatusUpdate]);
-
-  useEffect(() => {
     if (!room.deviceID) {
       setCurrentStatus('waiting');
+      if (onStatusUpdate) onStatusUpdate(room.id, 'waiting');
       return;
     }
-    
-    const logsRef = collection(db, 'SensorLogs');
+
     const q = query(
-      logsRef,
+      collection(db, 'SensorLogs'),
       where('deviceID', '==', room.deviceID),
       orderBy('timestamp', 'desc'),
       limit(1)
@@ -44,30 +38,31 @@ function RoomCard({ room, onRoomSelect, openEdit, handleDelete, onStatusUpdate }
       if (!snapshot.empty) {
         const logData = snapshot.docs[0].data();
         setLatestLog(logData);
-        
+
         const hum = Number(logData.humidity ?? 0);
         const safeLimit = Number(room.safeLimit ?? 60);
         const criticalLimit = Number(room.criticalLimit ?? 85);
-        
+
         let status = 'safe';
         if (hum >= criticalLimit) {
           status = 'critical';
         } else if (hum >= safeLimit) {
           status = 'warning';
-        } else {
-          status = 'safe';
         }
 
-        console.log('Room:', room.name, 'Hum:', hum, 'Crit:', criticalLimit, 'Result:', status);
         setCurrentStatus(status);
+        if (onStatusUpdate) onStatusUpdate(room.id, status);
       } else {
         setLatestLog(null);
         setCurrentStatus('waiting');
+        if (onStatusUpdate) onStatusUpdate(room.id, 'waiting');
       }
+    }, (error) => {
+      console.error('[RoomCard] Listener error for', room.name, ':', error);
     });
 
     return () => unsubscribe();
-  }, [room.deviceID, room.safeLimit, room.criticalLimit, room.name]);
+  }, [room.deviceID, room.safeLimit, room.criticalLimit]);
 
   const config = statusConfig[currentStatus] || statusConfig['waiting'];
 
@@ -137,11 +132,25 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [roomStatuses, setRoomStatuses] = useState<Record<string, string>>({});
 
+  // Use ref to accumulate status updates without triggering re-renders
+  const statusRef = useRef<Record<string, string>>({});
+
   const handleStatusUpdate = useCallback((roomId: string, status: string) => {
-    setRoomStatuses(prev => {
-      if (prev[roomId] === status) return prev;
-      return { ...prev, [roomId]: status };
-    });
+    statusRef.current[roomId] = status;
+  }, []);
+
+  // Periodically sync ref -> state for the summary counters
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRoomStatuses(prev => {
+        const current = { ...statusRef.current };
+        // Only update state if something actually changed
+        const changed = Object.keys(current).some(k => prev[k] !== current[k]) ||
+                        Object.keys(current).length !== Object.keys(prev).length;
+        return changed ? current : prev;
+      });
+    }, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   const [formData, setFormData] = useState({

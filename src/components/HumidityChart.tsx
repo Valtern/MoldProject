@@ -24,28 +24,80 @@ export function HumidityChart({ deviceID }: HumidityChartProps) {
   useEffect(() => {
     if (!deviceID) return;
 
-    const logsRef = collection(db, 'SensorLogs');
+    setData([]);
+
+    // Fetch last 24 hours of data
+    const cutoff = new Date();
+    cutoff.setHours(cutoff.getHours() - 24);
+
     const q = query(
-      logsRef,
+      collection(db, 'SensorLogs'),
       where('deviceID', '==', deviceID),
-      orderBy('timestamp', 'asc'),
-      limit(20)
+      where('timestamp', '>=', cutoff),
+      orderBy('timestamp', 'asc')
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const chartData = snapshot.docs.map(doc => {
+      const MAX_POINTS = 50;
+
+      // Map all raw docs to data points
+      const allPoints = snapshot.docs.map(doc => {
         const payload = doc.data();
         let formattedTime = '';
         if (payload.timestamp) {
-           const d = payload.timestamp.toDate ? payload.timestamp.toDate() : new Date(payload.timestamp);
-           formattedTime = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+          const d = payload.timestamp.toDate ? payload.timestamp.toDate() : new Date(payload.timestamp);
+          formattedTime = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
         }
         return {
           time: formattedTime,
           humidity: payload.humidity ?? 0
         };
       });
-      setData(chartData);
+
+      // If we have fewer points than the max, use them all
+      if (allPoints.length <= MAX_POINTS) {
+        setData(allPoints);
+        return;
+      }
+
+      // Downsample using peak/valley preservation:
+      // Always keep first and last point, then divide the rest into
+      // (MAX_POINTS - 2) buckets and pick the most significant point
+      // from each bucket (the one furthest from the bucket average).
+      const downsampled: typeof allPoints = [];
+      downsampled.push(allPoints[0]); // always keep first
+
+      const bucketSize = (allPoints.length - 2) / (MAX_POINTS - 2);
+
+      for (let i = 0; i < MAX_POINTS - 2; i++) {
+        const start = Math.floor(i * bucketSize) + 1;
+        const end = Math.floor((i + 1) * bucketSize) + 1;
+        const bucket = allPoints.slice(start, end);
+
+        if (bucket.length === 0) continue;
+
+        // Calculate bucket average
+        const avg = bucket.reduce((sum, p) => sum + p.humidity, 0) / bucket.length;
+
+        // Pick the point with the largest deviation from the average
+        // This preserves spikes (rising trend) and dips (lowering trend)
+        let maxDev = -1;
+        let pick = bucket[0];
+        for (const point of bucket) {
+          const dev = Math.abs(point.humidity - avg);
+          if (dev > maxDev) {
+            maxDev = dev;
+            pick = point;
+          }
+        }
+
+        downsampled.push(pick);
+      }
+
+      downsampled.push(allPoints[allPoints.length - 1]); // always keep last
+      setData(downsampled);
+    }, (error) => {
+      console.error('[HumidityChart] Listener error:', error);
     });
 
     return () => unsubscribe();

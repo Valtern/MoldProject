@@ -36,6 +36,8 @@ export function SettingsPage() {
         setAlertEmail(data.alertEmail ?? '');
         setAlertsEnabled(data.alertsEnabled ?? false);
       }
+    }, (error) => {
+      console.error('[Settings] Listener error:', error);
     });
 
     return () => unsubscribe();

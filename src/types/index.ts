@@ -24,6 +24,7 @@ export interface ApplianceControl {
 }
 
 export interface RoomData {
+  id: string;
   name: string;
   status: RoomStatus;
   lastUpdated: string;
@@ -33,4 +34,6 @@ export interface RoomData {
   humidityHistory: HumidityDataPoint[];
   appliances: ApplianceControl[];
   deviceID: string;
+  safeLimit: number;
+  criticalLimit: number;
 }
