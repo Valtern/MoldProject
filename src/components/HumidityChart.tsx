@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
+import { db } from '@/lib/firebase';
+import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import {
   AreaChart,
   Area,
@@ -12,11 +14,42 @@ import {
 import type { HumidityDataPoint } from '@/types';
 
 interface HumidityChartProps {
-  data: HumidityDataPoint[];
+  deviceID?: string;
 }
 
-export function HumidityChart({ data }: HumidityChartProps) {
+export function HumidityChart({ deviceID }: HumidityChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [data, setData] = useState<Array<{time: string, humidity: number}>>([]);
+
+  useEffect(() => {
+    if (!deviceID) return;
+
+    const logsRef = collection(db, 'SensorLogs');
+    const q = query(
+      logsRef,
+      where('deviceID', '==', deviceID),
+      orderBy('timestamp', 'asc'),
+      limit(20)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const chartData = snapshot.docs.map(doc => {
+        const payload = doc.data();
+        let formattedTime = '';
+        if (payload.timestamp) {
+           const d = payload.timestamp.toDate ? payload.timestamp.toDate() : new Date(payload.timestamp);
+           formattedTime = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        }
+        return {
+          time: formattedTime,
+          humidity: payload.humidity ?? 0
+        };
+      });
+      setData(chartData);
+    });
+
+    return () => unsubscribe();
+  }, [deviceID]);
 
   useEffect(() => {
     if (!containerRef.current) return;
