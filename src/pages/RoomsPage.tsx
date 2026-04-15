@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import { Thermometer, Droplets, ChevronRight, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Thermometer, Droplets, Wifi, ChevronRight, Plus, Pencil, Trash2, X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDoc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
-const statusConfig: Record<string, { dotClass: string, textClass: string, label: string }> = {
-  safe: { dotClass: 'bg-emerald-500', textClass: 'text-emerald-500', label: 'Safe' },
-  warning: { dotClass: 'bg-amber-500', textClass: 'text-amber-500', label: 'Warning' },
-  critical: { dotClass: 'bg-red-500', textClass: 'text-red-500', label: 'Critical Risk' },
+const statusConfig: Record<string, { dotClass: string, textClass: string, bgClass: string, label: string }> = {
+  safe: { dotClass: 'bg-emerald-500', textClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10 border-emerald-500/20', label: 'Safe' },
+  warning: { dotClass: 'bg-amber-500', textClass: 'text-amber-500', bgClass: 'bg-amber-500/10 border-amber-500/20', label: 'Warning' },
+  critical: { dotClass: 'bg-red-500', textClass: 'text-red-500', bgClass: 'bg-red-500/10 border-red-500/20', label: 'Critical Risk' },
+  waiting: { dotClass: 'bg-zinc-400', textClass: 'text-zinc-600 dark:text-zinc-400', bgClass: 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700', label: 'Waiting for data...' },
 };
 
 interface RoomsPageProps {
@@ -15,10 +16,133 @@ interface RoomsPageProps {
   onRoomSelect: (roomId: string) => void;
 }
 
+function RoomCard({ room, onRoomSelect, openEdit, handleDelete, onStatusUpdate }: any) {
+  const [latestLog, setLatestLog] = useState<any>(null);
+  const [currentStatus, setCurrentStatus] = useState<string>('waiting');
+
+  useEffect(() => {
+    if (onStatusUpdate) {
+      onStatusUpdate(room.id, currentStatus);
+    }
+  }, [currentStatus, room.id, onStatusUpdate]);
+
+  useEffect(() => {
+    if (!room.deviceID) {
+      setCurrentStatus('waiting');
+      return;
+    }
+    
+    const logsRef = collection(db, 'SensorLogs');
+    const q = query(
+      logsRef,
+      where('deviceID', '==', room.deviceID),
+      orderBy('timestamp', 'desc'),
+      limit(1)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        const logData = snapshot.docs[0].data();
+        setLatestLog(logData);
+        
+        const hum = Number(logData.humidity ?? 0);
+        const safeLimit = Number(room.safeLimit ?? 60);
+        const criticalLimit = Number(room.criticalLimit ?? 85);
+        
+        let status = 'safe';
+        if (hum >= criticalLimit) {
+          status = 'critical';
+        } else if (hum >= safeLimit) {
+          status = 'warning';
+        } else {
+          status = 'safe';
+        }
+
+        console.log('Room:', room.name, 'Hum:', hum, 'Crit:', criticalLimit, 'Result:', status);
+        setCurrentStatus(status);
+      } else {
+        setLatestLog(null);
+        setCurrentStatus('waiting');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [room.deviceID, room.safeLimit, room.criticalLimit, room.name]);
+
+  const config = statusConfig[currentStatus] || statusConfig['waiting'];
+
+  return (
+    <div
+      onClick={() => onRoomSelect(room.id)}
+      className="
+        group
+        bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 text-left cursor-pointer
+        transition-all duration-150 hover:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/50
+        focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50
+        relative
+      "
+    >
+      {/* Room Name & Actions */}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-medium text-zinc-900 dark:text-zinc-100">{room.name}</h3>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button 
+            onClick={(e) => openEdit(e, room)}
+            className="p-1.5 text-zinc-500 dark:text-zinc-400 hover:text-emerald-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={(e) => handleDelete(e, room.id)}
+            className="p-1.5 text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+        <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:hidden" />
+      </div>
+
+      {/* Temperature & Humidity */}
+      <div className="space-y-2 mb-4">
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <Thermometer className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+            <span className="text-zinc-500 dark:text-zinc-400">{latestLog?.temperature ?? '--'}°C</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Wifi className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+            <span className="text-zinc-500 dark:text-zinc-400">{latestLog?.wifiSignal ? `${latestLog.wifiSignal} dBm` : '--'}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <Droplets className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+          <span className="text-zinc-500 dark:text-zinc-400">{latestLog?.humidity ?? '--'}% humidity</span>
+        </div>
+      </div>
+
+      {/* Status Indicator */}
+      <div className="flex items-center pt-3 border-t border-zinc-200 dark:border-zinc-800">
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${config.bgClass} ${config.textClass}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${config.dotClass}`} />
+          {config.label}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
+  const [roomStatuses, setRoomStatuses] = useState<Record<string, string>>({});
+
+  const handleStatusUpdate = useCallback((roomId: string, status: string) => {
+    setRoomStatuses(prev => {
+      if (prev[roomId] === status) return prev;
+      return { ...prev, [roomId]: status };
+    });
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -106,10 +230,11 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
 
   const resetForm = () => setFormData({ name: '', deviceID: '', safeLimit: 60, criticalLimit: 85 });
 
-  // Calculate dynamic stats
-  const safeCount = availableRooms.filter(r => (r.status || 'safe') === 'safe').length;
-  const warningCount = availableRooms.filter(r => r.status === 'warning').length;
-  const criticalCount = availableRooms.filter(r => r.status === 'critical').length;
+  // Calculate dynamic stats directly from the active cards reporting in
+  const statuses = Object.values(roomStatuses);
+  const safeCount = statuses.filter(s => s === 'safe').length;
+  const warningCount = statuses.filter(s => s === 'warning').length;
+  const criticalCount = statuses.filter(s => s === 'critical').length;
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -220,63 +345,16 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {availableRooms.map((room) => {
-            const config = statusConfig[room.status || 'safe'];
-
-            return (
-              <div
-                key={room.id}
-                onClick={() => onRoomSelect(room.id)}
-                className="
-                  group
-                  bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 text-left cursor-pointer
-                  transition-all duration-150 hover:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/50
-                  focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50
-                  relative
-                "
-              >
-                {/* Room Name & Actions */}
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-medium text-zinc-900 dark:text-zinc-100">{room.name}</h3>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={(e) => openEdit(e, room)}
-                      className="p-1.5 text-zinc-500 dark:text-zinc-400 hover:text-emerald-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={(e) => handleDelete(e, room.id)}
-                      className="p-1.5 text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:hidden" />
-                </div>
-
-                {/* Temperature & Humidity (using local defaults if unpopulated) */}
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Thermometer className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
-                    <span className="text-zinc-500 dark:text-zinc-400">{room.temperature ?? '--'}°C</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Droplets className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
-                    <span className="text-zinc-500 dark:text-zinc-400">{room.humidity ?? '--'}% humidity</span>
-                  </div>
-                </div>
-
-                {/* Status Indicator */}
-                <div className="flex items-center gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-                  <span className={`w-1.5 h-1.5 rounded-full ${config.dotClass}`} />
-                  <span className={`text-xs font-medium ${config.textClass}`}>
-                    {config.label}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+          {availableRooms.map((room) => (
+            <RoomCard
+              key={room.id}
+              room={room}
+              onRoomSelect={onRoomSelect}
+              openEdit={openEdit}
+              handleDelete={handleDelete}
+              onStatusUpdate={handleStatusUpdate}
+            />
+          ))}
         </div>
       )}
 

@@ -189,15 +189,30 @@ function App() {
             newStatus = 'warning';
           }
 
-          let formattedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          if (data.timestamp?.toDate) {
-             formattedTime = data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          let formattedTime = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+          if (data.timestamp) {
+             const d = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
+             formattedTime = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+          }
+
+          let newAppliances = prev.appliances;
+          if (data.fanStatus || data.dehumidifierStatus) {
+            newAppliances = prev.appliances.map(app => {
+              if (app.icon === 'fan' && data.fanStatus) {
+                return { ...app, state: data.fanStatus === 'ON' ? 'manual-on' : 'manual-off' };
+              }
+              if ((app.icon === 'droplets' || app.icon === 'dehumidifier') && data.dehumidifierStatus) {
+                return { ...app, state: data.dehumidifierStatus === 'ON' ? 'manual-on' : 'manual-off' };
+              }
+              return app;
+            });
           }
 
           return {
             ...prev,
             status: newStatus,
             lastUpdated: formattedTime,
+            appliances: newAppliances,
             temperature: {
               ...prev.temperature,
               value: Math.round(newTemp * 10) / 10,
