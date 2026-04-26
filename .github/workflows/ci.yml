@@ -1,0 +1,77 @@
+# =====================================================================
+#  MoldGuard Frontend CI Pipeline
+# ---------------------------------------------------------------------
+#  Apa yang dilakukan workflow ini?
+#    1. Setiap kali ada `git push` ke branch APA PUN (main, Seno,
+#       Charel, Hammam, anton, dll.) -- semua dev dapat feedback CI
+#    2. Setiap kali ada Pull Request yang menarget `main`
+#    -> GitHub Actions akan otomatis menjalankan:
+#         a. Install dependencies (npm ci)
+#         b. Lint code dengan ESLint  (`npm run lint`)
+#         c. Type-check + build production (`npm run build`)
+#         d. Upload hasil build (folder `dist/`) sebagai artifact
+#
+#  Workflow ini SAMA SEKALI TIDAK MEN-DEPLOY apa-apa ke Firebase.
+#  Jadi tidak ada risiko production rusak.
+#  Untuk upgrade ke auto-deploy nanti, baca CI-CD-GUIDE.md.
+# =====================================================================
+
+name: CI - Lint & Build
+
+on:
+  push:
+    branches: ['**']      # trigger di SEMUA branch (team-friendly)
+  pull_request:
+    branches: [main]      # trigger saat ada PR ke main
+  # Memungkinkan trigger manual dari tab Actions (tombol "Run workflow")
+  workflow_dispatch:
+
+# Batalkan run sebelumnya jika ada commit baru di branch yang sama
+# (hemat waktu CI dan menit gratis GitHub Actions)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-build:
+    name: Lint & Build Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) Ambil source code dari repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2) Install Node.js 20 (sesuai dengan environment lokal kamu)
+      #    `cache: 'npm'` mempercepat run berikutnya dengan cache npm dependencies
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3) Install dependencies persis seperti package-lock.json
+      #    `npm ci` lebih cepat dan deterministic dibanding `npm install`
+      - name: Install dependencies
+        run: npm ci
+
+      # 4) Linting -- pastikan tidak ada error style/syntax
+      - name: Run ESLint
+        run: npm run lint
+
+      # 5) Build production bundle
+      #    `npm run build` di project ini menjalankan `tsc -b && vite build`
+      #    jadi sekaligus type-check TypeScript + bundle Vite
+      - name: Build production bundle
+        run: npm run build
+
+      # 6) Upload folder `dist/` sebagai artifact yang bisa di-download
+      #    dari halaman Actions di GitHub. Berguna untuk inspect hasil build,
+      #    dan jadi "siap pakai" kalau nanti mau di-promote ke deploy job.
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
