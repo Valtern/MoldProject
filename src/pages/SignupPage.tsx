@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useTheme } from 'next-themes';
-import { Mail, Lock, Eye, EyeOff, Loader2, Moon, Sun } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, Loader2, User, Moon, Sun } from 'lucide-react';
 
-interface LoginPageProps {
-  onLoginSuccess: () => void;
-  onForgotPassword?: () => void;
-  onSignup?: () => void;
+interface SignupPageProps {
+  onBackToLogin: () => void;
 }
 
-export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginPageProps) {
+export function SignupPage({ onBackToLogin }: SignupPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { theme, setTheme } = useTheme();
@@ -23,38 +23,60 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
     setTheme(isDark ? 'light' : 'dark');
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const validateForm = () => {
+    if (!email.trim()) {
+      setError('Please enter your email address');
+      return false;
+    }
+    
+    if (!password.trim()) {
+      setError('Please enter a password');
+      return false;
+    }
+    
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return false;
+    }
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!email.trim() || !password.trim()) {
-      setError('Please enter email and password');
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      onLoginSuccess();
+      await createUserWithEmailAndPassword(auth, email, password);
+      // Sign out the user after creation to force manual login
+      await auth.signOut();
+      onBackToLogin();
     } catch (err: any) {
-      let errorMessage = 'Login failed. Please try again.';
+      let errorMessage = 'Failed to create account. Please try again.';
       
       switch (err.code) {
-        case 'auth/user-not-found':
-          errorMessage = 'No account found with this email address.';
-          break;
-        case 'auth/wrong-password':
-          errorMessage = 'Incorrect password. Please try again.';
+        case 'auth/email-already-in-use':
+          errorMessage = 'An account with this email already exists.';
           break;
         case 'auth/invalid-email':
           errorMessage = 'Please enter a valid email address.';
           break;
-        case 'auth/user-disabled':
-          errorMessage = 'This account has been disabled.';
+        case 'auth/weak-password':
+          errorMessage = 'Password is too weak. Please use a stronger password.';
           break;
-        case 'auth/too-many-requests':
-          errorMessage = 'Too many failed attempts. Please try again later.';
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Email/password accounts are not enabled.';
           break;
         default:
           errorMessage = err.message || errorMessage;
@@ -83,8 +105,17 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
       </div>
 
       <div className="relative z-10 w-full max-w-[420px]">
+        {/* Back Button */}
+        <button
+          onClick={onBackToLogin}
+          className="flex items-center gap-2 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm">Back to login</span>
+        </button>
+
         {/* Card */}
-        <div className="relative bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl dark:shadow-black/50 p-8 md:p-10">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl dark:shadow-black/50 p-8 md:p-10">
           {/* Theme Toggle - inside card top-right */}
           <div className="absolute top-4 right-4">
             <button
@@ -99,22 +130,21 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
               )}
             </button>
           </div>
-
-          {/* Logo */}
+          {/* Header */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-24 h-24 rounded-2xl bg-white dark:bg-zinc-800 flex items-center justify-center mb-4">
-              <img src="/logo.png" alt="MoldGuard Logo" className="w-20 h-20 object-contain" />
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mb-4">
+              <User className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             </div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
-              MoldGuard
+              Create Account
             </h1>
-            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1.5">
-              Sign in to your dashboard
+            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1.5 text-center">
+              Sign up to start monitoring your spaces
             </p>
           </div>
 
-          {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-5">
+          {/* Form */}
+          <form onSubmit={handleSignup} className="space-y-5">
             {/* Email Input */}
             <div>
               <label 
@@ -157,7 +187,7 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-11 pr-11 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-400 transition-all duration-200"
-                  placeholder="Enter your password"
+                  placeholder="Create a password (min 6 characters)"
                   disabled={loading}
                 />
                 <button
@@ -167,6 +197,42 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
                   disabled={loading}
                 >
                   {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm Password Input */}
+            <div>
+              <label 
+                htmlFor="confirmPassword" 
+                className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-2"
+              >
+                Confirm Password
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors duration-200" />
+                </div>
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full pl-11 pr-11 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-400 transition-all duration-200"
+                  placeholder="Confirm your password"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 transition-colors"
+                  disabled={loading}
+                >
+                  {showConfirmPassword ? (
                     <EyeOff className="h-5 w-5" />
                   ) : (
                     <Eye className="h-5 w-5" />
@@ -185,46 +251,28 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
               </div>
             )}
 
-            {/* Sign In Button */}
+            {/* Sign Up Button */}
             <button
               type="submit"
-              disabled={loading || !email.trim() || !password.trim()}
+              disabled={loading || !email.trim() || !password.trim() || !confirmPassword.trim()}
               className="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 disabled:shadow-none"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Signing in...
+                  Creating account...
                 </>
               ) : (
-                'Sign in'
+                'Create Account'
               )}
             </button>
-
-            {/* Forgot Password & Sign Up Links */}
-            <div className="flex items-center justify-between mt-4">
-              <button
-                type="button"
-                onClick={onForgotPassword}
-                className="text-sm text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
-              >
-                Forgot password?
-              </button>
-              <button
-                type="button"
-                onClick={onSignup}
-                className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
-              >
-                Create account
-              </button>
-            </div>
           </form>
         </div>
 
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-400 dark:text-zinc-600">
-            Protected by enterprise-grade security
+            By creating an account, you agree to our terms and conditions
           </p>
         </div>
       </div>

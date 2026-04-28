@@ -31,7 +31,7 @@ interface SidebarProps {
 
 export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
   return (
-    <aside className="fixed left-0 top-0 h-full w-56 bg-white/70 dark:bg-zinc-950/40 backdrop-blur-xl border-r border-slate-200/60 dark:border-white/5 z-50 flex flex-col">
+    <aside className="fixed left-0 top-0 h-full w-56 bg-white/70 dark:bg-zinc-950/40 backdrop-blur-xl border-r border-slate-200/60 dark:border-white/5 z-50 flex flex-col hidden md:flex">
       {/* Logo */}
       <div className="px-4 py-4 border-b border-slate-200/60 dark:border-white/5">
         <div className="flex items-center gap-2.5">

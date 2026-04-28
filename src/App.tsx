@@ -12,10 +12,13 @@ import { DevicesPage } from '@/pages/DevicesPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { LoginPage } from '@/pages/LoginPage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
+import { SignupPage } from '@/pages/SignupPage';
 import type { RoomData } from '@/types';
 
 // Navigation context to share between Sidebar and App
 export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings';
+export type AuthPageId = 'login' | 'forgot-password' | 'signup';
 
 function DashboardPage({
   roomData,
@@ -80,6 +83,7 @@ function App() {
   const [availableRooms, setAvailableRooms] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<RoomData | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [authPage, setAuthPage] = useState<AuthPageId>('login');
 
   // ── Auth state listener ──
   useEffect(() => {
@@ -284,13 +288,43 @@ function App() {
   // Handle logout
   const handleLogout = useCallback(async () => {
     await signOut(auth);
+    setAuthPage('login');
   }, []);
 
   // Render current page
   const renderPage = () => {
-    // Show login page if not authenticated
+    // Show auth pages if not authenticated
     if (isAuthenticated === false) {
-      return <LoginPage onLoginSuccess={() => setIsAuthenticated(true)} />;
+      switch (authPage) {
+        case 'login':
+          return (
+            <LoginPage 
+              onLoginSuccess={() => setIsAuthenticated(true)}
+              onForgotPassword={() => setAuthPage('forgot-password')}
+              onSignup={() => setAuthPage('signup')}
+            />
+          );
+        case 'forgot-password':
+          return (
+            <ForgotPasswordPage 
+              onBackToLogin={() => setAuthPage('login')}
+            />
+          );
+        case 'signup':
+          return (
+            <SignupPage 
+              onBackToLogin={() => setAuthPage('login')}
+            />
+          );
+        default:
+          return (
+            <LoginPage 
+              onLoginSuccess={() => setIsAuthenticated(true)}
+              onForgotPassword={() => setAuthPage('forgot-password')}
+              onSignup={() => setAuthPage('signup')}
+            />
+          );
+      }
     }
 
     // Show loading while checking auth
@@ -409,13 +443,15 @@ function App() {
         />
       </div>
 
-      {/* Sidebar */}
-      <div className="relative z-50">
-        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} />
-      </div>
+      {/* Sidebar - only show when authenticated */}
+      {isAuthenticated && (
+        <div className="relative z-50">
+          <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} />
+        </div>
+      )}
 
       {/* Main Content */}
-      <main className="ml-56 min-h-screen relative z-10 text-slate-900 dark:text-zinc-100">
+      <main className={`${isAuthenticated ? 'md:ml-56' : ''} min-h-screen relative z-10 text-slate-900 dark:text-zinc-100`}>
         {renderPage()}
       </main>
     </div>
