@@ -5,6 +5,7 @@ import {
   FileText,
   Settings,
   Shield,
+  LogOut,
 } from 'lucide-react';
 import type { PageId } from '@/App';
 
@@ -25,9 +26,10 @@ const navItems: NavItem[] = [
 interface SidebarProps {
   currentPage: PageId;
   onPageChange: (page: PageId) => void;
+  onLogout?: () => void;
 }
 
-export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
+export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
   return (
     <aside className="fixed left-0 top-0 h-full w-56 bg-white/70 dark:bg-zinc-950/40 backdrop-blur-xl border-r border-slate-200/60 dark:border-white/5 z-50 flex flex-col">
       {/* Logo */}
@@ -73,6 +75,15 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
 
       {/* Version */}
       <div className="px-4 py-3 border-t border-slate-200/60 dark:border-white/5">
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800/30 transition-colors duration-150 mb-2"
+          >
+            <LogOut className="w-4 h-4" strokeWidth={2} />
+            <span className="text-sm">Logout</span>
+          </button>
+        )}
         <p className="text-xs text-slate-400 dark:text-zinc-600">v2.4.0</p>
       </div>
     </aside>

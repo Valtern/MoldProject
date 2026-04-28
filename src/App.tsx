@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { db, auth } from '@/lib/firebase';
 import { Sidebar } from '@/components/Sidebar';
 import { StatusBanner } from '@/components/StatusBanner';
 import { StatCard } from '@/components/StatCard';
@@ -10,6 +11,7 @@ import { RoomsPage } from '@/pages/RoomsPage';
 import { DevicesPage } from '@/pages/DevicesPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { LoginPage } from '@/pages/LoginPage';
 import type { RoomData } from '@/types';
 
 // Navigation context to share between Sidebar and App
@@ -77,6 +79,15 @@ function App() {
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
   const [availableRooms, setAvailableRooms] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<RoomData | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  // ── Auth state listener ──
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // ── Ripple wave system (direct DOM injection) ──
   const lastRippleTime = useRef(0);
@@ -270,8 +281,30 @@ function App() {
     return () => unsubscribe();
   }, [currentPage, roomData?.deviceID]);
 
+  // Handle logout
+  const handleLogout = useCallback(async () => {
+    await signOut(auth);
+  }, []);
+
   // Render current page
   const renderPage = () => {
+    // Show login page if not authenticated
+    if (isAuthenticated === false) {
+      return <LoginPage onLoginSuccess={() => setIsAuthenticated(true)} />;
+    }
+
+    // Show loading while checking auth
+    if (isAuthenticated === null) {
+      return (
+        <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+            <p className="text-zinc-500 dark:text-zinc-400">Loading...</p>
+          </div>
+        </div>
+      );
+    }
+
     switch (currentPage) {
       case 'dashboard':
         if (!roomData) {
@@ -378,7 +411,7 @@ function App() {
 
       {/* Sidebar */}
       <div className="relative z-50">
-        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} />
       </div>
 
       {/* Main Content */}
