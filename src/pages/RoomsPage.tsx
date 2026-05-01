@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Thermometer, Droplets, Wifi, ChevronRight, Plus, Pencil, Trash2, X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDoc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 const statusConfig: Record<string, { dotClass: string, textClass: string, bgClass: string, label: string }> = {
@@ -166,9 +166,11 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
       resetForm();
     } else {
       try {
-        const globalSnap = await getDoc(doc(db, 'Settings', 'global'));
-        if (globalSnap.exists()) {
-          const data = globalSnap.data();
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+        const userSettingsSnap = await getDoc(doc(db, 'Settings', uid));
+        if (userSettingsSnap.exists()) {
+          const data = userSettingsSnap.data();
           setFormData(prev => ({
             ...prev,
             safeLimit: data.safeHumidityLimit ?? 60,
@@ -184,7 +186,10 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) throw new Error('Not authenticated');
       await addDoc(collection(db, 'Devices'), {
+        userId: uid,
         name: formData.name,
         deviceID: formData.deviceID,
         safeLimit: Number(formData.safeLimit),
@@ -266,7 +271,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
           </Dialog.Trigger>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
-            <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 z-50 focus:outline-none">
+            <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[calc(100%-2rem)] max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 z-50 focus:outline-none">
               <div className="flex justify-between items-center mb-5">
                 <Dialog.Title className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Add New Room</Dialog.Title>
                 <Dialog.Close asChild>
@@ -284,7 +289,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
                   <label className="text-sm font-medium text-zinc-300">Device ID</label>
                   <input required value={formData.deviceID} onChange={e => setFormData({...formData, deviceID: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" placeholder="e.g. ESP32_01" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-zinc-300">Safe Humidity Limit (%)</label>
                     <input type="number" required value={formData.safeLimit} onChange={e => setFormData({...formData, safeLimit: Number(e.target.value)})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500" />
@@ -308,7 +313,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
         <Dialog.Root open={isEditOpen} onOpenChange={(open) => { setIsEditOpen(open); if(!open) setEditingRoom(null); }}>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
-            <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 z-50 focus:outline-none">
+            <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[calc(100%-2rem)] max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 z-50 focus:outline-none">
               <div className="flex justify-between items-center mb-5">
                 <Dialog.Title className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Edit Room</Dialog.Title>
                 <Dialog.Close asChild>
@@ -368,7 +373,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
       )}
 
       {/* Summary Stats */}
-      <div className="mt-6 grid grid-cols-3 gap-4 max-w-md">
+      <div className="mt-6 grid grid-cols-3 gap-4 max-w-xs sm:max-w-md">
         <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 text-center">
           <p className="text-2xl font-semibold text-emerald-500">{safeCount}</p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Safe</p>
