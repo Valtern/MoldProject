@@ -115,7 +115,7 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
         </button>
 
         {/* Card */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl dark:shadow-black/50 p-8 md:p-10">
+        <div className="relative bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl dark:shadow-black/50 p-8 md:p-10">
           {/* Theme Toggle - inside card top-right */}
           <div className="absolute top-4 right-4">
             <button

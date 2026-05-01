@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
+import { collection, doc, getDoc, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
 import { Sidebar } from '@/components/Sidebar';
@@ -14,6 +14,7 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { SignupPage } from '@/pages/SignupPage';
+import { useTheme } from 'next-themes';
 import type { RoomData } from '@/types';
 
 // Navigation context to share between Sidebar and App
@@ -84,11 +85,26 @@ function App() {
   const [roomData, setRoomData] = useState<RoomData | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [authPage, setAuthPage] = useState<AuthPageId>('login');
+  const { setTheme } = useTheme();
 
-  // ── Auth state listener ──
+  // ── Auth state listener ── apply user theme on login, reset on logout
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setIsAuthenticated(!!user);
+      if (user) {
+        // Fetch user's theme preference from their Settings document
+        try {
+          const settingsSnap = await getDoc(doc(db, 'Settings', user.uid));
+          if (settingsSnap.exists() && settingsSnap.data().themePreference) {
+            setTheme(settingsSnap.data().themePreference);
+          }
+        } catch (err) {
+          console.error('[App] Failed to load user theme:', err);
+        }
+      } else {
+        // Reset theme to system default on logout
+        setTheme('system');
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -123,10 +139,19 @@ function App() {
     return () => window.removeEventListener('click', spawnRipple, true);
   }, []);
 
-  // Listen to available rooms from Devices collection
+  // Listen to available rooms from Devices collection — only when authenticated
   useEffect(() => {
+    if (!isAuthenticated || !auth.currentUser) {
+      // Clear stale data when logged out
+      setAvailableRooms([]);
+      setRoomData(null);
+      return;
+    }
+
+    const uid = auth.currentUser.uid;
     const devicesRef = collection(db, 'Devices');
-    const unsubscribe = onSnapshot(devicesRef, (snapshot) => {
+    const q = query(devicesRef, where('userId', '==', uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const rooms: any[] = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -164,7 +189,7 @@ function App() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAuthenticated]);
 
   // Handle room selection from Rooms page
   const handleRoomSelect = useCallback((roomId: string) => {
@@ -285,8 +310,11 @@ function App() {
     return () => unsubscribe();
   }, [currentPage, roomData?.deviceID]);
 
-  // Handle logout
+  // Handle logout — clear all user data before signing out
   const handleLogout = useCallback(async () => {
+    setAvailableRooms([]);
+    setRoomData(null);
+    setCurrentPage('dashboard');
     await signOut(auth);
     setAuthPage('login');
   }, []);
@@ -368,7 +396,7 @@ function App() {
       case 'devices':
         return <DevicesPage availableRooms={availableRooms} />;
       case 'reports':
-        return <ReportsPage />;
+        return <ReportsPage availableRooms={availableRooms} />;
       case 'settings':
         return <SettingsPage />;
       default:

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Sliders, Bell, Mail, Monitor, Moon, Sun } from 'lucide-react';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
@@ -15,27 +15,34 @@ export function SettingsPage() {
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
-    const globalRef = doc(db, 'Settings', 'global');
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    const userSettingsRef = doc(db, 'Settings', uid);
     
     // Check if doc exists first before subscribing, to initialize if missing
-    getDoc(globalRef).then((snapshot) => {
+    getDoc(userSettingsRef).then((snapshot) => {
       if (!snapshot.exists()) {
-        setDoc(globalRef, {
+        setDoc(userSettingsRef, {
           safeHumidityLimit: 60,
           criticalHumidityLimit: 85,
           alertEmail: '',
-          alertsEnabled: false
+          alertsEnabled: false,
+          themePreference: 'system'
         }, { merge: true });
       }
     });
 
-    const unsubscribe = onSnapshot(globalRef, (snapshot) => {
+    const unsubscribe = onSnapshot(userSettingsRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
         setSafeHumidityLimit(data.safeHumidityLimit ?? 60);
         setCriticalHumidityLimit(data.criticalHumidityLimit ?? 85);
         setAlertEmail(data.alertEmail ?? '');
         setAlertsEnabled(data.alertsEnabled ?? false);
+        if (data.themePreference) {
+          setTheme(data.themePreference);
+        }
       }
     }, (error) => {
       console.error('[Settings] Listener error:', error);
@@ -46,11 +53,14 @@ export function SettingsPage() {
 
   const handleSave = async () => {
     try {
-      await setDoc(doc(db, 'Settings', 'global'), {
+      const uid = auth.currentUser?.uid;
+      if (!uid) throw new Error('Not authenticated');
+      await setDoc(doc(db, 'Settings', uid), {
         safeHumidityLimit: Number(safeHumidityLimit),
         criticalHumidityLimit: Number(criticalHumidityLimit),
         alertEmail,
-        alertsEnabled
+        alertsEnabled,
+        themePreference: theme || 'system'
       }, { merge: true });
       toast.success('Settings saved successfully!');
     } catch (error) {

@@ -12,7 +12,11 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-export function ReportsPage() {
+interface ReportsPageProps {
+  availableRooms: any[];
+}
+
+export function ReportsPage({ availableRooms }: ReportsPageProps) {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   
@@ -20,10 +24,24 @@ export function ReportsPage() {
   const [timeframe, setTimeframe] = useState<'24h' | '7d' | '30d'>('24h');
   const [chartData, setChartData] = useState<any[]>([]);
 
+  // Derive the user's device IDs from their isolated rooms
+  const userDeviceIds = availableRooms.map(room => room.deviceID).filter(Boolean);
+
   useEffect(() => {
-    // 1. Alerts Subscriber
+    // Guard: don't query with an empty array (Firestore 'in' requires at least 1 element)
+    if (userDeviceIds.length === 0) {
+      setAlerts([]);
+      setRecentActivity([]);
+      return;
+    }
+
+    // 1. Alerts Subscriber — filtered to user's devices
     const alertsRef = collection(db, 'AnalyticsAlerts');
-    const qAlerts = query(alertsRef, orderBy('timestamp', 'desc'));
+    const qAlerts = query(
+      alertsRef,
+      where('deviceID', 'in', userDeviceIds),
+      orderBy('timestamp', 'desc')
+    );
     
     const unsubscribeAlerts = onSnapshot(qAlerts, (snapshot) => {
       const parsedAlerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -32,9 +50,14 @@ export function ReportsPage() {
       console.error('[Reports] Alerts listener error:', error);
     });
 
-    // 2. Recent Activity Subscriber
+    // 2. Recent Activity Subscriber — filtered to user's devices
     const logsRef = collection(db, 'SensorLogs');
-    const qLogs = query(logsRef, orderBy('timestamp', 'desc'), limit(10));
+    const qLogs = query(
+      logsRef,
+      where('deviceID', 'in', userDeviceIds),
+      orderBy('timestamp', 'desc'),
+      limit(10)
+    );
     
     const unsubscribeLogs = onSnapshot(qLogs, (snapshot) => {
       const parsedLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -47,10 +70,15 @@ export function ReportsPage() {
       unsubscribeAlerts();
       unsubscribeLogs();
     };
-  }, []);
+  }, [userDeviceIds.join(',')]);
 
-  // 3. Historical Data Subscriber (Timeframe-dependent)
+  // 3. Historical Data Subscriber (Timeframe-dependent) — filtered to user's devices
   useEffect(() => {
+    if (userDeviceIds.length === 0) {
+      setChartData([]);
+      return;
+    }
+
     let daysToSubtract = 1;
     if (timeframe === '7d') daysToSubtract = 7;
     if (timeframe === '30d') daysToSubtract = 30;
@@ -61,6 +89,7 @@ export function ReportsPage() {
     const logsRef = collection(db, 'SensorLogs');
     const q = query(
       logsRef,
+      where('deviceID', 'in', userDeviceIds),
       where('timestamp', '>=', thresholdDate),
       orderBy('timestamp', 'asc')
     );
@@ -100,7 +129,7 @@ export function ReportsPage() {
     });
 
     return () => unsubscribe();
-  }, [timeframe]);
+  }, [timeframe, userDeviceIds.join(',')]);
 
 
   const formatTimeAgo = (date: any) => {

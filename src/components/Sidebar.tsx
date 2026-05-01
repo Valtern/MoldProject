@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   LayoutDashboard,
   Home,
@@ -7,6 +8,7 @@ import {
   Shield,
   LogOut,
 } from 'lucide-react';
+import { auth } from '@/lib/firebase';
 import type { PageId } from '@/App';
 
 interface NavItem {
@@ -30,6 +32,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
+  const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
   return (
     <aside className="fixed left-0 top-0 h-full w-56 bg-white/70 dark:bg-zinc-950/40 backdrop-blur-xl border-r border-slate-200/60 dark:border-white/5 z-50 flex flex-col hidden md:flex">
       {/* Logo */}
@@ -73,18 +76,60 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
         </ul>
       </nav>
 
-      {/* Version */}
-      <div className="px-4 py-3 border-t border-slate-200/60 dark:border-white/5">
+      {/* User Profile / Logout Panel */}
+      <div className="px-3 py-3 border-t border-slate-200/60 dark:border-white/5">
         {onLogout && (
-          <button
-            onClick={onLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800/30 transition-colors duration-150 mb-2"
+          <div
+            className="w-full flex items-center justify-between gap-3 p-3 bg-zinc-100 dark:bg-zinc-800/40 rounded-xl border border-zinc-200 dark:border-zinc-700/50 mb-2"
           >
-            <LogOut className="w-4 h-4" strokeWidth={2} />
-            <span className="text-sm">Logout</span>
-          </button>
+            <span className="text-sm text-zinc-600 dark:text-zinc-400 truncate">
+              {auth.currentUser?.email || 'User'}
+            </span>
+            <div className="relative group flex items-center">
+              {/* Tooltip / Confirmation Bubble */}
+              <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 text-xs font-medium text-white bg-zinc-900 dark:text-zinc-900 dark:bg-zinc-100 rounded-lg shadow-lg z-50 transition-opacity duration-150 ${
+                isConfirmingLogout
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover:opacity-100 pointer-events-none'
+              }`}>
+                {isConfirmingLogout ? (
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <span>Log out?</span>
+                    <button
+                      onClick={() => { setIsConfirmingLogout(false); onLogout?.(); }}
+                      className="px-2 py-0.5 rounded bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => setIsConfirmingLogout(false)}
+                      className="px-2 py-0.5 rounded bg-zinc-700 hover:bg-zinc-600 dark:bg-zinc-300 dark:hover:bg-zinc-400 text-white dark:text-zinc-900 text-xs font-semibold transition-colors"
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <span className="whitespace-nowrap">Log out</span>
+                )}
+                {/* Arrow */}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900 dark:border-t-zinc-100"></div>
+              </div>
+              {/* Logout Icon Button */}
+              <button
+                onClick={() => setIsConfirmingLogout(true)}
+                className={`p-1.5 rounded-md transition-colors duration-150 ${
+                  isConfirmingLogout
+                    ? 'bg-zinc-200 dark:bg-zinc-700'
+                    : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+                aria-label="Log out"
+              >
+                <LogOut className="w-4 h-4 text-emerald-500 flex-shrink-0" strokeWidth={2} />
+              </button>
+            </div>
+          </div>
         )}
-        <p className="text-xs text-slate-400 dark:text-zinc-600">v2.4.0</p>
+        <p className="text-xs text-slate-400 dark:text-zinc-600 px-1">v2.4.0</p>
       </div>
     </aside>
   );

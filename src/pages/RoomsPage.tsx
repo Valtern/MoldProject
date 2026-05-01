@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Thermometer, Droplets, Wifi, ChevronRight, Plus, Pencil, Trash2, X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDoc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 const statusConfig: Record<string, { dotClass: string, textClass: string, bgClass: string, label: string }> = {
@@ -166,9 +166,11 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
       resetForm();
     } else {
       try {
-        const globalSnap = await getDoc(doc(db, 'Settings', 'global'));
-        if (globalSnap.exists()) {
-          const data = globalSnap.data();
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+        const userSettingsSnap = await getDoc(doc(db, 'Settings', uid));
+        if (userSettingsSnap.exists()) {
+          const data = userSettingsSnap.data();
           setFormData(prev => ({
             ...prev,
             safeLimit: data.safeHumidityLimit ?? 60,
@@ -184,7 +186,10 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) throw new Error('Not authenticated');
       await addDoc(collection(db, 'Devices'), {
+        userId: uid,
         name: formData.name,
         deviceID: formData.deviceID,
         safeLimit: Number(formData.safeLimit),
