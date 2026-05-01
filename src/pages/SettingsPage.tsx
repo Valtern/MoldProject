@@ -181,7 +181,7 @@ export function SettingsPage() {
           <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Appearance</h2>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
             onClick={() => setTheme('light')}
             className={`flex flex-col items-center justify-center p-4 rounded-lg border transition-all ${

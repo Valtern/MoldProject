@@ -7,6 +7,8 @@ import {
   Settings,
   Shield,
   LogOut,
+  Menu,
+  X,
 } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import type { PageId } from '@/App';
@@ -33,17 +35,35 @@ interface SidebarProps {
 
 export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
-  return (
-    <aside className="fixed left-0 top-0 h-full w-56 bg-white/70 dark:bg-zinc-950/40 backdrop-blur-xl border-r border-slate-200/60 dark:border-white/5 z-50 flex flex-col hidden md:flex">
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handlePageChange = (page: PageId) => {
+    onPageChange(page);
+    setIsMobileMenuOpen(false);
+  };
+
+  // Shared navigation + logout content (used by both desktop sidebar and mobile drawer)
+  const sidebarContent = (
+    <>
       {/* Logo */}
       <div className="px-4 py-4 border-b border-slate-200/60 dark:border-white/5">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-md bg-emerald-500/10 flex items-center justify-center">
-            <Shield className="w-4 h-4 text-emerald-500" strokeWidth={2} />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-emerald-500/10 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-emerald-500" strokeWidth={2} />
+            </div>
+            <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
+              MoldGuard
+            </span>
           </div>
-          <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
-            MoldGuard
-          </span>
+          {/* Close button — only visible in mobile drawer */}
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="md:hidden p-1.5 rounded-md text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
@@ -57,7 +77,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
             return (
               <li key={item.id}>
                 <button
-                  onClick={() => onPageChange(item.id)}
+                  onClick={() => handlePageChange(item.id)}
                   className={`
                     w-full flex items-center gap-3 px-3 py-2 rounded-md
                     transition-colors duration-150
@@ -96,7 +116,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
                   <div className="flex items-center gap-2 whitespace-nowrap">
                     <span>Log out?</span>
                     <button
-                      onClick={() => { setIsConfirmingLogout(false); onLogout?.(); }}
+                      onClick={() => { setIsConfirmingLogout(false); setIsMobileMenuOpen(false); onLogout?.(); }}
                       className="px-2 py-0.5 rounded bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors"
                     >
                       Yes
@@ -131,6 +151,49 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
         )}
         <p className="text-xs text-slate-400 dark:text-zinc-600 px-1">v2.4.0</p>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* ═══ Mobile Top Header (visible below md:) ═══ */}
+      <header className="fixed top-0 left-0 right-0 h-14 bg-white/70 dark:bg-zinc-950/40 backdrop-blur-xl border-b border-slate-200/60 dark:border-white/5 z-50 flex md:hidden items-center justify-between px-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-md bg-emerald-500/10 flex items-center justify-center">
+            <Shield className="w-4 h-4 text-emerald-500" strokeWidth={2} />
+          </div>
+          <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
+            MoldGuard
+          </span>
+        </div>
+        <button
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="p-2 rounded-md text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </header>
+
+      {/* ═══ Mobile Drawer Overlay (visible below md: when open) ═══ */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-[60] md:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => { setIsMobileMenuOpen(false); setIsConfirmingLogout(false); }}
+          />
+          {/* Drawer */}
+          <aside className="absolute left-0 top-0 h-full w-64 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-r border-slate-200/60 dark:border-white/5 flex flex-col shadow-2xl animate-slide-in-left">
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+
+      {/* ═══ Desktop Sidebar (visible md: and above) ═══ */}
+      <aside className="fixed left-0 top-0 h-full w-56 bg-white/70 dark:bg-zinc-950/40 backdrop-blur-xl border-r border-slate-200/60 dark:border-white/5 z-50 hidden md:flex flex-col">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

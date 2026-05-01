@@ -479,7 +479,7 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className={`${isAuthenticated ? 'md:ml-56' : ''} min-h-screen relative z-10 text-slate-900 dark:text-zinc-100`}>
+      <main className={`${isAuthenticated ? 'pt-14 md:pt-0 md:ml-56' : ''} min-h-screen relative z-10 text-slate-900 dark:text-zinc-100`}>
         {renderPage()}
       </main>
     </div>
