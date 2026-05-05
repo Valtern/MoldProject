@@ -70,23 +70,24 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-4xl 2xl:max-w-5xl mx-auto transition-all">
+    <div className="w-full max-w-4xl 2xl:max-w-5xl mx-auto transition-all">
+      <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
       {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Settings</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-          Configure thresholds, alerts, and system appearance
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Data Management</h1>
+        <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          Manage data, alerts, and system settings
         </p>
       </div>
 
       {/* Threshold Configuration */}
-      <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-5 mb-4">
+      <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-3 md:mb-4">
         <div className="flex items-center gap-2 mb-4">
           <Sliders className="w-4 h-4 text-emerald-500" />
           <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Threshold Configuration</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <div>
             <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
               Safe Humidity Limit (%)
@@ -124,7 +125,7 @@ export function SettingsPage() {
       </div>
 
       {/* Alert Preferences */}
-      <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-5 mb-4">
+      <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-3 md:mb-4">
         <div className="flex items-center gap-2 mb-4">
           <Bell className="w-4 h-4 text-emerald-500" />
           <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Alert Preferences</h2>
@@ -175,7 +176,7 @@ export function SettingsPage() {
       </div>
 
       {/* Appearance */}
-      <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-5 mb-6">
+      <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-4 md:mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Monitor className="w-4 h-4 text-emerald-500" />
           <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Appearance</h2>
@@ -249,6 +250,7 @@ export function SettingsPage() {
         >
           Save Changes
         </button>
+      </div>
       </div>
     </div>
   );

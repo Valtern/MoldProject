@@ -173,8 +173,9 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto transition-all">
-      <div className="grid grid-cols-1 xl:grid-cols-3 3xl:grid-cols-4 gap-6 2xl:gap-8 transition-all">
+    <div className="w-full max-w-[1920px] mx-auto transition-all">
+      <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
+      <div className="grid grid-cols-1 xl:grid-cols-3 3xl:grid-cols-4 gap-3 md:gap-4 lg:gap-6 2xl:gap-8 transition-all">
         
         {/* Left Column: Predictive Alerts Sidebar (xl:col-span-1) */}
         <div className="xl:col-span-1 flex flex-col gap-4">
@@ -242,11 +243,11 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
         <div className="xl:col-span-2 3xl:col-span-3 flex flex-col gap-6 2xl:gap-8">
           
           {/* Top: Page Header & Filter */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Reports</h1>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                Historical analysis and predictive insights
+              <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Analytics</h1>
+              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Advanced insights and predictive analysis
               </p>
             </div>
             <div className="flex bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 p-1 rounded-lg">
@@ -397,6 +398,7 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
           </div>
           
         </div>
+      </div>
       </div>
     </div>
   );
