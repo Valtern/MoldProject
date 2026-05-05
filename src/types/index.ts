@@ -25,6 +25,7 @@ export interface ApplianceControl {
 
 export interface RoomData {
   id: string;
+  userId: string;
   name: string;
   status: RoomStatus;
   lastUpdated: string;

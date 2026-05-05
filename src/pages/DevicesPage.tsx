@@ -169,7 +169,8 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
         </div>
       ) : (
         <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg overflow-hidden">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px]">
             {/* Table Header */}
             <thead>
               <tr className="bg-slate-50/80 dark:bg-zinc-900/60 border-b border-slate-200/60 dark:border-white/5">
@@ -198,6 +199,7 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

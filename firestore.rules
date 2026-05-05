@@ -1,9 +1,28 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    // 1. SETTINGS COLLECTION
+    match /Settings/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // 2. DEVICES COLLECTION
+    match /Devices/{documentId} {
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // 3. SENSOR LOGS & ANALYTICS ALERTS
+    match /SensorLogs/{logId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Physically blocks hackers from faking sensor data
+    }
+
+    match /AnalyticsAlerts/{alertId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Physically blocks hackers from faking AI warnings
+    }
+
   }
 }

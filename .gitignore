@@ -1,3 +1,71 @@
-node_modules
+# =============================================================
+#  Dependencies
+# =============================================================
+node_modules/
+.pnp
+.pnp.js
+
+# =============================================================
+#  Build outputs (akan di-generate ulang oleh CI/CD)
+# =============================================================
+dist/
+build/
+*.local
+
+# =============================================================
+#  Environment variables  -- JANGAN PERNAH commit file .env!
+# =============================================================
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# =============================================================
+#  Firebase / Google service account credentials
+#  (file ini bisa baca/tulis seluruh database & storage kamu --
+#   harus disimpan di GitHub Secrets, bukan di repo!)
+# =============================================================
+*-adminsdk-*.json
+serviceAccount*.json
+service-account*.json
+*-firebase-adminsdk-*.json
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+ui-debug.log
+.firebaserc.local
+
+# =============================================================
+#  Editor / IDE
+# =============================================================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+.idea/
+.qodo/
+*.swp
+*.swo
+*~
+
+# =============================================================
+#  Logs
+# =============================================================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# =============================================================
+#  TypeScript / Vite cache
+# =============================================================
+*.tsbuildinfo
+.vite/
+
+# =============================================================
+#  OS-generated
+# =============================================================
+.DS_Store
+Thumbs.db

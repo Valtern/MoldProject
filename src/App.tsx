@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, doc, getDoc, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { db, auth } from '@/lib/firebase';
 import { Sidebar } from '@/components/Sidebar';
 import { StatusBanner } from '@/components/StatusBanner';
 import { StatCard } from '@/components/StatCard';
@@ -10,10 +11,15 @@ import { RoomsPage } from '@/pages/RoomsPage';
 import { DevicesPage } from '@/pages/DevicesPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { LoginPage } from '@/pages/LoginPage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
+import { SignupPage } from '@/pages/SignupPage';
+import { useTheme } from 'next-themes';
 import type { RoomData } from '@/types';
 
 // Navigation context to share between Sidebar and App
 export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings';
+export type AuthPageId = 'login' | 'forgot-password' | 'signup';
 
 function DashboardPage({
   roomData,
@@ -77,6 +83,31 @@ function App() {
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
   const [availableRooms, setAvailableRooms] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<RoomData | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [authPage, setAuthPage] = useState<AuthPageId>('login');
+  const { setTheme } = useTheme();
+
+  // ── Auth state listener ── apply user theme on login, reset on logout
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setIsAuthenticated(!!user);
+      if (user) {
+        // Fetch user's theme preference from their Settings document
+        try {
+          const settingsSnap = await getDoc(doc(db, 'Settings', user.uid));
+          if (settingsSnap.exists() && settingsSnap.data().themePreference) {
+            setTheme(settingsSnap.data().themePreference);
+          }
+        } catch (err) {
+          console.error('[App] Failed to load user theme:', err);
+        }
+      } else {
+        // Reset theme to system default on logout
+        setTheme('system');
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // ── Ripple wave system (direct DOM injection) ──
   const lastRippleTime = useRef(0);
@@ -108,10 +139,19 @@ function App() {
     return () => window.removeEventListener('click', spawnRipple, true);
   }, []);
 
-  // Listen to available rooms from Devices collection
+  // Listen to available rooms from Devices collection — only when authenticated
   useEffect(() => {
+    if (!isAuthenticated || !auth.currentUser) {
+      // Clear stale data when logged out
+      setAvailableRooms([]);
+      setRoomData(null);
+      return;
+    }
+
+    const uid = auth.currentUser.uid;
     const devicesRef = collection(db, 'Devices');
-    const unsubscribe = onSnapshot(devicesRef, (snapshot) => {
+    const q = query(devicesRef, where('userId', '==', uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const rooms: any[] = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -149,7 +189,7 @@ function App() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAuthenticated]);
 
   // Handle room selection from Rooms page
   const handleRoomSelect = useCallback((roomId: string) => {
@@ -270,8 +310,63 @@ function App() {
     return () => unsubscribe();
   }, [currentPage, roomData?.deviceID]);
 
+  // Handle logout — clear all user data before signing out
+  const handleLogout = useCallback(async () => {
+    setAvailableRooms([]);
+    setRoomData(null);
+    setCurrentPage('dashboard');
+    await signOut(auth);
+    setAuthPage('login');
+  }, []);
+
   // Render current page
   const renderPage = () => {
+    // Show auth pages if not authenticated
+    if (isAuthenticated === false) {
+      switch (authPage) {
+        case 'login':
+          return (
+            <LoginPage 
+              onLoginSuccess={() => setIsAuthenticated(true)}
+              onForgotPassword={() => setAuthPage('forgot-password')}
+              onSignup={() => setAuthPage('signup')}
+            />
+          );
+        case 'forgot-password':
+          return (
+            <ForgotPasswordPage 
+              onBackToLogin={() => setAuthPage('login')}
+            />
+          );
+        case 'signup':
+          return (
+            <SignupPage 
+              onBackToLogin={() => setAuthPage('login')}
+            />
+          );
+        default:
+          return (
+            <LoginPage 
+              onLoginSuccess={() => setIsAuthenticated(true)}
+              onForgotPassword={() => setAuthPage('forgot-password')}
+              onSignup={() => setAuthPage('signup')}
+            />
+          );
+      }
+    }
+
+    // Show loading while checking auth
+    if (isAuthenticated === null) {
+      return (
+        <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+            <p className="text-zinc-500 dark:text-zinc-400">Loading...</p>
+          </div>
+        </div>
+      );
+    }
+
     switch (currentPage) {
       case 'dashboard':
         if (!roomData) {
@@ -301,7 +396,7 @@ function App() {
       case 'devices':
         return <DevicesPage availableRooms={availableRooms} />;
       case 'reports':
-        return <ReportsPage />;
+        return <ReportsPage availableRooms={availableRooms} />;
       case 'settings':
         return <SettingsPage />;
       default:
@@ -376,13 +471,15 @@ function App() {
         />
       </div>
 
-      {/* Sidebar */}
-      <div className="relative z-50">
-        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
-      </div>
+      {/* Sidebar - only show when authenticated */}
+      {isAuthenticated && (
+        <div className="relative z-50">
+          <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} />
+        </div>
+      )}
 
       {/* Main Content */}
-      <main className="ml-56 min-h-screen relative z-10 text-slate-900 dark:text-zinc-100">
+      <main className={`${isAuthenticated ? 'pt-14 md:pt-0 md:ml-56' : ''} min-h-screen relative z-10 text-slate-900 dark:text-zinc-100`}>
         {renderPage()}
       </main>
     </div>
