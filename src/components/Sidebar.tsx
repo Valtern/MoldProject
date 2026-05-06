@@ -60,9 +60,9 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
   };
 
   const topBar = (
-    <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-slate-200/60 dark:border-white/5 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl">
+    <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-slate-200/60 dark:border-white/5 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl md:left-64">
       <div className="mx-auto flex h-full max-w-[1920px] items-center justify-between px-4 md:px-6 lg:px-8 2xl:px-10">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3 md:hidden">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/20">
             <Shield className="h-5 w-5" strokeWidth={2} />
           </div>
@@ -76,7 +76,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-3 rounded-3xl border border-slate-200/80 dark:border-white/5 bg-slate-100/70 dark:bg-zinc-900/70 px-3 py-2 shadow-sm transition-colors hover:bg-slate-100 dark:hover:bg-zinc-800/70">
+            <button className="ml-auto flex items-center gap-3 rounded-3xl border border-slate-200/80 dark:border-white/5 bg-slate-100/70 dark:bg-zinc-900/70 px-3 py-2 shadow-sm transition-colors hover:bg-slate-100 dark:hover:bg-zinc-800/70">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-sm">
                 <User className="h-5 w-5" />
               </div>
@@ -122,8 +122,51 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
     </header>
   );
 
+  const desktopSidebar = (
+    <aside className="hidden md:fixed md:left-0 md:top-0 md:flex md:w-64 md:h-screen md:flex-col md:border-r md:border-slate-200/60 dark:md:border-white/5 md:bg-white/95 dark:md:bg-zinc-950/95 md:backdrop-blur-xl md:z-40 md:pt-0">
+      {/* Logo Section */}
+      <div className="flex h-16 items-center gap-3 border-b border-slate-200/70 dark:border-white/10 px-4 flex-shrink-0">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/20">
+          <Shield className="h-5 w-5" strokeWidth={2} />
+        </div>
+        <div className="flex min-w-0 flex-col leading-tight">
+          <span className="truncate text-sm font-bold text-slate-900 dark:text-zinc-100">
+            Mold Prevention
+          </span>
+          <span className="text-xs text-slate-500 dark:text-zinc-400">Sensors</span>
+        </div>
+      </div>
+
+      {/* Navigation Items */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <div className="space-y-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentPage === item.id;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => handlePageChange(item.id)}
+                className={`w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-150 ${
+                  isActive
+                    ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                    : 'text-slate-600 hover:bg-slate-100/60 hover:text-slate-900 dark:text-zinc-300 dark:hover:bg-zinc-800/30 dark:hover:text-zinc-100'
+                }`}
+              >
+                <Icon className="h-5 w-5 flex-shrink-0" strokeWidth={2} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    </aside>
+  );
+
   return (
     <>
+      {desktopSidebar}
       {topBar}
 
       {isMobileMenuOpen && (
