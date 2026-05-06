@@ -82,7 +82,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
               </div>
               <div className="hidden min-w-0 flex-col items-start text-left sm:flex">
                 <span className="truncate text-lg font-medium text-slate-800 dark:text-zinc-100">
-                  Admin
+                  Hi, {displayName}
                 </span>
               </div>
               <ChevronDown className="h-5 w-5 text-slate-500 dark:text-zinc-400" />
@@ -109,7 +109,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
                   event.preventDefault();
                   handleLogout();
                 }}
-                className="flex h-14 items-center gap-4 rounded-2xl px-4 text-lg text-red-500 focus:text-red-500"
+                className="flex h-14 items-center gap-4 rounded-2xl px-4 text-lg !text-red-500 focus:!text-red-500 dark:!text-red-400 [&_svg]:!text-red-500 dark:[&_svg]:!text-red-400"
                 variant="destructive"
               >
                 <LogOut className="h-5 w-5" />
