@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertTriangle, Activity, Clock, ShieldCheck, Thermometer, Droplets, Zap } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, onSnapshot, getDocs } from 'firebase/firestore';
 import {
   AreaChart,
   Area,
@@ -11,6 +11,28 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+
+// ── Chunking Utility ─────────────────────────────────────────────────────────
+// Splits an array into smaller arrays of at most `size` elements.
+// This bypasses the Firestore 'in' operator's 10-item limit.
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
+
+// ── Timestamp helper ─────────────────────────────────────────────────────────
+// Converts a Firestore Timestamp or Date-like value to epoch ms for sorting.
+function toEpoch(timestamp: any): number {
+  if (!timestamp) return 0;
+  if (typeof timestamp.toMillis === 'function') return timestamp.toMillis();
+  if (typeof timestamp.toDate === 'function') return timestamp.toDate().getTime();
+  return new Date(timestamp).getTime();
+}
+
+const FIRESTORE_IN_LIMIT = 10;
 
 interface ReportsPageProps {
   availableRooms: any[];
@@ -27,57 +49,79 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
   // Derive the user's device IDs from their isolated rooms
   const userDeviceIds = availableRooms.map(room => room.deviceID).filter(Boolean);
 
+  // ── 1 & 2. Alerts + Recent Activity (real-time listeners, chunked) ─────────
   useEffect(() => {
-    // Guard: don't query with an empty array (Firestore 'in' requires at least 1 element)
     if (userDeviceIds.length === 0) {
       setAlerts([]);
       setRecentActivity([]);
       return;
     }
 
-    // 1. Alerts Subscriber — filtered to user's devices
-    const alertsRef = collection(db, 'AnalyticsAlerts');
-    const qAlerts = query(
-      alertsRef,
-      where('deviceID', 'in', userDeviceIds),
-      orderBy('timestamp', 'desc')
-    );
-    
-    const unsubscribeAlerts = onSnapshot(qAlerts, (snapshot) => {
-      const parsedAlerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAlerts(parsedAlerts);
-    }, (error) => {
-      console.error('[Reports] Alerts listener error:', error);
-    });
+    const chunks = chunkArray(userDeviceIds, FIRESTORE_IN_LIMIT);
 
-    // 2. Recent Activity Subscriber — filtered to user's devices
-    const logsRef = collection(db, 'SensorLogs');
-    const qLogs = query(
-      logsRef,
-      where('deviceID', 'in', userDeviceIds),
-      orderBy('timestamp', 'desc'),
-      limit(10)
-    );
-    
-    const unsubscribeLogs = onSnapshot(qLogs, (snapshot) => {
-      const parsedLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setRecentActivity(parsedLogs);
-    }, (error) => {
-      console.error('[Reports] Activity listener error:', error);
+    // We accumulate partial results per-chunk and merge on every snapshot update.
+    const alertsByChunk: Record<number, any[]> = {};
+    const logsByChunk: Record<number, any[]> = {};
+    const unsubscribers: (() => void)[] = [];
+
+    chunks.forEach((chunk, idx) => {
+      // --- Alerts listener for this chunk ---
+      const alertsRef = collection(db, 'AnalyticsAlerts');
+      const qAlerts = query(
+        alertsRef,
+        where('deviceID', 'in', chunk),
+        orderBy('timestamp', 'desc')
+      );
+
+      const unsubAlerts = onSnapshot(qAlerts, (snapshot) => {
+        alertsByChunk[idx] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Merge all chunks, then re-sort descending by timestamp
+        const merged = Object.values(alertsByChunk).flat();
+        merged.sort((a, b) => toEpoch(b.timestamp) - toEpoch(a.timestamp));
+
+        console.log('Chunked Alerts Fetched:', merged);
+        setAlerts(merged);
+      }, (error) => {
+        console.error(`[Reports] Alerts chunk ${idx} listener error:`, error);
+      });
+      unsubscribers.push(unsubAlerts);
+
+      // --- Recent Activity listener for this chunk ---
+      const logsRef = collection(db, 'SensorLogs');
+      const qLogs = query(
+        logsRef,
+        where('deviceID', 'in', chunk),
+        orderBy('timestamp', 'desc'),
+        limit(10)
+      );
+
+      const unsubLogs = onSnapshot(qLogs, (snapshot) => {
+        logsByChunk[idx] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Merge all chunks, re-sort descending, then trim to 10 most recent
+        const merged = Object.values(logsByChunk).flat();
+        merged.sort((a, b) => toEpoch(b.timestamp) - toEpoch(a.timestamp));
+        setRecentActivity(merged.slice(0, 10));
+      }, (error) => {
+        console.error(`[Reports] Activity chunk ${idx} listener error:`, error);
+      });
+      unsubscribers.push(unsubLogs);
     });
 
     return () => {
-      unsubscribeAlerts();
-      unsubscribeLogs();
+      unsubscribers.forEach(unsub => unsub());
     };
   }, [userDeviceIds.join(',')]);
 
-  // 3. Historical Data Subscriber (Timeframe-dependent) — filtered to user's devices
+  // ── 3. Historical Chart Data (one-shot chunked queries via Promise.all) ────
   useEffect(() => {
     if (userDeviceIds.length === 0) {
       setChartData([]);
       return;
     }
+
+    let cancelled = false;
 
     let daysToSubtract = 1;
     if (timeframe === '7d') daysToSubtract = 7;
@@ -86,49 +130,67 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
     const thresholdDate = new Date();
     thresholdDate.setDate(thresholdDate.getDate() - daysToSubtract);
 
-    const logsRef = collection(db, 'SensorLogs');
-    const q = query(
-      logsRef,
-      where('deviceID', 'in', userDeviceIds),
-      where('timestamp', '>=', thresholdDate),
-      orderBy('timestamp', 'asc')
-    );
+    const chunks = chunkArray(userDeviceIds, FIRESTORE_IN_LIMIT);
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const grouped: Record<string, { timeLabel: string, sumHum: number, sumTemp: number, count: number }> = {};
-
-      snapshot.docs.forEach(doc => {
-        const data = doc.data();
-        if (!data.timestamp) return;
-        const d = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
-
-        let key = '';
-        if (timeframe === '24h') {
-          key = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-        } else {
-          key = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-        }
-
-        if (!grouped[key]) {
-          grouped[key] = { timeLabel: key, sumHum: 0, sumTemp: 0, count: 0 };
-        }
-        grouped[key].sumHum += (data.humidity || 0);
-        grouped[key].sumTemp += (data.temperature || 0);
-        grouped[key].count += 1;
-      });
-
-      const aggregated = Object.values(grouped).map((g) => ({
-        timeLabel: g.timeLabel,
-        humidity: Math.round(g.sumHum / g.count),
-        temperature: Math.round(g.sumTemp / g.count)
-      }));
-
-      setChartData(aggregated);
-    }, (error) => {
-      console.error('[Reports] Chart listener error:', error);
+    // Fire one getDocs per chunk in parallel
+    const chunkPromises = chunks.map((chunk) => {
+      const logsRef = collection(db, 'SensorLogs');
+      const q = query(
+        logsRef,
+        where('deviceID', 'in', chunk),
+        where('timestamp', '>=', thresholdDate),
+        orderBy('timestamp', 'asc')
+      );
+      return getDocs(q);
     });
 
-    return () => unsubscribe();
+    Promise.all(chunkPromises)
+      .then((snapshots) => {
+        if (cancelled) return;
+
+        // Flatten all docs from all chunks into a single array
+        const allDocs = snapshots.flatMap(snap =>
+          snap.docs.map(doc => doc.data())
+        );
+
+        // Sort ascending by timestamp before grouping
+        allDocs.sort((a, b) => toEpoch(a.timestamp) - toEpoch(b.timestamp));
+
+        // Group into time buckets
+        const grouped: Record<string, { timeLabel: string, sumHum: number, sumTemp: number, count: number }> = {};
+
+        allDocs.forEach(data => {
+          if (!data.timestamp) return;
+          const d = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
+
+          let key = '';
+          if (timeframe === '24h') {
+            key = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+          } else {
+            key = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+          }
+
+          if (!grouped[key]) {
+            grouped[key] = { timeLabel: key, sumHum: 0, sumTemp: 0, count: 0 };
+          }
+          grouped[key].sumHum += (data.humidity || 0);
+          grouped[key].sumTemp += (data.temperature || 0);
+          grouped[key].count += 1;
+        });
+
+        const aggregated = Object.values(grouped).map((g) => ({
+          timeLabel: g.timeLabel,
+          humidity: Math.round(g.sumHum / g.count),
+          temperature: Math.round(g.sumTemp / g.count)
+        }));
+
+        setChartData(aggregated);
+      })
+      .catch((error) => {
+        console.error('[Reports] Chart chunked query error:', error);
+      });
+
+    return () => { cancelled = true; };
   }, [timeframe, userDeviceIds.join(',')]);
 
 
