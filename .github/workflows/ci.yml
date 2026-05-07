@@ -110,6 +110,15 @@ jobs:
       - name: Create Pull Request to main (skip if exists)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: |
+            ## Auto-generated PR
+
+            Pull request ini dibuat otomatis oleh CI setelah ada push ke branch `experimental`.
+
+            ### Checklist sebelum merge
+            - [ ] Semua CI jobs hijau (Lint + Build)
+            - [ ] Review code sudah dilakukan
+            - [ ] Tidak ada konflik dengan `main`
         run: |
           EXISTING=$(gh pr list \
             --base main \
@@ -125,16 +134,6 @@ jobs:
               --base main \
               --head experimental \
               --title "feat: merge experimental into main" \
-              --body "$(cat <<'EOF'
-## Auto-generated PR
-
-Pull request ini dibuat otomatis oleh CI setelah ada push ke branch \`experimental\`.
-
-### Checklist sebelum merge
-- [ ] Semua CI jobs hijau (Lint + Build)
-- [ ] Review code sudah dilakukan
-- [ ] Tidak ada konflik dengan \`main\`
-EOF
-)"
+              --body "$PR_BODY"
             echo "PR berhasil dibuat dari experimental → main."
           fi
