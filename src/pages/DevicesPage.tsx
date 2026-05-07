@@ -154,18 +154,19 @@ interface DevicesPageProps {
 
 export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
   return (
-    <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto transition-all">
+    <div className="w-full max-w-[1920px] mx-auto transition-all">
+      <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
       {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Devices</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-          Monitor hardware health and connectivity status
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Device Controls</h1>
+        <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          Manage and control your connected devices and appliances
         </p>
       </div>
 
       {availableRooms.length === 0 ? (
         <div className="text-center py-12 border border-slate-200/60 dark:border-zinc-800 rounded-lg border-dashed">
-          <p className="text-zinc-500 dark:text-zinc-400">No devices configured yet. Please add a room to track devices.</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">No devices configured yet. Please add a room to track devices.</p>
         </div>
       ) : (
         <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg overflow-hidden">
@@ -174,19 +175,19 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
             {/* Table Header */}
             <thead>
               <tr className="bg-slate-50/80 dark:bg-zinc-900/60 border-b border-slate-200/60 dark:border-white/5">
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Device ID
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Assigned Room
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Wi-Fi Signal
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Sensors
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   Status
                 </th>
               </tr>
@@ -205,7 +206,7 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
 
       {/* Summary Reference */}
       {availableRooms.length > 0 && (
-         <div className="mt-4 flex items-center gap-6 text-sm">
+         <div className="mt-3 md:mt-4 flex flex-wrap gap-3 md:gap-6 text-xs md:text-sm">
            <div className="flex items-center gap-2">
              <span className="w-2 h-2 rounded-full bg-emerald-500" />
              <span className="text-zinc-500 dark:text-zinc-400">Online (&lt; 5m)</span>
@@ -220,6 +221,7 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
            </div>
          </div>
       )}
+      </div>
     </div>
   );
 }

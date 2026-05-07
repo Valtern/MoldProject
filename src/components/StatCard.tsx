@@ -59,7 +59,7 @@ export function StatCard({ data, index, status = 'safe' }: StatCardProps) {
   return (
     <div
       ref={cardRef}
-      className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-5 flex flex-col justify-between h-32"
+      className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 md:p-5 flex flex-col justify-between h-28 md:h-32"
     >
       {/* Label - top left */}
       <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
@@ -70,11 +70,11 @@ export function StatCard({ data, index, status = 'safe' }: StatCardProps) {
       <div className="flex items-baseline gap-1">
         <span
           ref={valueRef}
-          className="text-3xl font-semibold text-zinc-900 dark:text-zinc-100"
+          className="text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-100"
         >
           {displayValue}
         </span>
-        <span className="text-lg text-zinc-500 dark:text-zinc-400">{data.unit}</span>
+        <span className="text-sm md:text-lg text-zinc-500 dark:text-zinc-400">{data.unit}</span>
       </div>
 
       {/* Status indicator - bottom */}
