@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertTriangle, Activity, Clock, ShieldCheck, Thermometer, Droplets, Zap } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, limit, onSnapshot, getDocs } from 'firebase/firestore';
