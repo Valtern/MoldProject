@@ -52,12 +52,19 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
   // ── 1 & 2. Alerts + Recent Activity (real-time listeners, chunked) ─────────
   useEffect(() => {
     if (userDeviceIds.length === 0) {
+      console.log('[Reports] No device IDs available — skipping alert/activity listeners.');
       setAlerts([]);
       setRecentActivity([]);
       return;
     }
 
+    console.log('[Reports] Setting up listeners for device IDs:', userDeviceIds);
     const chunks = chunkArray(userDeviceIds, FIRESTORE_IN_LIMIT);
+
+    // 3-month cutoff — alerts older than this will be hidden
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const threeMonthsCutoff = threeMonthsAgo.getTime();
 
     // We accumulate partial results per-chunk and merge on every snapshot update.
     const alertsByChunk: Record<number, any[]> = {};
@@ -66,22 +73,24 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
 
     chunks.forEach((chunk, idx) => {
       // --- Alerts listener for this chunk ---
+      // NOTE: We intentionally omit orderBy to avoid requiring a composite index.
+      // Sorting is performed client-side after merging all chunks.
       const alertsRef = collection(db, 'AnalyticsAlerts');
       const qAlerts = query(
         alertsRef,
-        where('deviceID', 'in', chunk),
-        orderBy('timestamp', 'desc')
+        where('deviceID', 'in', chunk)
       );
 
       const unsubAlerts = onSnapshot(qAlerts, (snapshot) => {
         alertsByChunk[idx] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Merge all chunks, then re-sort descending by timestamp
+        // Merge all chunks, filter out alerts older than 3 months, then sort descending
         const merged = Object.values(alertsByChunk).flat();
-        merged.sort((a, b) => toEpoch(b.timestamp) - toEpoch(a.timestamp));
+        const filtered = merged.filter(alert => toEpoch(alert.timestamp) >= threeMonthsCutoff);
+        filtered.sort((a, b) => toEpoch(b.timestamp) - toEpoch(a.timestamp));
 
-        console.log('Chunked Alerts Fetched:', merged);
-        setAlerts(merged);
+        console.log('[Reports] Alerts fetched:', filtered.length, 'of', merged.length, '(after 3-month filter)');
+        setAlerts(filtered);
       }, (error) => {
         console.error(`[Reports] Alerts chunk ${idx} listener error:`, error);
       });
@@ -291,7 +300,7 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
                          <Droplets className="w-3.5 h-3.5" /> Avg Humidity
                        </span>
                        <span className={`font-medium ${alert.averageHumidity > 65 ? 'text-red-400' : 'text-amber-400'}`}>
-                         {alert.averageHumidity}%
+                         {Math.round(alert.averageHumidity * 10) / 10}%
                        </span>
                      </div>
                   )}
