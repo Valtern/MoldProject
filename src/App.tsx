@@ -29,52 +29,56 @@ function DashboardPage({
   onApplianceStateChange: (id: string, turnOn: boolean) => void;
 }) {
   return (
-    <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto transition-all">
-      {/* Status Banner */}
-      <section className="mb-6">
-        <StatusBanner
-          roomName={roomData.name}
-          status={roomData.status}
-          lastUpdated={roomData.lastUpdated}
-        />
-      </section>
-
-      {/* Stats Row */}
-      <section className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 2xl:grid-cols-3 gap-4 lg:gap-6 2xl:gap-8 transition-all">
-          <StatCard
-            data={roomData.temperature}
-            index={0}
+    <div className="w-full max-w-[1920px] mx-auto transition-all">
+      {/* Mobile: Compact padding */}
+      {/* Desktop: Generous padding */}
+      <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
+        {/* Status Banner */}
+        <section className="mb-4 md:mb-6">
+          <StatusBanner
+            roomName={roomData.name}
             status={roomData.status}
+            lastUpdated={roomData.lastUpdated}
           />
-          <StatCard
-            data={roomData.humidity}
-            index={1}
-            status={roomData.status}
-          />
-          <StatCard
-            data={roomData.lightLevel}
-            index={2}
-            status="safe"
-          />
-        </div>
-      </section>
+        </section>
 
-      {/* Chart and Control Panel Row */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 2xl:grid-cols-4 gap-4 lg:gap-6 2xl:gap-8 transition-all">
-        {/* Humidity Chart - takes 2/3 width on large screens, more on 4K */}
-        <div className="lg:col-span-2 2xl:col-span-3">
-          <HumidityChart deviceID={roomData.deviceID} />
-        </div>
+        {/* Stats Row - Stacked on mobile, grid on larger screens */}
+        <section className="mb-4 md:mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 2xl:gap-8">
+            <StatCard
+              data={roomData.temperature}
+              index={0}
+              status={roomData.status}
+            />
+            <StatCard
+              data={roomData.humidity}
+              index={1}
+              status={roomData.status}
+            />
+            <StatCard
+              data={roomData.lightLevel}
+              index={2}
+              status="safe"
+            />
+          </div>
+        </section>
 
-        {/* Appliance Control Panel - takes 1/3 width on large screens */}
-        <div className="lg:col-span-1">
-          <ApplianceControlPanel
-            appliances={roomData.appliances || []}
-            onStateChange={onApplianceStateChange}
-          />
-        </div>
-      </section>
+        {/* Chart and Control Panel Row - Stacked on mobile */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 2xl:grid-cols-4 gap-3 md:gap-4 lg:gap-6 2xl:gap-8">
+          {/* Humidity Chart */}
+          <div className="lg:col-span-2 2xl:col-span-3">
+            <HumidityChart deviceID={roomData.deviceID} />
+          </div>
+
+          {/* Appliance Control Panel */}
+          <div className="lg:col-span-1">
+            <ApplianceControlPanel
+              appliances={roomData.appliances || []}
+              onStateChange={onApplianceStateChange}
+            />
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
@@ -471,15 +475,13 @@ function App() {
         />
       </div>
 
-      {/* Sidebar - only show when authenticated */}
+      {/* Top bar + bottom nav - only show when authenticated */}
       {isAuthenticated && (
-        <div className="relative z-50">
-          <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} />
-        </div>
+        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} />
       )}
 
       {/* Main Content */}
-      <main className={`${isAuthenticated ? 'pt-14 md:pt-0 md:ml-56' : ''} min-h-screen relative z-10 text-slate-900 dark:text-zinc-100`}>
+      <main className={`${isAuthenticated ? 'pt-16 pb-20 md:pt-0 md:pb-0 md:ml-56' : ''} min-h-screen relative z-10 text-slate-900 dark:text-zinc-100`}>
         {renderPage()}
       </main>
     </div>

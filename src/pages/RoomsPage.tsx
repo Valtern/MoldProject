@@ -251,13 +251,14 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
   const criticalCount = statuses.filter(s => s === 'critical').length;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto transition-all">
+    <div className="w-full max-w-[1920px] mx-auto transition-all">
+      <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
       {/* Page Header */}
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-4 md:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Rooms</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Monitor environmental conditions across all rooms
+          <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">IoT Sensor Nodes</h1>
+          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            Monitor all connected sensors in your mold prevention system
           </p>
         </div>
 
@@ -358,7 +359,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
           <p className="text-zinc-500 dark:text-zinc-400">No rooms configured yet.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4 2xl:gap-6 transition-all">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 2xl:gap-6 transition-all">
           {availableRooms.map((room) => (
             <RoomCard
               key={room.id}
@@ -373,19 +374,20 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
       )}
 
       {/* Summary Stats */}
-      <div className="mt-6 grid grid-cols-3 gap-4 max-w-xs sm:max-w-md">
-        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 text-center">
-          <p className="text-2xl font-semibold text-emerald-500">{safeCount}</p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Safe</p>
+      <div className="mt-4 md:mt-6 grid grid-cols-3 gap-2 md:gap-4 max-w-full">
+        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-2 md:p-3 text-center">
+          <p className="text-xl md:text-2xl font-semibold text-emerald-500">{safeCount}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Online</p>
         </div>
-        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 text-center">
-          <p className="text-2xl font-semibold text-amber-500">{warningCount}</p>
+        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-2 md:p-3 text-center">
+          <p className="text-xl md:text-2xl font-semibold text-amber-500">{warningCount}</p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Warning</p>
         </div>
-        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 text-center">
-          <p className="text-2xl font-semibold text-red-500">{criticalCount}</p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Critical</p>
+        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-2 md:p-3 text-center">
+          <p className="text-xl md:text-2xl font-semibold text-red-500">{criticalCount}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Offline</p>
         </div>
+      </div>
       </div>
     </div>
   );
