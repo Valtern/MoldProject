@@ -1,73 +1,87 @@
 # =====================================================================
 #  MoldGuard Frontend CI Pipeline
 # ---------------------------------------------------------------------
-#  Apa yang dilakukan workflow ini?
-#    1. Setiap kali ada `git push` ke branch APA PUN (main, Seno,
-#       Charel, Hammam, anton, dll.) -- semua dev dapat feedback CI
-#    2. Setiap kali ada Pull Request yang menarget `main`
-#    -> GitHub Actions akan otomatis menjalankan:
-#         a. Install dependencies (npm ci)
-#         b. Lint code dengan ESLint  (`npm run lint`)
-#         c. Type-check + build production (`npm run build`)
-#         d. Upload hasil build (folder `dist/`) sebagai artifact
+#  Arsitektur:
+#    - LINT   → jalan di SEMUA branch setiap ada push
+#    - BUILD  → jalan hanya di branch `experimental` dan `main`
+#    - AUTO-PR→ otomatis buat PR ke main kalau ada push ke `experimental`
 #
-#  Workflow ini SAMA SEKALI TIDAK MEN-DEPLOY apa-apa ke Firebase.
-#  Jadi tidak ada risiko production rusak.
-#  Untuk upgrade ke auto-deploy nanti, baca CI-CD-GUIDE.md.
+#  Workflow ini TIDAK men-deploy ke Firebase.
+#  Deploy ditangani oleh deploy.yml (hanya di main).
 # =====================================================================
 
-name: CI - Lint & Build
+name: CI
 
 on:
   push:
-    branches: ['**']      # trigger di SEMUA branch (team-friendly)
+    branches: ['**']
   pull_request:
-    branches: [main]      # trigger saat ada PR ke main
-  # Memungkinkan trigger manual dari tab Actions (tombol "Run workflow")
+    branches: [main]
   workflow_dispatch:
 
-# Batalkan run sebelumnya jika ada commit baru di branch yang sama
-# (hemat waktu CI dan menit gratis GitHub Actions)
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  lint-and-build:
-    name: Lint & Build Frontend
+  # -------------------------------------------------------------------
+  # JOB 1: LINT — jalan di semua branch
+  # -------------------------------------------------------------------
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Ambil source code dari repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2) Install Node.js 20 (sesuai dengan environment lokal kamu)
-      #    `cache: 'npm'` mempercepat run berikutnya dengan cache npm dependencies
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      # 3) Install dependencies persis seperti package-lock.json
-      #    `npm ci` lebih cepat dan deterministic dibanding `npm install`
       - name: Install dependencies
         run: npm ci
 
-      # 4) Linting -- pastikan tidak ada error style/syntax
       - name: Run ESLint
         run: npm run lint
 
-      # 5) Build production bundle
-      #    `npm run build` di project ini menjalankan `tsc -b && vite build`
-      #    jadi sekaligus type-check TypeScript + bundle Vite
+  # -------------------------------------------------------------------
+  # JOB 2: BUILD — hanya jalan di branch `experimental` dan `main`
+  # -------------------------------------------------------------------
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: lint
+    if: |
+      github.ref == 'refs/heads/experimental' ||
+      github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Build production bundle
         run: npm run build
 
-      # 6) Upload folder `dist/` sebagai artifact yang bisa di-download
-      #    dari halaman Actions di GitHub. Berguna untuk inspect hasil build,
-      #    dan jadi "siap pakai" kalau nanti mau di-promote ke deploy job.
+      - name: Verify build output
+        run: |
+          if [ ! -f "dist/index.html" ]; then
+            echo "ERROR: dist/index.html not found."
+            exit 1
+          fi
+          echo "Build verified."
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -75,3 +89,52 @@ jobs:
           path: dist/
           retention-days: 7
           if-no-files-found: error
+
+  # -------------------------------------------------------------------
+  # JOB 3: AUTO-PR — hanya jalan kalau push ke `experimental`
+  #         Otomatis buat PR dari experimental ke main (skip jika sudah ada)
+  # -------------------------------------------------------------------
+  auto-pr:
+    name: Auto PR to main
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/experimental'
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create Pull Request to main (skip if exists)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh pr list \
+            --base main \
+            --head experimental \
+            --state open \
+            --json number \
+            --jq '.[0].number')
+
+          if [ -n "$EXISTING" ]; then
+            echo "PR #$EXISTING sudah ada dari experimental → main. Skip."
+          else
+            gh pr create \
+              --base main \
+              --head experimental \
+              --title "feat: merge experimental into main" \
+              --body "$(cat <<'EOF'
+## Auto-generated PR
+
+Pull request ini dibuat otomatis oleh CI setelah ada push ke branch \`experimental\`.
+
+### Checklist sebelum merge
+- [ ] Semua CI jobs hijau (Lint + Build)
+- [ ] Review code sudah dilakukan
+- [ ] Tidak ada konflik dengan \`main\`
+EOF
+)"
+            echo "PR berhasil dibuat dari experimental → main."
+          fi
