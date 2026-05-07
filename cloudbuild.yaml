@@ -125,9 +125,8 @@ options:
   # Enable dynamic variable substitutions (e.g., $PROJECT_ID)
   dynamicSubstitutions: true
 
-  # E2_MEDIUM provides balanced performance for Node builds.
-  # Switch to E2_SMALL to reduce cost if build times are acceptable.
-  machineType: 'E2_MEDIUM'
+  # Default machine type (E2_MEDIUM equivalent) auto-selected by Cloud Build.
+  # Override only if you need larger workers (e.g. N1_HIGHCPU_8).
 
 # ---------------------------------------------------------------------
 # Secret Manager Integration
