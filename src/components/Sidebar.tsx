@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   LayoutDashboard,
   Radio,
@@ -13,7 +13,8 @@ import {
 import { auth } from '@/lib/firebase';
 import type { PageId } from '@/App';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 interface NavItem {
   id: PageId;
   label: string;
@@ -39,6 +40,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<SidebarProps>) {
+  const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
   const userEmail = auth.currentUser?.email || 'admin@moldprev.io';
 
   const displayName = useMemo(() => {
@@ -106,13 +108,52 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
             <span className="truncate text-sm text-zinc-600 dark:text-zinc-400">
               {userEmail}
             </span>
-            <button
-              onClick={handleLogout}
-              className="rounded-md p-1.5 text-emerald-500 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
-              aria-label="Log out"
-            >
-              <LogOut className="h-4 w-4" strokeWidth={2} />
-            </button>
+            <Popover open={isConfirmingLogout} onOpenChange={setIsConfirmingLogout}>
+              <TooltipProvider>
+                <Tooltip open={isConfirmingLogout ? false : undefined}>
+                  <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setIsConfirmingLogout(true);
+                        }}
+                        className="rounded-md p-1.5 text-emerald-500 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                        aria-label="Log out"
+                      >
+                        <LogOut className="h-4 w-4" strokeWidth={2} />
+                      </button>
+                    </PopoverTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="center" sideOffset={8} className="bg-slate-900 text-white border-none dark:bg-zinc-800 [&_svg]:!bg-slate-900 [&_svg]:!fill-slate-900 dark:[&_svg]:!bg-zinc-800 dark:[&_svg]:!fill-zinc-800">
+                    <p>Log out</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <PopoverContent className="w-auto p-3 bg-slate-900 border-none shadow-xl dark:bg-zinc-800" side="top" align="center" sideOffset={8}>
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium text-white text-center">Log out?</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsConfirmingLogout(false)}
+                      className="rounded px-3 py-1 text-xs font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 dark:bg-zinc-700 dark:hover:bg-zinc-600 transition-colors"
+                    >
+                      No
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsConfirmingLogout(false);
+                        handleLogout();
+                      }}
+                      className="rounded px-3 py-1 text-xs font-medium bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                    >
+                      Yes
+                    </button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <p className="mt-2 px-1 text-xs text-slate-400 dark:text-zinc-600">v2.4.0</p>
         </div>
