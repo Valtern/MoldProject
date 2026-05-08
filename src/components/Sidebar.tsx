@@ -153,8 +153,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
               </div>
               <div className="p-3">
                 <DropdownMenuItem
-                  onSelect={(event) => {
-                    event.preventDefault();
+                  onSelect={() => {
                     handleSettings();
                   }}
                   className="flex h-14 items-center gap-4 rounded-2xl px-4 text-lg text-slate-700 dark:text-zinc-200"
