@@ -1,0 +1,72 @@
+# =====================================================================
+#  MoldGuard CD Pipeline — GitHub Actions
+# ---------------------------------------------------------------------
+#  Trigger: push to branch `main`
+#  Purpose: Build production bundle and deploy to Firebase Hosting
+#
+#  This workflow COMPLEMENTS the existing CI workflow (ci.yml).
+#    - CI (lint + type-check + build validation) runs on ALL branches.
+#    - CD (build + deploy) runs ONLY on `main` after CI passes.
+# =====================================================================
+
+name: CD - Deploy to Firebase Hosting
+
+on:
+  push:
+    branches: [main]
+
+# Prevent concurrent deploys to the same branch
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) Checkout source code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2) Setup Node.js with npm cache
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3) Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4) Build production bundle
+      #    `npm run build` runs `tsc -b && vite build`
+      - name: Build production bundle
+        run: npm run build
+
+      # 5) Verify dist/ exists (fail-fast sanity check)
+      - name: Verify build output
+        run: |
+          if [ ! -f "dist/index.html" ]; then
+            echo "ERROR: dist/index.html not found. Build failed."
+            exit 1
+          fi
+          echo "Build output verified."
+
+      # 6) Install Firebase CLI
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools@latest
+
+      # 7) Deploy to Firebase Hosting (live channel)
+      - name: Deploy to Firebase Hosting
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          firebase deploy \
+            --project moldymoldbase \
+            --only hosting \
+            --token "$FIREBASE_TOKEN" \
+            --non-interactive \
+            --force
