@@ -2,14 +2,14 @@
 #  MoldGuard CD Pipeline — GitHub Actions
 # ---------------------------------------------------------------------
 #  Trigger: push to branch `main`
-#  Purpose: Build production bundle and deploy to Firebase Hosting
+#  Purpose: Build production bundle and deploy to Firebase Hosting + Cloud Functions
 #
 #  This workflow COMPLEMENTS the existing CI workflow (ci.yml).
 #    - CI (lint + type-check + build validation) runs on ALL branches.
 #    - CD (build + deploy) runs ONLY on `main` after CI passes.
 # =====================================================================
 
-name: CD - Deploy to Firebase Hosting
+name: CD - Deploy to Firebase
 
 on:
   push:
@@ -55,18 +55,22 @@ jobs:
           fi
           echo "Build output verified."
 
-      # 6) Install Firebase CLI
+      # 6) Install Cloud Functions dependencies
+      - name: Install Cloud Functions dependencies
+        run: npm ci --prefix functions
+
+      # 7) Install Firebase CLI
       - name: Install Firebase CLI
         run: npm install -g firebase-tools@latest
 
-      # 7) Deploy to Firebase Hosting (live channel)
-      - name: Deploy to Firebase Hosting
+      # 8) Deploy to Firebase Hosting + Cloud Functions
+      - name: Deploy to Firebase
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
           firebase deploy \
             --project moldymoldbase \
-            --only hosting \
+            --only hosting,functions \
             --token "$FIREBASE_TOKEN" \
             --non-interactive \
             --force

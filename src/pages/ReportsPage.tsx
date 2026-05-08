@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Activity, Clock, ShieldCheck, Thermometer, Droplets, Zap } from 'lucide-react';
+import { AlertTriangle, Activity, Clock, ShieldCheck, Thermometer, Droplets, Zap, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, limit, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, onSnapshot, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { toast } from 'sonner';
 import {
   AreaChart,
   Area,
@@ -45,6 +46,10 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
   // Bar Chart State
   const [timeframe, setTimeframe] = useState<'24h' | '7d' | '30d'>('24h');
   const [chartData, setChartData] = useState<any[]>([]);
+
+  // Predictive Alerts Pagination
+  const ALERTS_PER_PAGE = 5;
+  const [alertPage, setAlertPage] = useState(0);
 
   // Derive the user's device IDs from their isolated rooms
   const userDeviceIds = availableRooms.map(room => room.deviceID).filter(Boolean);
@@ -225,6 +230,28 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
     return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   };
 
+  // ── Predictive Alert Dismiss Handler ────────────────────────────────────────
+  const handleDismissAlert = async (alertId: string) => {
+    try {
+      await deleteDoc(doc(db, 'AnalyticsAlerts', alertId));
+      toast.success('Alert dismissed.');
+    } catch (error) {
+      console.error('[Reports] Failed to dismiss alert:', error);
+      toast.error('Failed to dismiss alert. Please try again.');
+    }
+  };
+
+  // ── Pagination Derived Values ───────────────────────────────────────────────
+  const totalAlertPages = Math.max(1, Math.ceil(alerts.length / ALERTS_PER_PAGE));
+  const paginatedAlerts = alerts.slice(alertPage * ALERTS_PER_PAGE, (alertPage + 1) * ALERTS_PER_PAGE);
+
+  // Reset to first page if current page is out of bounds (e.g. after dismissals)
+  useEffect(() => {
+    if (alertPage >= totalAlertPages) {
+      setAlertPage(Math.max(0, totalAlertPages - 1));
+    }
+  }, [alerts.length]);
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -262,8 +289,8 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
               <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">Our predictive models indicate all rooms are perfectly safe.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
-              {alerts.map((alert) => (
+            <div className="flex flex-col gap-3">
+              {paginatedAlerts.map((alert) => (
                 <div 
                   key={alert.id}
                   className={`bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border shadow-lg dark:shadow-xl rounded-lg p-4 transition-colors ${
@@ -288,10 +315,18 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
                         {alert.message}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
                       <span className="text-xs text-zinc-500 dark:text-zinc-500">
                         {formatLocalTime(alert.timestamp)}
                       </span>
+                      <button
+                        onClick={() => handleDismissAlert(alert.id)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        title="Dismiss alert"
+                      >
+                        <X className="w-3 h-3" />
+                        Dismiss
+                      </button>
                     </div>
                   </div>
                   {alert.averageHumidity && (
@@ -306,6 +341,31 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
                   )}
                 </div>
               ))}
+
+              {/* Pagination Controls */}
+              {alerts.length > ALERTS_PER_PAGE && (
+                <div className="flex items-center justify-between mt-1">
+                  <button
+                    onClick={() => setAlertPage(p => Math.max(0, p - 1))}
+                    disabled={alertPage === 0}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    Previous
+                  </button>
+                  <span className="text-xs text-zinc-500">
+                    {alertPage + 1} / {totalAlertPages}
+                  </span>
+                  <button
+                    onClick={() => setAlertPage(p => Math.min(totalAlertPages - 1, p + 1))}
+                    disabled={alertPage >= totalAlertPages - 1}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

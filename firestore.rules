@@ -21,7 +21,8 @@ service cloud.firestore {
 
     match /AnalyticsAlerts/{alertId} {
       allow read: if request.auth != null;
-      allow write: if false; // Physically blocks hackers from faking AI warnings
+      allow create, update: if false; // Only Cloud Functions can generate alerts
+      allow delete: if request.auth != null; // Allow authenticated users to dismiss
     }
 
   }
