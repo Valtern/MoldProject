@@ -1,6 +1,6 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-const Mailjet = require('node-mailjet');
+const nodemailer = require('nodemailer');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -85,10 +85,14 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
         const docRef = await db.collection('SensorLogs').add(docData);
 
         // Update the Devices collection with the last seen status
-        await db.collection('Devices').doc(validatedData.deviceID).set({
-            lastSeen: admin.firestore.FieldValue.serverTimestamp(),
-            status: 'Online'
-        }, { merge: true });
+        // Query by deviceID field since documents use auto-generated IDs
+        const devicesQuery = await db.collection('Devices').where('deviceID', '==', validatedData.deviceID).limit(1).get();
+        if (!devicesQuery.empty) {
+            await devicesQuery.docs[0].ref.set({
+                lastSeen: admin.firestore.FieldValue.serverTimestamp(),
+                status: 'Online'
+            }, { merge: true });
+        }
 
         return res.status(201).json({
             success: true,
@@ -117,31 +121,40 @@ exports.esp32api = onRequest({ region: 'asia-southeast2', maxInstances: 10 }, ap
 exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', region: 'asia-southeast2' }, async (event) => {
     const logData = event.data.data();
 
-    if (!logData) return;
-
-    const deviceID = logData.deviceID;
-    const deviceRef = db.collection('Devices').doc(deviceID);
-    const deviceSnap = await deviceRef.get();
-    
-    if (!deviceSnap.exists) {
-        console.log(`Device ${deviceID} not found. Aborting alert.`);
+    if (!logData) {
+        console.warn('[checkMoldRisk] Abort: Trigger fired but event data is null/undefined.');
         return;
     }
 
+    console.log(`[checkMoldRisk] Trigger fired for document SensorLogs/${event.params.logId}, deviceID: ${logData.deviceID}, humidity: ${logData.humidity}`);
+
+    const deviceID = logData.deviceID;
+    // Query by deviceID field since documents use auto-generated IDs
+    const devicesQuery = await db.collection('Devices').where('deviceID', '==', deviceID).limit(1).get();
+    
+    if (devicesQuery.empty) {
+        console.warn(`[checkMoldRisk] Abort: No device document found for deviceID: ${deviceID}`);
+        return;
+    }
+
+    const deviceSnap = devicesQuery.docs[0];
+    const deviceRef = deviceSnap.ref;
     const deviceData = deviceSnap.data();
     const userId = deviceData.userId;
 
     if (!userId) {
-        console.log(`Device ${deviceID} has no assigned userId. Aborting alert.`);
+        console.warn(`[checkMoldRisk] Abort: Device ${deviceID} has no assigned userId field.`);
         return;
     }
+
+    console.log(`[checkMoldRisk] Resolved userId: ${userId} from device: ${deviceID} (docId: ${deviceSnap.id})`);
 
     // Query the exact Settings document for this user
     const settingsRef = db.collection('Settings').doc(userId);
     const settingsSnap = await settingsRef.get();
 
     if (!settingsSnap.exists) {
-        console.log(`Settings not found for user ${userId}. Aborting alert.`);
+        console.warn(`[checkMoldRisk] Abort: No Settings document found for userId: ${userId}`);
         return;
     }
 
@@ -154,7 +167,7 @@ exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', regi
 
     // Abort if email is missing/invalid or alerts disabled
     if (!alertsEnabled || !alertEmail || alertEmail.trim() === '') {
-        console.log(`Alerts disabled or email missing for user ${userId}. Aborting alert.`);
+        console.warn(`[checkMoldRisk] Abort: Alerts disabled or email missing for userId: ${userId} (alertsEnabled=${alertsEnabled}, alertEmail=${alertEmail})`);
         return;
     }
 
@@ -163,23 +176,33 @@ exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', regi
 
     // Only proceed if humidity exceeds the critical threshold
     if (logData.humidity <= threshold) {
+        console.log(`[checkMoldRisk] No alert needed: humidity ${logData.humidity}% is within safe threshold of ${threshold}%.`);
         return;
     }
+
+    console.log(`[checkMoldRisk] THRESHOLD EXCEEDED: humidity ${logData.humidity}% > ${threshold}% for device ${deviceID}. Proceeding to hysteresis check.`);
 
     const lastAlertSent = deviceData.lastAlertSent;
     // Hysteresis: Check if an alert was sent in the last 3 hours
     if (lastAlertSent) {
         const threeHoursAgo = Date.now() - (3 * 60 * 60 * 1000);
+        const timeSinceLastAlert = Date.now() - lastAlertSent.toMillis();
         if (lastAlertSent.toMillis() > threeHoursAgo) {
-            console.log(`Alert for ${deviceID} skipped due to 3-hour hysteresis loop.`);
+            console.warn(`[checkMoldRisk] Abort: Alert for ${deviceID} suppressed by hysteresis. Last alert was ${Math.round(timeSinceLastAlert / 60000)} minutes ago.`);
             return;
         }
+        console.log(`[checkMoldRisk] Hysteresis passed: last alert for ${deviceID} was ${Math.round(timeSinceLastAlert / 60000)} minutes ago.`);
+    } else {
+        console.log(`[checkMoldRisk] No previous alert found for ${deviceID}. First alert dispatch.`);
     }
 
-    // Initialize Mailjet
-    const mailjet = new Mailjet({
-        apiKey: process.env.MAILJET_API_KEY,
-        apiSecret: process.env.MAILJET_SECRET_KEY
+    // Initialize Nodemailer for Gmail
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+        }
     });
 
     const eventTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' });
@@ -225,33 +248,137 @@ exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', regi
     `;
 
     try {
-        await mailjet.post("send", { 'version': 'v3.1' }).request({
-            "Messages": [
-                {
-                    "From": {
-                        "Email": process.env.ALERT_FROM_EMAIL,
-                        "Name": "MoldGuard Alerts"
-                    },
-                    "To": [
-                        {
-                            "Email": alertEmail,
-                            "Name": "Administrator"
-                        }
-                    ],
-                    "Subject": `[CRITICAL] Humidity Alert: ${deviceID} (${logData.humidity}%)`,
-                    "HTMLPart": htmlBody
-                }
-            ]
+        console.log(`[checkMoldRisk] Sending email to: ${alertEmail} for device: ${deviceID}`);
+        await transporter.sendMail({
+            from: `"MoldGuard Alerts" <${process.env.ALERT_FROM_EMAIL}>`,
+            to: alertEmail,
+            subject: `[CRITICAL] Humidity Alert: ${deviceID} (${logData.humidity}%)`,
+            html: htmlBody
         });
 
-        console.log(`Successfully sent alert email for ${deviceID}`);
+        console.log(`[checkMoldRisk] SUCCESS: Alert email delivered for ${deviceID} to ${alertEmail}`);
 
         // State Update: Update lastAlertSent to reset hysteresis loop
         await deviceRef.set({
             lastAlertSent: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
+        console.log(`[checkMoldRisk] Updated lastAlertSent timestamp for device ${deviceID}`);
 
     } catch (error) {
-        console.error("Failed to send Mailjet email or update device:", error);
+        console.error(`[checkMoldRisk] SMTP ERROR for device ${deviceID}:`, error);
+    }
+});
+
+// 9. Predictive Analytics Alert Worker (Firestore Trigger)
+exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{alertId}', region: 'asia-southeast2' }, async (event) => {
+    const alertData = event.data.data();
+
+    if (!alertData) {
+        console.warn('[notifyPredictiveAlert] Abort: Trigger fired but event data is null/undefined.');
+        return;
+    }
+
+    console.log(`[notifyPredictiveAlert] Trigger fired for AnalyticsAlerts/${event.params.alertId}, deviceID: ${alertData.deviceID}, riskLevel: ${alertData.riskLevel}`);
+
+    const deviceID = alertData.deviceID;
+    // Query by deviceID field since documents use auto-generated IDs
+    const devicesQuery = await db.collection('Devices').where('deviceID', '==', deviceID).limit(1).get();
+    
+    if (devicesQuery.empty) {
+        console.warn(`[notifyPredictiveAlert] Abort: No device document found for deviceID: ${deviceID}`);
+        return;
+    }
+
+    const deviceSnap = devicesQuery.docs[0];
+    const deviceData = deviceSnap.data();
+    const userId = deviceData.userId;
+
+    if (!userId) {
+        console.warn(`[notifyPredictiveAlert] Abort: Device ${deviceID} has no assigned userId field.`);
+        return;
+    }
+
+    console.log(`[notifyPredictiveAlert] Resolved userId: ${userId} from device: ${deviceID} (docId: ${deviceSnap.id})`);
+
+    // Query the exact Settings document for this user
+    const settingsRef = db.collection('Settings').doc(userId);
+    const settingsSnap = await settingsRef.get();
+
+    if (!settingsSnap.exists) {
+        console.warn(`[notifyPredictiveAlert] Abort: No Settings document found for userId: ${userId}`);
+        return;
+    }
+
+    const settingsData = settingsSnap.data();
+    
+    const alertsEnabled = settingsData.alertsEnabled;
+    const alertEmail = settingsData.alertEmail;
+
+    // Early exit if disabled or no email
+    if (!alertsEnabled || !alertEmail || alertEmail.trim() === '') {
+        console.warn(`[notifyPredictiveAlert] Abort: Alerts disabled or email missing for userId: ${userId} (alertsEnabled=${alertsEnabled}, alertEmail=${alertEmail})`);
+        return;
+    }
+
+    // Initialize Nodemailer for Gmail
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+        }
+    });
+
+    const eventTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' });
+
+    // Distinct HTML Email Template for Predictive Alerts
+    const htmlBody = `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="background-color: #f57c00; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0; font-size: 24px; font-weight: 600;">🔮 Predictive Analytics Warning</h1>
+            </div>
+            <div style="padding: 30px; background-color: #ffffff; color: #333333;">
+                <p style="font-size: 16px; line-height: 1.5; margin-top: 0;">Our Big Data Hadoop cluster has identified a potential future mold risk based on current environmental patterns.</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 25px 0;">
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #555;">Device ID</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; color: #111;">${deviceID}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #555;">Time of Analysis</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; color: #111;">${eventTime}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #f57c00;">Risk Level</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: bold; color: #f57c00;">${alertData.riskLevel}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #555;">Message</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; color: #111;">${alertData.message}</td>
+                    </tr>
+                </table>
+
+                <p style="font-size: 14px; color: #666; margin-bottom: 0;">Consider adjusting your environment controls preemptively to mitigate this risk.</p>
+            </div>
+            <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #999;">
+                <p style="margin: 0;">This is an automated predictive alert generated by MoldGuard Analytics.</p>
+            </div>
+        </div>
+    `;
+
+    try {
+        console.log(`[notifyPredictiveAlert] Sending email to: ${alertEmail} for device: ${deviceID}`);
+        await transporter.sendMail({
+            from: '"MoldGuard Predictive Alerts" <' + process.env.ALERT_FROM_EMAIL + '>',
+            to: alertEmail,
+            subject: `[PREDICTIVE] Mold Risk Alert: ${deviceID} (${alertData.riskLevel})`,
+            html: htmlBody
+        });
+
+        console.log(`[notifyPredictiveAlert] SUCCESS: Predictive alert email delivered for ${deviceID} to ${alertEmail}`);
+
+    } catch (error) {
+        console.error(`[notifyPredictiveAlert] SMTP ERROR for device ${deviceID}:`, error);
     }
 });
