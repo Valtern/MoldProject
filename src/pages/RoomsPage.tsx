@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Thermometer, Droplets, Wifi, ChevronRight, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Thermometer, Droplets, Wifi, ChevronRight, Pencil, Trash2, X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { db, auth } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { collection, updateDoc, deleteDoc, doc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 const statusConfig: Record<string, { dotClass: string, textClass: string, bgClass: string, label: string }> = {
   safe: { dotClass: 'bg-emerald-500', textClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10 border-emerald-500/20', label: 'Safe' },
@@ -127,7 +127,6 @@ function RoomCard({ room, onRoomSelect, openEdit, handleDelete, onStatusUpdate }
 }
 
 export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
-  const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [roomStatuses, setRoomStatuses] = useState<Record<string, string>>({});
@@ -158,33 +157,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
     deviceID: ''
   });
 
-  const handleAddOpenChange = (open: boolean) => {
-    setIsAddOpen(open);
-    if (!open) {
-      resetForm();
-    }
-  };
 
-  const handleAddSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const uid = auth.currentUser?.uid;
-      if (!uid) throw new Error('Not authenticated');
-      await addDoc(collection(db, 'Devices'), {
-        userId: uid,
-        name: formData.name,
-        deviceID: formData.deviceID,
-        appliances: [
-          { id: 'fan', name: 'Exhaust Fan', icon: 'fan', state: 'auto' }, 
-          { id: 'dehumidifier', name: 'Dehumidifier', icon: 'dehumidifier', state: 'auto' }
-        ]
-      });
-      setIsAddOpen(false);
-      setFormData({ name: '', deviceID: '' });
-    } catch (err) {
-      console.error("Failed to add room", err);
-    }
-  };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,7 +191,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
     setIsEditOpen(true);
   };
 
-  const resetForm = () => setFormData({ name: '', deviceID: '' });
+
 
   // Calculate dynamic stats directly from the active cards reporting in
   const statuses = Object.values(roomStatuses);
@@ -230,91 +203,49 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
     <div className="w-full max-w-[1920px] mx-auto transition-all">
       <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
       {/* Page Header */}
-      <div className="mb-4 md:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-        <div>
-          <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">IoT Sensor Nodes</h1>
-          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Monitor all connected sensors in your mold prevention system
-          </p>
-        </div>
-
-        {/* Add Room Trigger */}
-        <Dialog.Root open={isAddOpen} onOpenChange={handleAddOpenChange}>
-          <Dialog.Trigger asChild>
-            <button className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors">
-              <Plus className="w-4 h-4" />
-              Add Room
-            </button>
-          </Dialog.Trigger>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
-            <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[calc(100%-2rem)] max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 z-50 focus:outline-none">
-              <div className="flex justify-between items-center mb-5">
-                <Dialog.Title className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Add New Room</Dialog.Title>
-                <Dialog.Close asChild>
-                  <button className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-300">
-                    <X className="w-5 h-5" />
-                  </button>
-                </Dialog.Close>
-              </div>
-              <form onSubmit={handleAddSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Room Name</label>
-                  <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" placeholder="e.g. Living Room" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Device ID</label>
-                  <input required value={formData.deviceID} onChange={e => setFormData({...formData, deviceID: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" placeholder="e.g. ESP32_01" />
-                </div>
-
-                <div className="pt-4 flex justify-end">
-                  <button type="submit" className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md transition-colors">
-                    Save Room
-                  </button>
-                </div>
-              </form>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-
-        {/* Edit Room Modal (Shared state) */}
-        <Dialog.Root open={isEditOpen} onOpenChange={(open) => { setIsEditOpen(open); if(!open) setEditingRoom(null); }}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
-            <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[calc(100%-2rem)] max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 z-50 focus:outline-none">
-              <div className="flex justify-between items-center mb-5">
-                <Dialog.Title className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Edit Room</Dialog.Title>
-                <Dialog.Close asChild>
-                  <button className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-300">
-                    <X className="w-5 h-5" />
-                  </button>
-                </Dialog.Close>
-              </div>
-              <form onSubmit={handleEditSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Room Name</label>
-                  <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Device ID</label>
-                  <input required value={formData.deviceID} onChange={e => setFormData({...formData, deviceID: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" />
-                </div>
-
-                <div className="pt-4 flex justify-end">
-                  <button type="submit" className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md transition-colors">
-                    Update Room
-                  </button>
-                </div>
-              </form>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">IoT Sensor Nodes</h1>
+        <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          Monitor all connected sensors in your mold prevention system
+        </p>
       </div>
+
+      {/* Edit Room Modal */}
+      <Dialog.Root open={isEditOpen} onOpenChange={(open) => { setIsEditOpen(open); if(!open) setEditingRoom(null); }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
+          <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[calc(100%-2rem)] max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 z-50 focus:outline-none">
+            <div className="flex justify-between items-center mb-5">
+              <Dialog.Title className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Edit Room</Dialog.Title>
+              <Dialog.Close asChild>
+                <button className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-300">
+                  <X className="w-5 h-5" />
+                </button>
+              </Dialog.Close>
+            </div>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Room Name</label>
+                <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Device ID</label>
+                <input required value={formData.deviceID} onChange={e => setFormData({...formData, deviceID: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" />
+              </div>
+
+              <div className="pt-4 flex justify-end">
+                <button type="submit" className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md transition-colors">
+                  Update Room
+                </button>
+              </div>
+            </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {availableRooms.length === 0 ? (
         <div className="text-center py-12 border border-zinc-200 dark:border-zinc-800 rounded-lg border-dashed">
-          <p className="text-zinc-500 dark:text-zinc-400">No rooms configured yet.</p>
+          <p className="text-zinc-500 dark:text-zinc-400">No claimed devices yet. Go to <span className="font-medium text-emerald-500">Device Controls</span> to claim your first ESP32.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 2xl:gap-6 transition-all">

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Wifi, AlertCircle, CheckCircle2, Thermometer, Droplets } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { Wifi, AlertCircle, CheckCircle2, Thermometer, Droplets, Plus, Search, Loader2 } from 'lucide-react';
+import { db, auth } from '@/lib/firebase';
+import { collection, query, where, orderBy, limit, onSnapshot, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { toast } from 'sonner';
 
 const wifiConfig = {
   Excellent: { icon: Wifi, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
@@ -148,6 +149,168 @@ function DeviceTableRow({ room }: { room: any }) {
   );
 }
 
+// ── Claim Device Form ────────────────────────────────────────────────────────
+type ClaimStatus = 'idle' | 'loading' | 'success' | 'error';
+
+function ClaimDeviceCard() {
+  const [deviceIdInput, setDeviceIdInput] = useState('');
+  const [roomNameInput, setRoomNameInput] = useState('');
+  const [claimStatus, setClaimStatus] = useState<ClaimStatus>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleClaim = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedId = deviceIdInput.trim();
+    const trimmedName = roomNameInput.trim();
+
+    if (!trimmedId || !trimmedName) return;
+
+    setClaimStatus('loading');
+    setErrorMessage('');
+
+    try {
+      const uid = auth.currentUser?.uid;
+      if (!uid) {
+        setClaimStatus('error');
+        setErrorMessage('You must be logged in to claim a device.');
+        return;
+      }
+
+      // Query the Devices collection for a matching unclaimed device.
+      // The status constraint is required to satisfy Firestore's "rules are not filters"
+      // principle — our security rules only permit reads where status == "unclaimed".
+      const devicesRef = collection(db, 'Devices');
+      const q = query(devicesRef, where('deviceID', '==', trimmedId), where('status', '==', 'unclaimed'));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        setClaimStatus('error');
+        setErrorMessage('No unclaimed device found with this ID. Ensure your ESP32 is connected to Wi-Fi and hasn\'t already been claimed.');
+        return;
+      }
+
+      const deviceDoc = snapshot.docs[0];
+
+      // Claim the device: assign ownership, room name, and default analytical fields
+      await updateDoc(deviceDoc.ref, {
+        userId: uid,
+        status: 'claimed',
+        name: trimmedName,
+        apiKey: trimmedId,
+        safeLimit: 60,
+        criticalLimit: 85,
+        claimedAt: serverTimestamp(),
+        appliances: [
+          { id: 'fan', name: 'Exhaust Fan', icon: 'fan', state: 'auto' },
+          { id: 'dehumidifier', name: 'Dehumidifier', icon: 'dehumidifier', state: 'auto' }
+        ]
+      });
+
+      setClaimStatus('success');
+      setDeviceIdInput('');
+      setRoomNameInput('');
+      toast.success(`Device "${trimmedId}" claimed as "${trimmedName}"!`);
+
+      // Reset back to idle after a short delay
+      setTimeout(() => setClaimStatus('idle'), 3000);
+
+    } catch (error: any) {
+      console.error('[ClaimDevice] Error:', error);
+      setClaimStatus('error');
+
+      if (error?.code === 'permission-denied') {
+        setErrorMessage('Permission denied. The device may already be claimed or you are not authorized.');
+      } else {
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
+    }
+  };
+
+  return (
+    <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-4 md:mb-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Plus className="w-4 h-4 text-emerald-500" />
+        <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Claim a Device</h2>
+      </div>
+      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+        Enter the Custom Device ID assigned on your ESP32 hardware via the captive portal setup. The device must have connected to the server at least once to be discoverable.
+      </p>
+
+      <form onSubmit={handleClaim} className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1 space-y-1.5">
+          <label htmlFor="claim-device-id" className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            Device ID
+          </label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+            <input
+              id="claim-device-id"
+              type="text"
+              value={deviceIdInput}
+              onChange={(e) => { setDeviceIdInput(e.target.value); setClaimStatus('idle'); setErrorMessage(''); }}
+              placeholder="e.g. MasterBed_01"
+              required
+              disabled={claimStatus === 'loading'}
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md pl-10 pr-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 disabled:opacity-50"
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 space-y-1.5">
+          <label htmlFor="claim-room-name" className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            Friendly Room Name
+          </label>
+          <input
+            id="claim-room-name"
+            type="text"
+            value={roomNameInput}
+            onChange={(e) => { setRoomNameInput(e.target.value); setClaimStatus('idle'); setErrorMessage(''); }}
+            placeholder="e.g. Master Bedroom"
+            required
+            disabled={claimStatus === 'loading'}
+            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 disabled:opacity-50"
+          />
+        </div>
+
+        <div className="flex items-end">
+          <button
+            type="submit"
+            disabled={claimStatus === 'loading' || !deviceIdInput.trim() || !roomNameInput.trim()}
+            className="flex items-center gap-2 px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap h-[38px]"
+          >
+            {claimStatus === 'loading' ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Claiming...
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                Claim Device
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+
+      {/* Status Messages */}
+      {claimStatus === 'error' && errorMessage && (
+        <div className="mt-3 flex items-center gap-2 p-3 rounded-md bg-red-500/10 border border-red-500/20">
+          <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+          <p className="text-xs text-red-400">{errorMessage}</p>
+        </div>
+      )}
+
+      {claimStatus === 'success' && (
+        <div className="mt-3 flex items-center gap-2 p-3 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <p className="text-xs text-emerald-400">Device claimed successfully! It will now appear in your device list and room overview.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface DevicesPageProps {
   availableRooms?: any[];
 }
@@ -164,9 +327,12 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
         </p>
       </div>
 
+      {/* Claim Device Card */}
+      <ClaimDeviceCard />
+
       {availableRooms.length === 0 ? (
         <div className="text-center py-12 border border-slate-200/60 dark:border-zinc-800 rounded-lg border-dashed">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">No devices configured yet. Please add a room to track devices.</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">No claimed devices yet. Use the form above to claim your first ESP32 device.</p>
         </div>
       ) : (
         <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg overflow-hidden">
