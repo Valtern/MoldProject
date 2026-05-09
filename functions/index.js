@@ -320,6 +320,26 @@ exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{
         return;
     }
 
+    // Severity Suppression Gate — only send emails for user-selected risk levels
+    const riskLevel = alertData.riskLevel || 'Low';
+
+    // Read the multi-select array; fall back to legacy single-value field for migration
+    let emailAlertLevels = settingsData.emailAlertLevels;
+    if (!Array.isArray(emailAlertLevels)) {
+        // Migrate from legacy emailAlertThreshold if present
+        const legacy = settingsData.emailAlertThreshold || 'High';
+        if (legacy === 'Low') emailAlertLevels = ['Low', 'Medium', 'High'];
+        else if (legacy === 'Medium') emailAlertLevels = ['Medium', 'High'];
+        else emailAlertLevels = ['High'];
+    }
+
+    if (!emailAlertLevels.includes(riskLevel)) {
+        console.log(`[SKIPPED] Email suppressed for device ${deviceID}. Alert level (${riskLevel}) is not in user's selected levels [${emailAlertLevels.join(', ')}].`);
+        return;
+    }
+
+    console.log(`[notifyPredictiveAlert] Severity gate passed: alert (${riskLevel}) is in user's selected levels [${emailAlertLevels.join(', ')}]. Proceeding to send email.`);
+
     // Initialize Nodemailer for Gmail
     const transporter = nodemailer.createTransport({
         service: 'gmail',
