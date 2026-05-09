@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Thermometer, Droplets, Wifi, ChevronRight, Plus, Pencil, Trash2, X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { db, auth } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDoc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 const statusConfig: Record<string, { dotClass: string, textClass: string, bgClass: string, label: string }> = {
   safe: { dotClass: 'bg-emerald-500', textClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10 border-emerald-500/20', label: 'Safe' },
@@ -155,31 +155,13 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
 
   const [formData, setFormData] = useState({
     name: '',
-    deviceID: '',
-    safeLimit: 60,
-    criticalLimit: 85
+    deviceID: ''
   });
 
-  const handleAddOpenChange = async (open: boolean) => {
+  const handleAddOpenChange = (open: boolean) => {
     setIsAddOpen(open);
     if (!open) {
       resetForm();
-    } else {
-      try {
-        const uid = auth.currentUser?.uid;
-        if (!uid) return;
-        const userSettingsSnap = await getDoc(doc(db, 'Settings', uid));
-        if (userSettingsSnap.exists()) {
-          const data = userSettingsSnap.data();
-          setFormData(prev => ({
-            ...prev,
-            safeLimit: data.safeHumidityLimit ?? 60,
-            criticalLimit: data.criticalHumidityLimit ?? 85
-          }));
-        }
-      } catch (err) {
-        console.error("Failed to fetch global settings fallback", err);
-      }
     }
   };
 
@@ -192,15 +174,13 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
         userId: uid,
         name: formData.name,
         deviceID: formData.deviceID,
-        safeLimit: Number(formData.safeLimit),
-        criticalLimit: Number(formData.criticalLimit),
         appliances: [
           { id: 'fan', name: 'Exhaust Fan', icon: 'fan', state: 'auto' }, 
           { id: 'dehumidifier', name: 'Dehumidifier', icon: 'dehumidifier', state: 'auto' }
         ]
       });
       setIsAddOpen(false);
-      setFormData({ name: '', deviceID: '', safeLimit: 60, criticalLimit: 85 });
+      setFormData({ name: '', deviceID: '' });
     } catch (err) {
       console.error("Failed to add room", err);
     }
@@ -212,9 +192,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
     try {
       await updateDoc(doc(db, 'Devices', editingRoom.id), {
         name: formData.name,
-        deviceID: formData.deviceID,
-        safeLimit: Number(formData.safeLimit),
-        criticalLimit: Number(formData.criticalLimit)
+        deviceID: formData.deviceID
       });
       setIsEditOpen(false);
       setEditingRoom(null);
@@ -235,14 +213,12 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
     setEditingRoom(room);
     setFormData({
       name: room.name || '',
-      deviceID: room.deviceID || '',
-      safeLimit: room.safeLimit ?? 60,
-      criticalLimit: room.criticalLimit ?? 85
+      deviceID: room.deviceID || ''
     });
     setIsEditOpen(true);
   };
 
-  const resetForm = () => setFormData({ name: '', deviceID: '', safeLimit: 60, criticalLimit: 85 });
+  const resetForm = () => setFormData({ name: '', deviceID: '' });
 
   // Calculate dynamic stats directly from the active cards reporting in
   const statuses = Object.values(roomStatuses);
@@ -290,16 +266,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
                   <label className="text-sm font-medium text-zinc-300">Device ID</label>
                   <input required value={formData.deviceID} onChange={e => setFormData({...formData, deviceID: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" placeholder="e.g. ESP32_01" />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Safe Humidity Limit (%)</label>
-                    <input type="number" required value={formData.safeLimit} onChange={e => setFormData({...formData, safeLimit: Number(e.target.value)})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Critical Limit (%)</label>
-                    <input type="number" required value={formData.criticalLimit} onChange={e => setFormData({...formData, criticalLimit: Number(e.target.value)})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500" />
-                  </div>
-                </div>
+
                 <div className="pt-4 flex justify-end">
                   <button type="submit" className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md transition-colors">
                     Save Room
@@ -332,16 +299,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
                   <label className="text-sm font-medium text-zinc-300">Device ID</label>
                   <input required value={formData.deviceID} onChange={e => setFormData({...formData, deviceID: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Safe Humidity Limit (%)</label>
-                    <input type="number" required value={formData.safeLimit} onChange={e => setFormData({...formData, safeLimit: Number(e.target.value)})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Critical Limit (%)</label>
-                    <input type="number" required value={formData.criticalLimit} onChange={e => setFormData({...formData, criticalLimit: Number(e.target.value)})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500" />
-                  </div>
-                </div>
+
                 <div className="pt-4 flex justify-end">
                   <button type="submit" className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md transition-colors">
                     Update Room
