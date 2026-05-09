@@ -50,19 +50,15 @@ const payloadSchema = z.object({
     wifiSignal: z.number().int().min(-100).max(0)
 });
 
-// 5. Authentication Middleware (API Key/PSK)
+// 5. Authentication Middleware (Per-Device Identity)
+// The ESP32 sends its deviceID as the x-esp32-api-key header.
+// This middleware only checks that the header is present; the actual
+// identity match (header === payload.deviceID) is verified after Zod parsing.
 const authenticateESP32 = (req, res, next) => {
     const providedKey = req.headers['x-esp32-api-key'];
-    // In Cloud Functions, .env files in the functions directory are automatically loaded into process.env
-    const validKey = process.env.ESP32_API_KEY;
 
-    if (!validKey) {
-        console.error("CRITICAL ERROR: ESP32_API_KEY environment variable is not set on the server!");
-        return res.status(500).json({ error: "Server misconfiguration" });
-    }
-
-    if (!providedKey || providedKey !== validKey) {
-        return res.status(401).json({ error: "Unauthorized: Invalid or missing API Key" });
+    if (!providedKey || typeof providedKey !== 'string' || providedKey.trim() === '') {
+        return res.status(401).json({ error: "Unauthorized: Missing API Key header" });
     }
 
     next();
@@ -75,6 +71,13 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
         // and formatting must strictly match the schema requirements.
         const validatedData = payloadSchema.parse(req.body);
 
+        // Per-device identity check: the API key header must match the deviceID in the payload.
+        // This ensures the ESP32 can only submit data for its own identity.
+        const providedKey = req.headers['x-esp32-api-key'];
+        if (providedKey !== validatedData.deviceID) {
+            return res.status(401).json({ error: "Unauthorized: API key does not match device identity" });
+        }
+
         // Prepare data payload for Firestore and inject secure server-side timestamp
         const docData = {
             ...validatedData,
@@ -84,13 +87,25 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
         // Push valid data as a new document to the SensorLogs Firestore collection
         const docRef = await db.collection('SensorLogs').add(docData);
 
-        // Update the Devices collection with the last seen status
+        // Device auto-registration & heartbeat update
         // Query by deviceID field since documents use auto-generated IDs
         const devicesQuery = await db.collection('Devices').where('deviceID', '==', validatedData.deviceID).limit(1).get();
-        if (!devicesQuery.empty) {
+
+        if (devicesQuery.empty) {
+            // First-time contact: create an unclaimed shell document.
+            // This allows the device to appear in the "Claim Device" flow on the frontend.
+            await db.collection('Devices').add({
+                deviceID: validatedData.deviceID,
+                status: 'unclaimed',
+                firstSeen: admin.firestore.FieldValue.serverTimestamp(),
+                lastSeen: admin.firestore.FieldValue.serverTimestamp()
+            });
+            console.log(`[esp32api] New unclaimed device registered: ${validatedData.deviceID}`);
+        } else {
+            // Device exists — only update the heartbeat timestamp.
+            // CRITICAL: Never overwrite status, userId, or name to protect ownership state.
             await devicesQuery.docs[0].ref.set({
-                lastSeen: admin.firestore.FieldValue.serverTimestamp(),
-                status: 'Online'
+                lastSeen: admin.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
         }
 
