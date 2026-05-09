@@ -1,94 +1,174 @@
-# MoldGuard IoT Dashboard & Alert System
+# MoldGuard — Smart Mold Prevention System
 
-A complete smart home monitoring environment designed to track humidity and temperature across multiple rooms dynamically, predicting and alerting users to critical mold risks before they become a hazard. 
-
-This project is broken into three distinct environments:
-1. **The React/Vite Frontend Dashboard** 
-2. **The Node.js Watchdog Alert Worker**
-3. **The Node.js ESP32 IoT Middleware Bridge**
+**An end-to-end data pipeline demonstrating IoT, Edge Computing, Serverless Cloud Computing, SaaS, and a Big Data Analytics Pipeline.**
 
 ---
 
-## 1. Frontend Dashboard Setup
+## Project Overview
 
-The dashboard is built with React, Vite, TailwindCSS, and synced in real-time with Firebase.
+MoldGuard is a full-stack smart environment monitoring system designed to predict and prevent mold growth in residential and commercial indoor spaces. The system ingests real-time micro-climate telemetry from ESP32-based IoT sensor nodes, processes it through a serverless cloud backend, and renders actionable insights on a modern SaaS dashboard — all while feeding historical data into a Big Data analytics pipeline for multi-factor biological risk assessment.
 
-### Installation
-From the root directory (`/MoldProject`):
+The architecture is divided into four distinct engineering pillars:
+
+1. **IoT & Edge Computing** — Hardware sensor nodes running local edge logic for autonomous ventilation control.
+2. **Cloud Backend & Middleware** — Serverless Cloud Functions handling ingestion, alerting, and event-driven workflows.
+3. **SaaS Frontend** — A real-time React dashboard for telemetry visualization, predictive risk monitoring, and system configuration.
+4. **Big Data Analytics Pipeline** — An automated ETL and analysis workflow running on Hadoop (HDFS) with Python-based biological risk modeling.
+
+---
+
+## Comprehensive Tech Stack
+
+| Layer | Technologies |
+|---|---|
+| **IoT & Edge** | C++, ESP32 Microcontroller, DHT22 (Temperature & Humidity), LDR (Light Sensor), Wokwi Simulator |
+| **Web Frontend (SaaS)** | React, Vite, Tailwind CSS, Recharts, Lucide-React |
+| **Cloud Backend (PaaS/BaaS)** | Google Firebase (Firestore, Authentication, Hosting) |
+| **Middleware** | Node.js Serverless Cloud Functions, Nodemailer (SMTP) |
+| **Big Data (IaaS)** | GCP Ubuntu Virtual Machines, Apache Hadoop (HDFS), Python (Pandas), Bash |
+
+---
+
+## The 4 System Pillars
+
+### Pillar 1 — IoT & Edge Computing
+
+The ESP32 microcontroller serves as the edge computing node, reading environmental data from a **DHT22** sensor (temperature and relative humidity) and an **LDR** photoresistor (ambient light level). All sensor data is transmitted to the cloud backend via Wi-Fi over HTTPS.
+
+**Edge Logic (Local Autonomous Control):**
+
+The firmware implements threshold-based actuator control directly on the microcontroller, eliminating dependency on cloud round-trips for time-critical responses:
+
+- **Fan activation** at **≥ 70% RH** — initiates forced air circulation to lower localized humidity.
+- **Dehumidifier activation** at **≥ 85% RH** — engages active moisture extraction when passive ventilation is insufficient.
+
+**Hardware Design Decision — ADC2 Pin Avoidance:**
+
+The LDR analog sensor is deliberately wired to an **ADC1** GPIO pin (e.g., GPIO 34 or 36). This is a critical hardware-level design choice: on the ESP32, **ADC2 pins are shared with the Wi-Fi radio driver** and become unavailable when Wi-Fi is active. Routing the LDR to an ADC2 pin would result in unpredictable analog reads or complete read failures during Wi-Fi transmission cycles. By constraining the LDR to ADC1, the system guarantees stable, conflict-free analog-to-digital conversion concurrent with continuous Wi-Fi telemetry uploads.
+
+---
+
+### Pillar 2 — Cloud Backend & Serverless Middleware
+
+The cloud layer is built entirely on **Google Firebase**, leveraging Firestore as a NoSQL document database and Cloud Functions (2nd gen) as the serverless compute platform. Three distinct Cloud Functions form the middleware:
+
+1. **`esp32api`** — An Express.js HTTP endpoint hardened with Helmet, CORS, rate limiting, Zod schema validation, and a Pre-Shared Key (PSK) authentication middleware. Accepts sensor payloads from ESP32 devices, injects secure server-side timestamps, and writes validated documents to the `SensorLogs` Firestore collection.
+
+2. **`checkMoldRisk`** — An event-driven Firestore trigger (`onDocumentCreated`) that fires on every new `SensorLogs` entry. It performs a multi-tenant device lookup to resolve the owning `userId`, reads the user's dynamic threshold from the `Settings` collection, and dispatches a styled HTML critical humidity alert email via Nodemailer when the threshold is exceeded.
+
+3. **`notifyPredictiveAlert`** — A secondary Firestore trigger listening on the `AnalyticsAlerts` collection. When the Big Data pipeline writes a new predictive risk document, this function resolves the device owner, evaluates the severity suppression gate, and sends a predictive warning email.
+
+**Anti-Spam Mechanisms:**
+
+To prevent alert fatigue from sustained high-humidity environments, the system employs two distinct suppression layers:
+
+- **Hysteresis Algorithm** — The `checkMoldRisk` function records a `lastAlertSent` timestamp on the device document after each successful email dispatch. Subsequent triggers within a **3-hour cooldown window** are silently suppressed, preventing rapid-fire duplicate emails while humidity remains elevated.
+
+- **Dynamic Array-Based Email Suppression Gate** — The `notifyPredictiveAlert` function reads the user's `emailAlertLevels` array from Firestore (e.g., `['Medium', 'High']`). The incoming alert's `riskLevel` is checked against this array using an `Array.includes()` gate. If the risk level is not in the user's selected preferences, the email is suppressed. This gives users granular, multi-select control over which severity tiers generate email notifications.
+
+---
+
+### Pillar 3 — SaaS Frontend Dashboard
+
+The frontend is a single-page React application built with **Vite** and styled with **Tailwind CSS**. It provides a real-time operational dashboard with multi-tenant data isolation enforced through Firebase Authentication and Firestore `where` clause filtering.
+
+**Core Features:**
+
+- **Real-Time Telemetry Listeners** — All room data, sensor logs, and device statuses are rendered via Firestore `onSnapshot` real-time listeners, ensuring the dashboard reflects the latest environmental state without manual refresh.
+
+- **Predictive Dual-Risk Visualization** — The Analytics page displays predictive alerts generated by the Big Data pipeline. Each alert card renders two independent probability progress bars:
+  - **General Mold Risk** (0–100%) — Probability of common mold colonization.
+  - **Toxic Black Mold Risk** (0–100%) — Probability of *Stachybotrys chartarum* colonization.
+
+  Progress bars are color-coded by severity: **emerald** (< 40%), **amber** (40–79%), and **red** (≥ 80%).
+
+- **Historical Trend Aggregation** — Interactive area charts powered by **Recharts** display humidity and temperature trends over configurable timeframes (24h, 7d, 30d), with data aggregated into time-bucket averages.
+
+- **Robust Threshold Configuration** — The Settings page exposes **4 distinct biological limit fields** that users can configure independently:
+  1. General Mold — Safe Limit (% RH)
+  2. General Mold — Critical Limit (% RH)
+  3. Toxic Black Mold — Safe Limit (% RH)
+  4. Toxic Black Mold — Critical Limit (% RH)
+
+  Client-side validation enforces that Safe < Critical for each mold type, and a **hard cap of 90% RH** is enforced on the Black Mold Critical Limit as the biological ceiling for guaranteed *Stachybotrys chartarum* colonization.
+
+- **Multi-Select Notification Preferences** — Users can independently toggle email notifications for **Low**, **Medium**, and **High** risk levels via a multi-select UI, which persists to Firestore and is enforced server-side by the Cloud Function suppression gate.
+
+---
+
+### Pillar 4 — Big Data Analytics Pipeline
+
+The Big Data tier runs on **GCP Ubuntu Virtual Machines** provisioned with **Apache Hadoop** (HDFS) for distributed storage. An automated **ETL (Extract, Transform, Load)** process, orchestrated via **Bash** scripts, periodically exports sensor telemetry from Firestore into HDFS for batch analysis.
+
+**Analytical Model — Effective Environmental Load:**
+
+The core analytics engine is a **Python** script leveraging **Pandas** for data manipulation. It calculates the **"Effective Environmental Load"** — a composite risk score that amplifies raw humidity readings using biologically-motivated environmental multipliers:
+
+- **Thermophilic Multiplier** — Temperatures within the optimal mold growth range (typically 25–30°C) amplify the effective humidity contribution. Readings outside this range apply a lower multiplier, reflecting reduced biological viability.
+
+- **Photophobic Multiplier** — Low light conditions (indicative of enclosed, poorly-ventilated spaces where mold thrives) amplify the risk score. Higher ambient light levels reduce the multiplier, reflecting the inhibitory effect of UV exposure on mold sporulation.
+
+The final Effective Environmental Load is compared against user-configured thresholds to produce a risk classification (Low, Medium, or High), which is written back to the `AnalyticsAlerts` Firestore collection to trigger downstream email notifications and dashboard visualization.
+
+**Biological Hard-Cap Override:**
+
+Regardless of user-configured thresholds, the analytics pipeline enforces a strict **90% RH biological hard-cap**. Any reading at or above this level is automatically classified as the highest risk tier, overriding all user preferences. This reflects the scientific consensus that 90% relative humidity guarantees active *Stachybotrys chartarum* (Toxic Black Mold) colonization on cellulose-based building materials.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **Node.js** (v18 or higher recommended)
+- **npm** (bundled with Node.js)
+- A configured **Firebase** project with Firestore, Authentication, and Hosting enabled
+
+### 1. Frontend Dashboard (SaaS)
+
+From the project root directory:
+
 ```bash
 npm install
 ```
 
-### Running the Dashboard
+Start the Vite development server:
+
 ```bash
 npm run dev
 ```
-The application will launch locally (typically at `http://localhost:5173`). All room limits, global settings, and devices are pulled directly from Google Firebase in real-time.
 
----
+The application will launch locally at `http://localhost:5173`. All device data, room configurations, and user settings are synchronized in real-time with Google Firebase.
 
-## 2. Watchdog Alert System (Email Alerts)
+### 2. Cloud Functions (Serverless Middleware)
 
-To avoid sending hundreds of emails when a room stays humid for a long time, we run an independent Node.js watchdog script (`/alert-worker`). This script tracks 'Threshold Crossing' events in real-time and securely fires off automated **Nodemailer** warnings using a Gmail transport.
+Navigate into the Cloud Functions directory:
 
-### Installation
-Navigate into the alert worker folder:
 ```bash
-cd alert-worker
+cd functions
 npm install
 ```
 
-### Configuring Gmail Credentials
-For security reasons, email credentials are not stored in version control. 
+To deploy the functions to Firebase:
 
-1. Copy the `.env.example` file and rename it to exactly `.env`.
-   ```bash
-   # Inside the alert-worker directory
-   cp .env.example .env
-   ```
-2. Open your new `.env` file.
-3. Replace the placeholder values with your real Gmail address and a **16-character Google App Password**. 
-   > **Note:** If you do not have an App Password, you must enable 2-Step Verification in your Google Account Settings, go to "App Passwords", and generate a new one specifically for this script.
-
-### Running the Alert Worker
-Once your `.env` is configured, start the persistent watchdog alongside your frontend:
 ```bash
-node --env-file=.env index.js
+firebase deploy --only functions
 ```
-The script will announce:
-`[Watchdog Loaded] Listening to real-time events.`
 
-It will silently monitor all incoming Firebase sensor logs and send alerts to the `alertEmail` configured globally in your Dashboard Settings.
+> **Note:** Cloud Functions require environment variables (`ESP32_API_KEY`, `SMTP_USER`, `SMTP_PASS`, `ALERT_FROM_EMAIL`) to be configured in the `functions/.env` file. Copy `functions/.env.example` and populate with your credentials. These are automatically loaded by the Firebase runtime.
+
+### 3. Firebase Configuration
+
+Copy the root-level `.env.example` to `.env` and populate your Firebase project credentials:
+
+```bash
+cp .env.example .env
+```
+
+> **Security:** Environment files (`.env`) are excluded from version control via `.gitignore`. Never commit credentials to the repository.
 
 ---
 
-## 3. ESP32 IoT Middleware Bridge
+## License
 
-Since ESP32 devices cannot securely interface with Firebase Firestore directly using native client SDKs without tremendous overhead, we run a lightweight Node.js Express server to act as a secure intermediary layer. 
-
-The ESP32 posts simple JSON payloads over HTTP to this server. The server rigorously sanitizes the IoT payloads using strict `zod` schemas, verifies your Pre-Shared Key (PSK), and gracefully pushes secure timestamps and clean data up to Firebase using the Admin SDK.
-
-### Installation
-Navigate into the middleware folder:
-```bash
-cd esp32-middleware
-npm install
-```
-
-### Configuring Server Security Properties
-To authenticate your ESP32 microcontrollers and allow server-side database writes, you must provide your security variables:
-
-1. Copy the `.env.example` file and rename it to `.env`.
-   ```bash
-   cp .env.example .env
-   ```
-2. Open your new `.env` file and configure your API parameters:
-   * **`ESP32_API_KEY`**: Invent a secure Pre-Shared Key string. This exact string must be programmed into your ESP32 C++ code inside the `x-esp32-api-key` HTTP POST header block.
-   * **`GOOGLE_APPLICATION_CREDENTIALS`**: Go to your Firebase Project Dashboard -> Project Settings -> Service Accounts -> "Generate New Private Key". Download the JSON file to your server and provide the absolute path.
-
-### Running the Middleware
-With your environment secured, launch the Express bridge server:
-```bash
-npm run dev
-```
-The server defaults to port 3000 to listen for incoming ESP32 hardware payloads natively.
+This project was developed as part of an academic coursework submission and is intended for educational and portfolio demonstration purposes.
