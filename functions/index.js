@@ -24,7 +24,7 @@ app.use(helmet()); // Secure Express HTTP headers
 // CORS configuration to only accept POST requests
 const corsOptions = {
     origin: '*', // Adjust to match specific frontend/origin if required
-    methods: ['POST'],
+    methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'x-esp32-api-key'],
 };
 
@@ -150,10 +150,42 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
     }
 });
 
-// 7. Export the serverless HTTP Function
+// 7. Lightweight Fast-Polling Status Endpoint (Read-Only Heartbeat)
+// Returns only control fields — no writes to SensorLogs or timestamp updates.
+app.get('/api/status/:deviceId', cors(corsOptions), async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+
+        if (!deviceId || typeof deviceId !== 'string' || deviceId.trim() === '') {
+            return res.status(400).json({ error: 'Missing or invalid deviceId parameter.' });
+        }
+
+        const devicesQuery = await db.collection('Devices')
+            .where('deviceID', '==', deviceId)
+            .limit(1)
+            .get();
+
+        if (devicesQuery.empty) {
+            return res.status(404).json({ error: `Device not found: ${deviceId}` });
+        }
+
+        const deviceData = devicesQuery.docs[0].data();
+
+        return res.status(200).json({
+            mode: deviceData.mode || 'auto',
+            fanOverride: deviceData.fanOverride || 'OFF',
+            dehumidifierOverride: deviceData.dehumidifierOverride || 'OFF'
+        });
+    } catch (error) {
+        console.error('[status] Firestore read error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 8. Export the serverless HTTP Function
 exports.esp32api = onRequest({ region: 'asia-southeast2', maxInstances: 10 }, app);
 
-// 8. Event-Driven Alert Worker (Firestore Trigger)
+// 9. Event-Driven Alert Worker (Firestore Trigger)
 exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', region: 'asia-southeast2' }, async (event) => {
     const logData = event.data.data();
 
@@ -305,7 +337,7 @@ exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', regi
     }
 });
 
-// 9. Predictive Analytics Alert Worker (Firestore Trigger)
+// 10. Predictive Analytics Alert Worker (Firestore Trigger)
 exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{alertId}', region: 'asia-southeast2' }, async (event) => {
     const alertData = event.data.data();
 
