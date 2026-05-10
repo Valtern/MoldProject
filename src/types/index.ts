@@ -7,8 +7,7 @@ export interface GaugeData {
   min: number;
   max: number;
   unit: string;
-  label: string;
-  caption?: string;
+  type: 'temperature' | 'humidity' | 'lightLevel';
 }
 
 export interface HumidityDataPoint {

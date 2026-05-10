@@ -50,11 +50,13 @@ function DashboardPage({
               data={roomData.temperature}
               index={0}
               status={roomData.status}
+              safeLimit={roomData.safeLimit}
             />
             <StatCard
               data={roomData.humidity}
               index={1}
               status={roomData.status}
+              safeLimit={roomData.safeLimit}
             />
             <StatCard
               data={roomData.lightLevel}
@@ -86,7 +88,7 @@ function DashboardPage({
 }
 
 function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
   const [availableRooms, setAvailableRooms] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<RoomData | null>(null);
@@ -179,9 +181,9 @@ function App() {
               criticalLimit: freshRoom.criticalLimit,
               status: 'safe',
               lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              temperature: { value: 0, min: 0, max: 50, unit: '°C', label: t('dashboard.stats.temperature.label'), caption: t('dashboard.stats.temperature.caption.pending') },
-              humidity: { value: 0, min: 0, max: 100, unit: '%', label: t('dashboard.stats.humidity.label'), caption: t('dashboard.stats.humidity.caption.pending') },
-              lightLevel: { value: 0, min: 0, max: 1000, unit: 'lux', label: t('dashboard.stats.lightLevel.label'), caption: t('dashboard.stats.lightLevel.caption.pending') },
+              temperature: { value: 0, min: 0, max: 50, unit: '°C', type: 'temperature' },
+              humidity: { value: 0, min: 0, max: 100, unit: '%', type: 'humidity' },
+              lightLevel: { value: 0, min: 0, max: 1000, unit: 'lux', type: 'lightLevel' },
               humidityHistory: [],
               appliances: freshRoom.appliances || [],
             } as any;
@@ -214,9 +216,9 @@ function App() {
         criticalLimit: selectedRoom.criticalLimit,
         status: 'safe',
         lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        temperature: { value: 0, min: 0, max: 50, unit: '°C', label: t('dashboard.stats.temperature.label'), caption: t('dashboard.stats.temperature.caption.pending') },
-        humidity: { value: 0, min: 0, max: 100, unit: '%', label: t('dashboard.stats.humidity.label'), caption: t('dashboard.stats.humidity.caption.pending') },
-        lightLevel: { value: 0, min: 0, max: 1000, unit: 'lux', label: t('dashboard.stats.lightLevel.label'), caption: t('dashboard.stats.lightLevel.caption.pending') },
+        temperature: { value: 0, min: 0, max: 50, unit: '°C', type: 'temperature' },
+        humidity: { value: 0, min: 0, max: 100, unit: '%', type: 'humidity' },
+        lightLevel: { value: 0, min: 0, max: 1000, unit: 'lux', type: 'lightLevel' },
         humidityHistory: [],
         appliances: selectedRoom.appliances || [],
       } as any);
@@ -299,17 +301,14 @@ function App() {
             temperature: {
               ...prev.temperature,
               value: Math.round(newTemp * 10) / 10,
-              caption: newTemp < 18 ? t('dashboard.stats.temperature.caption.cool') : newTemp > 26 ? t('dashboard.stats.temperature.caption.warm') : t('dashboard.stats.temperature.caption.comfortable'),
             },
             humidity: {
               ...prev.humidity,
               value: Math.round(newHumidity),
-              caption: newHumidity < 40 ? t('dashboard.stats.humidity.caption.dry') : newHumidity >= safeLimit ? t('dashboard.stats.humidity.caption.humid') : t('dashboard.stats.humidity.caption.optimal'),
             },
             lightLevel: {
               ...prev.lightLevel,
               value: Math.round(newLight),
-              caption: newLight < 100 ? t('dashboard.stats.lightLevel.caption.dim') : newLight > 500 ? t('dashboard.stats.lightLevel.caption.bright') : t('dashboard.stats.lightLevel.caption.moderate'),
             },
           };
         });
@@ -398,6 +397,7 @@ function App() {
         }
         return (
           <DashboardPage
+            key={`dashboard-${i18n.language}`}
             roomData={roomData}
             onApplianceStateChange={handleApplianceStateChange}
           />

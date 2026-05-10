@@ -163,7 +163,7 @@
     "summary": {
       "online": "Daring",
       "warning": "Peringatan",
-      "offline": "Luring"
+      "offline": "Mati"
     },
     "edit": {
       "title": "Edit Ruangan",
@@ -206,7 +206,7 @@
     },
     "status": {
       "online": "Daring",
-      "offline": "Luring",
+      "offline": "Mati",
       "unstable": "Tidak Stabil"
     },
     "wifi": {
@@ -214,12 +214,12 @@
       "good": "Baik",
       "fair": "Cukup",
       "poor": "Lemah",
-      "offline": "Luring"
+      "offline": "Mati"
     },
     "legend": {
       "online": "Daring (< 5m)",
       "unstable": "Tidak Stabil (5-15m)",
-      "offline": "Luring (> 15m)"
+      "offline": "Mati (> 15m)"
     },
     "noDevices": "Belum ada perangkat yang diklaim. Gunakan formulir di atas untuk mengklaim ESP32 pertama Anda."
   },
