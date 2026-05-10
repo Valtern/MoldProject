@@ -8,6 +8,8 @@ export interface GaugeData {
   max: number;
   unit: string;
   type: 'temperature' | 'humidity' | 'lightLevel';
+  label?: string;
+  caption?: string;
 }
 
 export interface HumidityDataPoint {
