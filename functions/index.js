@@ -91,12 +91,22 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
         // Query by deviceID field since documents use auto-generated IDs
         const devicesQuery = await db.collection('Devices').where('deviceID', '==', validatedData.deviceID).limit(1).get();
 
+        // Default control values for unclaimed / newly registered devices
+        let deviceControls = {
+            mode: 'auto',
+            fanOverride: 'OFF',
+            dehumidifierOverride: 'OFF'
+        };
+
         if (devicesQuery.empty) {
             // First-time contact: create an unclaimed shell document.
             // This allows the device to appear in the "Claim Device" flow on the frontend.
             await db.collection('Devices').add({
                 deviceID: validatedData.deviceID,
                 status: 'unclaimed',
+                mode: 'auto',
+                fanOverride: 'OFF',
+                dehumidifierOverride: 'OFF',
                 firstSeen: admin.firestore.FieldValue.serverTimestamp(),
                 lastSeen: admin.firestore.FieldValue.serverTimestamp()
             });
@@ -107,12 +117,23 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
             await devicesQuery.docs[0].ref.set({
                 lastSeen: admin.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
+
+            // Extract control fields from the device document for the response
+            const deviceData = devicesQuery.docs[0].data();
+            deviceControls = {
+                mode: deviceData.mode || 'auto',
+                fanOverride: deviceData.fanOverride || 'OFF',
+                dehumidifierOverride: deviceData.dehumidifierOverride || 'OFF'
+            };
         }
 
         return res.status(201).json({
             success: true,
             message: "Payload validated and successfully saved to Firestore.",
-            docId: docRef.id
+            docId: docRef.id,
+            mode: deviceControls.mode,
+            fanOverride: deviceControls.fanOverride,
+            dehumidifierOverride: deviceControls.dehumidifierOverride
         });
 
     } catch (error) {

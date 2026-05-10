@@ -75,6 +75,7 @@ function DashboardPage({
             <ApplianceControlPanel
               appliances={roomData.appliances || []}
               onStateChange={onApplianceStateChange}
+              deviceID={roomData.deviceID}
             />
           </div>
         </section>
