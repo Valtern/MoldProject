@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Wifi, AlertCircle, CheckCircle2, Thermometer, Droplets, Plus, Search, Loader2 } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, where, orderBy, limit, onSnapshot, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -12,15 +13,19 @@ const wifiConfig = {
   Offline: { icon: AlertCircle, color: 'text-zinc-500 dark:text-zinc-400', bg: 'bg-zinc-100 dark:bg-zinc-800' },
 };
 
-const statusConfig = {
-  online: { label: 'Online', className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
-  offline: { label: 'Offline', className: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700' },
-  warning: { label: 'Unstable', className: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
-};
+function getStatusConfig(t: (key: string) => string) {
+  return {
+    online: { label: t('devices.status.online'), className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
+    offline: { label: t('devices.status.offline'), className: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700' },
+    warning: { label: t('devices.status.unstable'), className: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
+  };
+}
 
 function DeviceTableRow({ room }: { room: any }) {
+  const { t } = useTranslation();
   const [latestLog, setLatestLog] = useState<any>(null);
   const [status, setStatus] = useState<'online' | 'warning' | 'offline'>('offline');
+  const statusConfig = getStatusConfig(t);
 
   // Fetch the 1 most recent log for this device
   useEffect(() => {
@@ -40,8 +45,12 @@ function DeviceTableRow({ room }: { room: any }) {
       } else {
         setLatestLog(null);
       }
-    }, (error) => {
-      console.error('[DevicesPage] Listener error for', room.deviceID, ':', error);
+    }, (error: any) => {
+      if (error?.code === 'permission-denied') {
+        console.warn('[DevicesPage] Listener permission denied for', room.deviceID, ':', error.message);
+      } else {
+        console.error('[DevicesPage] Listener error for', room.deviceID, ':', error);
+      }
     });
 
     return () => unsubscribe();
@@ -84,9 +93,8 @@ function DeviceTableRow({ room }: { room: any }) {
     else if (sig >= -80) wifiStrengthKey = 'Fair';
     else wifiStrengthKey = 'Poor';
   } else if (status !== 'offline') {
-     // If they don't have wifi tracking yet but are online
      wifiStrengthKey = 'Good';
-     wifiSignalText = 'Active';
+     wifiSignalText = t('devices.table.active');
   }
 
   const wifi = wifiConfig[wifiStrengthKey];
@@ -100,7 +108,7 @@ function DeviceTableRow({ room }: { room: any }) {
           <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
             <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">IoT</span>
           </div>
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">{room.deviceID || 'Unassigned'}</span>
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">{room.deviceID || t('devices.table.unassigned')}</span>
         </div>
       </td>
       <td className="px-4 py-3.5">
@@ -115,7 +123,7 @@ function DeviceTableRow({ room }: { room: any }) {
             </span>
           </div>
         ) : (
-          <span className="text-sm text-zinc-600">Waiting for data...</span>
+          <span className="text-sm text-zinc-600">{t('devices.table.waiting')}</span>
         )}
       </td>
       <td className="px-4 py-3.5">
@@ -153,6 +161,7 @@ function DeviceTableRow({ room }: { room: any }) {
 type ClaimStatus = 'idle' | 'loading' | 'success' | 'error';
 
 function ClaimDeviceCard() {
+  const { t } = useTranslation();
   const [deviceIdInput, setDeviceIdInput] = useState('');
   const [roomNameInput, setRoomNameInput] = useState('');
   const [claimStatus, setClaimStatus] = useState<ClaimStatus>('idle');
@@ -172,7 +181,7 @@ function ClaimDeviceCard() {
       const uid = auth.currentUser?.uid;
       if (!uid) {
         setClaimStatus('error');
-        setErrorMessage('You must be logged in to claim a device.');
+        setErrorMessage(t('devices.claimDevice.error.notLoggedIn'));
         return;
       }
 
@@ -185,7 +194,7 @@ function ClaimDeviceCard() {
 
       if (snapshot.empty) {
         setClaimStatus('error');
-        setErrorMessage('No unclaimed device found with this ID. Ensure your ESP32 is connected to Wi-Fi and hasn\'t already been claimed.');
+        setErrorMessage(t('devices.claimDevice.error.notFound'));
         return;
       }
 
@@ -209,7 +218,7 @@ function ClaimDeviceCard() {
       setClaimStatus('success');
       setDeviceIdInput('');
       setRoomNameInput('');
-      toast.success(`Device "${trimmedId}" claimed as "${trimmedName}"!`);
+      toast.success(t('devices.claimDevice.success'));
 
       // Reset back to idle after a short delay
       setTimeout(() => setClaimStatus('idle'), 3000);
@@ -219,9 +228,9 @@ function ClaimDeviceCard() {
       setClaimStatus('error');
 
       if (error?.code === 'permission-denied') {
-        setErrorMessage('Permission denied. The device may already be claimed or you are not authorized.');
+        setErrorMessage(t('devices.claimDevice.error.permissionDenied'));
       } else {
-        setErrorMessage('An unexpected error occurred. Please try again.');
+        setErrorMessage(t('devices.claimDevice.error.generic'));
       }
     }
   };
@@ -230,16 +239,16 @@ function ClaimDeviceCard() {
     <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-4 md:mb-6">
       <div className="flex items-center gap-2 mb-4">
         <Plus className="w-4 h-4 text-emerald-500" />
-        <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Claim a Device</h2>
+        <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{t('devices.claimDevice.title')}</h2>
       </div>
       <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
-        Enter the Custom Device ID assigned on your ESP32 hardware via the captive portal setup. The device must have connected to the server at least once to be discoverable.
+        {t('devices.claimDevice.description')}
       </p>
 
       <form onSubmit={handleClaim} className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 space-y-1.5">
           <label htmlFor="claim-device-id" className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            Device ID
+            {t('devices.claimDevice.deviceId')}
           </label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
@@ -248,7 +257,7 @@ function ClaimDeviceCard() {
               type="text"
               value={deviceIdInput}
               onChange={(e) => { setDeviceIdInput(e.target.value); setClaimStatus('idle'); setErrorMessage(''); }}
-              placeholder="e.g. MasterBed_01"
+              placeholder={t('devices.claimDevice.deviceIdPlaceholder')}
               required
               disabled={claimStatus === 'loading'}
               className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md pl-10 pr-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 disabled:opacity-50"
@@ -258,14 +267,14 @@ function ClaimDeviceCard() {
 
         <div className="flex-1 space-y-1.5">
           <label htmlFor="claim-room-name" className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            Friendly Room Name
+            {t('devices.claimDevice.roomName')}
           </label>
           <input
             id="claim-room-name"
             type="text"
             value={roomNameInput}
             onChange={(e) => { setRoomNameInput(e.target.value); setClaimStatus('idle'); setErrorMessage(''); }}
-            placeholder="e.g. Master Bedroom"
+            placeholder={t('devices.claimDevice.roomNamePlaceholder')}
             required
             disabled={claimStatus === 'loading'}
             className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 disabled:opacity-50"
@@ -281,12 +290,12 @@ function ClaimDeviceCard() {
             {claimStatus === 'loading' ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Claiming...
+                {t('devices.claimDevice.claiming')}
               </>
             ) : (
               <>
                 <Plus className="w-4 h-4" />
-                Claim Device
+                {t('devices.claimDevice.claim')}
               </>
             )}
           </button>
@@ -304,7 +313,7 @@ function ClaimDeviceCard() {
       {claimStatus === 'success' && (
         <div className="mt-3 flex items-center gap-2 p-3 rounded-md bg-emerald-500/10 border border-emerald-500/20">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <p className="text-xs text-emerald-400">Device claimed successfully! It will now appear in your device list and room overview.</p>
+          <p className="text-xs text-emerald-400">{t('devices.claimDevice.success')}</p>
         </div>
       )}
     </div>
@@ -316,14 +325,15 @@ interface DevicesPageProps {
 }
 
 export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
+  const { t } = useTranslation();
   return (
     <div className="w-full max-w-[1920px] mx-auto transition-all">
       <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
       {/* Page Header */}
       <div className="mb-4 md:mb-6">
-        <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Device Controls</h1>
+        <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">{t('devices.title')}</h1>
         <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-          Manage and control your connected devices and appliances
+          {t('devices.subtitle')}
         </p>
       </div>
 
@@ -332,7 +342,7 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
 
       {availableRooms.length === 0 ? (
         <div className="text-center py-12 border border-slate-200/60 dark:border-zinc-800 rounded-lg border-dashed">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">No claimed devices yet. Use the form above to claim your first ESP32 device.</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">{t('devices.noDevices')}</p>
         </div>
       ) : (
         <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg overflow-hidden">
@@ -342,19 +352,19 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
             <thead>
               <tr className="bg-slate-50/80 dark:bg-zinc-900/60 border-b border-slate-200/60 dark:border-white/5">
                 <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Device ID
+                  {t('devices.table.deviceId')}
                 </th>
                 <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Assigned Room
+                  {t('devices.table.assignedRoom')}
                 </th>
                 <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Wi-Fi Signal
+                  {t('devices.table.wifiSignal')}
                 </th>
                 <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Sensors
+                  {t('devices.table.sensors')}
                 </th>
                 <th className="text-left px-3 md:px-4 py-2 md:py-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Status
+                  {t('devices.table.status')}
                 </th>
               </tr>
             </thead>
@@ -375,15 +385,15 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
          <div className="mt-3 md:mt-4 flex flex-wrap gap-3 md:gap-6 text-xs md:text-sm">
            <div className="flex items-center gap-2">
              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-             <span className="text-zinc-500 dark:text-zinc-400">Online (&lt; 5m)</span>
+             <span className="text-zinc-500 dark:text-zinc-400">{t('devices.legend.online')}</span>
            </div>
            <div className="flex items-center gap-2">
              <span className="w-2 h-2 rounded-full bg-amber-500" />
-             <span className="text-zinc-500 dark:text-zinc-400">Unstable (5-15m)</span>
+             <span className="text-zinc-500 dark:text-zinc-400">{t('devices.legend.unstable')}</span>
            </div>
            <div className="flex items-center gap-2">
              <span className="w-2 h-2 rounded-full bg-zinc-500" />
-             <span className="text-zinc-500 dark:text-zinc-400">Offline (&gt; 15m)</span>
+             <span className="text-zinc-500 dark:text-zinc-400">{t('devices.legend.offline')}</span>
            </div>
          </div>
       )}

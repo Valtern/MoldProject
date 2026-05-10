@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { gsap } from 'gsap';
 import { Fan, Droplets } from 'lucide-react';
 import { doc, updateDoc, onSnapshot, collection, query, where, limit } from 'firebase/firestore';
@@ -53,6 +54,7 @@ function ModePillToggle({
   mode: 'auto' | 'manual';
   onChange: (newMode: 'auto' | 'manual') => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 p-0.5 text-xs font-medium">
       <button
@@ -64,7 +66,7 @@ function ModePillToggle({
             : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}
         `}
       >
-        Auto
+        {t('dashboard.appliances.auto')}
       </button>
       <button
         onClick={() => onChange('manual')}
@@ -75,13 +77,14 @@ function ModePillToggle({
             : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}
         `}
       >
-        Manual
+        {t('dashboard.appliances.manual') || 'Manual'}
       </button>
     </div>
   );
 }
 
 export function ApplianceControlPanel({ appliances, deviceID }: ApplianceControlPanelProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
 
   // ── Firestore-driven state ──
@@ -106,8 +109,15 @@ export function ApplianceControlPanel({ appliances, deviceID }: ApplianceControl
         setFanOverride((data.fanOverride as 'ON' | 'OFF') || 'OFF');
         setDehumidifierOverride((data.dehumidifierOverride as 'ON' | 'OFF') || 'OFF');
       }
-    }, (error) => {
-      console.error('[ApplianceControlPanel] Device listener error:', error);
+    }, (error: any) => {
+      // Infrastructure/config issues shouldn't spam the error counter
+      if (error?.code === 'permission-denied') {
+        console.warn('[ApplianceControlPanel] Firestore permission denied — check security rules:', error.message);
+      } else if (error?.message?.includes('index') || error?.code === 'failed-precondition') {
+        console.warn('[ApplianceControlPanel] Firestore index required:', error.message);
+      } else {
+        console.error('[ApplianceControlPanel] Device listener error:', error);
+      }
     });
 
     return () => unsubscribe();
@@ -220,7 +230,7 @@ export function ApplianceControlPanel({ appliances, deviceID }: ApplianceControl
       {/* Header with Mode toggle */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          Appliance Control
+          {t('dashboard.appliances.title')}
         </h2>
         <ModePillToggle mode={mode} onChange={handleModeChange} />
       </div>
@@ -234,8 +244,8 @@ export function ApplianceControlPanel({ appliances, deviceID }: ApplianceControl
       `}>
         <span className={`w-1.5 h-1.5 rounded-full ${mode === 'auto' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
         {mode === 'auto'
-          ? 'Devices are controlled automatically by the ESP32 logic.'
-          : 'Manual override is active — you control the devices.'}
+          ? t('dashboard.appliances.autoDesc') || 'Devices are controlled automatically by the ESP32 logic.'
+          : t('dashboard.appliances.manualDesc') || 'Manual override is active — you control the devices.'}
       </div>
 
       <div className="space-y-3">
@@ -250,8 +260,12 @@ export function ApplianceControlPanel({ appliances, deviceID }: ApplianceControl
             : (isFan ? fanOverride === 'ON' : dehumidifierOverride === 'ON');
 
           const statusLabel = mode === 'auto'
-            ? (appliance.state === 'manual-on' ? 'ON (Auto)' : 'OFF (Auto)')
-            : (isOn ? 'ON (Manual)' : 'OFF (Manual)');
+            ? (appliance.state === 'manual-on'
+              ? `${t('dashboard.appliances.on')} (${t('dashboard.appliances.auto')})`
+              : `${t('dashboard.appliances.off')} (${t('dashboard.appliances.auto')})`)
+            : (isOn
+              ? `${t('dashboard.appliances.on')} (Manual)`
+              : `${t('dashboard.appliances.off')} (Manual)`);
 
           return (
             <div key={appliance.id} className="space-y-2">
@@ -308,8 +322,8 @@ export function ApplianceControlPanel({ appliances, deviceID }: ApplianceControl
       <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/5">
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           {mode === 'auto'
-            ? 'The ESP32 manages appliances automatically based on sensor readings.'
-            : 'Overrides are sent to the ESP32 on its next data push cycle.'}
+            ? t('dashboard.appliances.autoFooter') || 'The ESP32 manages appliances automatically based on sensor readings.'
+            : t('dashboard.appliances.manualFooter') || 'Overrides are sent to the ESP32 on its next data push cycle.'}
         </p>
       </div>
     </div>

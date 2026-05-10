@@ -1,0 +1,316 @@
+{
+  "language": {
+    "en": "Inggris",
+    "id": "Indonesia",
+    "switch": "Ganti bahasa"
+  },
+  "app": {
+    "name": "MoldGuard",
+    "tagline": "Sensor",
+    "loading": "Memuat...",
+    "welcome": "Selamat Datang di MoldyBase",
+    "welcomeSubtitle": "Silakan tambahkan ruangan untuk memulai pemantauan.",
+    "manageRooms": "Kelola Ruangan",
+    "version": "v2.4.0",
+    "footer": "Dilindungi oleh keamanan tingkat perusahaan"
+  },
+  "nav": {
+    "dashboard": "Dasbor",
+    "rooms": "Sensor",
+    "devices": "Perangkat",
+    "reports": "Analitik",
+    "settings": "Pengaturan",
+    "logout": "Keluar",
+    "logoutConfirm": "Keluar?",
+    "yes": "Ya",
+    "no": "Tidak",
+    "hi": "Hai,",
+    "mobileTitle": "Pencegahan Jamur"
+  },
+  "auth": {
+    "login": {
+      "title": "MoldGuard",
+      "subtitle": "Masuk ke dasbor Anda",
+      "email": "Email",
+      "emailPlaceholder": "Masukkan email Anda",
+      "password": "Kata Sandi",
+      "passwordPlaceholder": "Masukkan kata sandi Anda",
+      "signIn": "Masuk",
+      "signingIn": "Sedang masuk...",
+      "forgotPassword": "Lupa kata sandi?",
+      "createAccount": "Buat akun",
+      "errors": {
+        "emptyFields": "Silakan masukkan email dan kata sandi",
+        "userNotFound": "Tidak ada akun dengan email ini.",
+        "wrongPassword": "Kata sandi salah. Silakan coba lagi.",
+        "invalidEmail": "Silakan masukkan alamat email yang valid.",
+        "userDisabled": "Akun ini telah dinonaktifkan.",
+        "tooManyRequests": "Terlalu banyak percobaan gagal. Silakan coba lagi nanti.",
+        "generic": "Gagal masuk. Silakan coba lagi."
+      }
+    },
+    "signup": {
+      "title": "Buat Akun",
+      "subtitle": "Daftar untuk mulai memantau ruangan Anda",
+      "backToLogin": "Kembali ke masuk",
+      "email": "Email",
+      "emailPlaceholder": "Masukkan email Anda",
+      "password": "Kata Sandi",
+      "passwordPlaceholder": "Buat kata sandi (min 6 karakter)",
+      "confirmPassword": "Konfirmasi Kata Sandi",
+      "confirmPasswordPlaceholder": "Konfirmasi kata sandi Anda",
+      "createAccount": "Buat Akun",
+      "creatingAccount": "Sedang membuat akun...",
+      "footer": "Dengan membuat akun, Anda menyetujui syarat dan ketentuan kami",
+      "errors": {
+        "emptyEmail": "Silakan masukkan alamat email Anda",
+        "emptyPassword": "Silakan masukkan kata sandi",
+        "passwordTooShort": "Kata sandi minimal 6 karakter",
+        "passwordMismatch": "Kata sandi tidak cocok",
+        "emailInUse": "Akun dengan email ini sudah ada.",
+        "weakPassword": "Kata sandi terlalu lemah. Gunakan kata sandi yang lebih kuat.",
+        "operationNotAllowed": "Akun email/kata sandi tidak diaktifkan.",
+        "generic": "Gagal membuat akun. Silakan coba lagi."
+      }
+    },
+    "forgotPassword": {
+      "title": "Atur Ulang Kata Sandi",
+      "subtitle": "Masukkan email Anda dan kami akan mengirimkan tautan reset",
+      "backToLogin": "Kembali ke masuk",
+      "email": "Email",
+      "emailPlaceholder": "Masukkan email Anda",
+      "sendResetLink": "Kirim Tautan Reset",
+      "sending": "Mengirim...",
+      "emailSent": "Email Terkirim",
+      "resendIn": "Kirim ulang dalam {{seconds}}d",
+      "success": {
+        "title": "Email reset terkirim",
+        "message": "Periksa kotak masuk Anda untuk tautan reset kata sandi"
+      },
+      "errors": {
+        "emptyEmail": "Silakan masukkan alamat email Anda",
+        "invalidEmail": "Silakan masukkan alamat email yang valid.",
+        "userNotFound": "Tidak ada akun dengan email ini.",
+        "generic": "Gagal mengirim email reset. Silakan coba lagi."
+      }
+    }
+  },
+  "dashboard": {
+    "status": {
+      "safe": "Aman",
+      "warning": "Peringatan",
+      "critical": "Risiko Kritis",
+      "waiting": "Menunggu data...",
+      "updatedAt": "Diperbarui pada {{time}}"
+    },
+    "stats": {
+      "temperature": {
+        "label": "Suhu",
+        "caption": {
+          "cool": "Dingin",
+          "comfortable": "Nyaman",
+          "warm": "Hangat",
+          "pending": "Menunggu"
+        }
+      },
+      "humidity": {
+        "label": "Kelembaban",
+        "caption": {
+          "dry": "Kering",
+          "optimal": "Optimal",
+          "humid": "Lembab",
+          "pending": "Menunggu"
+        }
+      },
+      "lightLevel": {
+        "label": "Tingkat Cahaya",
+        "caption": {
+          "dim": "Redup",
+          "moderate": "Sedang",
+          "bright": "Terang",
+          "pending": "Menunggu"
+        }
+      }
+    },
+    "chart": {
+      "title": "Riwayat Kelembaban",
+      "subtitle": "24 jam terakhir",
+      "noData": "Tidak ada data tersedia",
+      "error": "Gagal memuat data grafik"
+    },
+    "appliances": {
+      "title": "Kontrol Peralatan",
+      "fan": "Kipas Ekshaust",
+      "dehumidifier": "Pelembab Udara",
+      "auto": "Otomatis",
+      "manual": "Manual",
+      "on": "Nyala",
+      "off": "Mati",
+      "turnOn": "Nyalakan",
+      "turnOff": "Matikan",
+      "noAppliances": "Tidak ada peralatan terhubung",
+      "autoDesc": "Perangkat dikontrol secara otomatis oleh logika ESP32.",
+      "manualDesc": "Override manual aktif — Anda mengontrol perangkat.",
+      "autoFooter": "ESP32 mengelola peralatan secara otomatis berdasarkan pembacaan sensor.",
+      "manualFooter": "Override dikirim ke ESP32 pada siklus push data berikutnya."
+    }
+  },
+  "rooms": {
+    "title": "Node Sensor IoT",
+    "subtitle": "Pantau semua sensor yang terhubung dalam sistem pencegahan jamur Anda",
+    "noDevices": "Belum ada perangkat yang diklaim. Buka {{deviceControls}} untuk mengklaim ESP32 pertama Anda.",
+    "deviceControls": "Kontrol Perangkat",
+    "summary": {
+      "online": "Daring",
+      "warning": "Peringatan",
+      "offline": "Luring"
+    },
+    "edit": {
+      "title": "Edit Ruangan",
+      "roomName": "Nama Ruangan",
+      "deviceId": "ID Perangkat",
+      "update": "Perbarui Ruangan",
+      "deleteConfirm": "Apakah Anda yakin ingin menghapus ruangan ini?"
+    },
+    "humidity": "kelembaban"
+  },
+  "devices": {
+    "title": "Kontrol Perangkat",
+    "subtitle": "Kelola dan kontrol perangkat dan peralatan yang terhubung",
+    "claimDevice": {
+      "title": "Klaim Perangkat",
+      "description": "Masukkan Custom Device ID yang ditetapkan pada perangkat keras ESP32 Anda melalui pengaturan captive portal. Perangkat harus pernah terhubung ke server setidaknya sekali agar dapat ditemukan.",
+      "deviceId": "ID Perangkat",
+      "deviceIdPlaceholder": "mis. MasterBed_01",
+      "roomName": "Nama Ruangan",
+      "roomNamePlaceholder": "mis. Kamar Tidur Utama",
+      "claim": "Klaim Perangkat",
+      "claiming": "Mengklaim...",
+      "success": "Perangkat berhasil diklaim! Sekarang akan muncul dalam daftar perangkat dan ikhtisar ruangan Anda.",
+      "error": {
+        "notLoggedIn": "Anda harus masuk untuk mengklaim perangkat.",
+        "notFound": "Tidak ada perangkat yang belum diklaim dengan ID ini. Pastikan ESP32 Anda terhubung ke Wi-Fi dan belum diklaim.",
+        "permissionDenied": "Akses ditolak. Perangkat mungkin sudah diklaim atau Anda tidak memiliki izin.",
+        "generic": "Terjadi kesalahan tak terduga. Silakan coba lagi."
+      }
+    },
+    "table": {
+      "deviceId": "ID Perangkat",
+      "assignedRoom": "Ruangan",
+      "wifiSignal": "Sinyal Wi-Fi",
+      "sensors": "Sensor",
+      "status": "Status",
+      "unassigned": "Belum ditetapkan",
+      "waiting": "Menunggu data...",
+      "active": "Aktif"
+    },
+    "status": {
+      "online": "Daring",
+      "offline": "Luring",
+      "unstable": "Tidak Stabil"
+    },
+    "wifi": {
+      "excellent": "Sangat Baik",
+      "good": "Baik",
+      "fair": "Cukup",
+      "poor": "Lemah",
+      "offline": "Luring"
+    },
+    "legend": {
+      "online": "Daring (< 5m)",
+      "unstable": "Tidak Stabil (5-15m)",
+      "offline": "Luring (> 15m)"
+    },
+    "noDevices": "Belum ada perangkat yang diklaim. Gunakan formulir di atas untuk mengklaim ESP32 pertama Anda."
+  },
+  "reports": {
+    "title": "Analitik",
+    "subtitle": "Wawasan lanjutan dan analisis prediktif",
+    "predictiveAlerts": "Peringatan Prediktif",
+    "noActiveRisks": "Tidak ada risiko aktif",
+    "allRoomsSafe": "Model prediktif kami menunjukkan semua ruangan dalam kondisi aman.",
+    "dismiss": "Abaikan",
+    "dismissAlert": "Abaikan peringatan",
+    "generalMoldRisk": "Risiko Jamur Umum",
+    "blackMoldRisk": "Risiko Jamur Hitam Beracun",
+    "previous": "Sebelumnya",
+    "next": "Berikutnya",
+    "trendAggregation": "Agregasi Tren",
+    "humidity": "Kelembaban",
+    "temperature": "Suhu",
+    "waitingIndex": "Menunggu perhitungan indeks database...",
+    "checkConsole": "Periksa izin konsol jika ini berlanjut.",
+    "globalStream": "Aliran Global",
+    "waitingData": "Menunggu data perangkat keras IoT limit(10)...",
+    "alertDismissed": "Peringatan diabaikan.",
+    "alertDismissFailed": "Gagal mengabaikan peringatan. Silakan coba lagi."
+  },
+  "settings": {
+    "title": "Manajemen Data",
+    "subtitle": "Kelola data, peringatan, dan pengaturan sistem",
+    "thresholds": {
+      "title": "Konfigurasi Ambang Batas",
+      "general": {
+        "title": "Ambang Batas Jamur Umum",
+        "safeLimit": "Batas Aman (% RH)",
+        "safeLimitDesc": "Kelembaban di bawah nilai ini dianggap aman",
+        "criticalLimit": "Batas Kritis (% RH)",
+        "criticalLimitDesc": "Kelembaban di atas ini memicu peringatan jamur kritis"
+      },
+      "blackMold": {
+        "title": "Ambang Batas Jamur Hitam Beracun",
+        "safeLimit": "Batas Aman (% RH)",
+        "safeLimitDesc": "Di bawah ini, risiko kolonisasi jamur hitam minimal",
+        "criticalLimit": "Batas Kritis (% RH)",
+        "criticalLimitDesc": "Maksimum yang dapat dikonfigurasi: 90% RH"
+      },
+      "notice": {
+        "title": "90% RH",
+        "text": "adalah ambang batas biologis untuk pertumbuhan {{organism}} yang dijamin dan memicu penggantian sistem. Menetapkan batas kritis di atas nilai ini tidak diizinkan.",
+        "organism": "Stachybotrys chartarum"
+      }
+    },
+    "alerts": {
+      "title": "Preferensi Peringatan",
+      "email": "Alamat Email untuk Peringatan",
+      "emailPlaceholder": "Masukkan alamat email",
+      "enable": "Aktifkan Peringatan Email",
+      "enableDesc": "Terima peringatan jamur otomatis melalui email"
+    },
+    "notifications": {
+      "title": "Preferensi Notifikasi",
+      "label": "Terima peringatan email untuk tingkat risiko ini",
+      "low": "Risiko Rendah",
+      "medium": "Risiko Sedang",
+      "high": "Risiko Tinggi",
+      "hint": "Pilih satu, beberapa, atau semua tingkat risiko. Anda hanya akan menerima email untuk tingkat yang Anda pilih."
+    },
+    "appearance": {
+      "title": "Tampilan",
+      "light": "Terang",
+      "dark": "Gelap",
+      "system": "Sistem",
+      "ripple": {
+        "title": "Efek Riak Klik",
+        "desc": "Tampilkan animasi riak gelombang saat klik"
+      }
+    },
+    "validation": {
+      "nan": "Semua bidang ambang batas harus berupa angka yang valid.",
+      "generalOrder": "Jamur Umum: Batas Aman harus lebih kecil dari Batas Kritis.",
+      "blackMoldOrder": "Jamur Hitam: Batas Aman harus lebih kecil dari Batas Kritis.",
+      "maxCeiling": "Batas Kritis Jamur Hitam tidak boleh melebihi 90% RH (batas biologis untuk {{organism}}).",
+      "fixBeforeSave": "Silakan perbaiki kesalahan validasi sebelum menyimpan."
+    },
+    "save": {
+      "button": "Simpan Perubahan",
+      "saving": "Menyimpan...",
+      "success": "Pengaturan berhasil disimpan!",
+      "error": "Gagal menyimpan pengaturan."
+    }
+  },
+  "theme": {
+    "switchToLight": "Beralih ke mode terang",
+    "switchToDark": "Beralih ke mode gelap"
+  }
+}

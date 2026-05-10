@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Radio,
@@ -10,6 +11,7 @@ import {
   ChevronDown,
   User,
 } from 'lucide-react';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { auth } from '@/lib/firebase';
 import type { PageId } from '@/App';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -21,17 +23,21 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'rooms', label: 'Sensors', icon: Radio },
-  { id: 'devices', label: 'Device', icon: Zap },
-  { id: 'reports', label: 'Analytics', icon: BarChart3 },
-];
+function getNavItems(t: (key: string) => string): NavItem[] {
+  return [
+    { id: 'dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
+    { id: 'rooms', label: t('nav.rooms'), icon: Radio },
+    { id: 'devices', label: t('nav.devices'), icon: Zap },
+    { id: 'reports', label: t('nav.reports'), icon: BarChart3 },
+  ];
+}
 
-const desktopNavItems: NavItem[] = [
-  ...navItems,
-  { id: 'settings', label: 'Settings', icon: Settings },
-];
+function getDesktopNavItems(t: (key: string) => string): NavItem[] {
+  return [
+    ...getNavItems(t),
+    { id: 'settings', label: t('nav.settings'), icon: Settings },
+  ];
+}
 
 interface SidebarProps {
   currentPage: PageId;
@@ -40,8 +46,12 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<SidebarProps>) {
+  const { t } = useTranslation();
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
   const userEmail = auth.currentUser?.email || 'admin@moldprev.io';
+
+  const navItems = getNavItems(t);
+  const desktopNavItems = getDesktopNavItems(t);
 
   const displayName = useMemo(() => {
     const prefix = userEmail.split('@')[0] || 'Admin';
@@ -66,16 +76,17 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
   return (
     <>
       <aside className="hidden md:fixed md:left-0 md:top-0 md:flex md:h-screen md:w-56 md:flex-col md:border-r md:border-slate-200/60 md:bg-white/95 md:backdrop-blur-xl md:z-40 dark:md:border-white/5 dark:md:bg-zinc-950/95">
-        <div className="flex h-16 items-center gap-2.5 border-b border-slate-200/70 px-4 dark:border-white/10">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10">
-            <Shield className="h-4 w-4 text-emerald-500" strokeWidth={2} />
+        <div className="flex h-16 items-center justify-between border-b border-slate-200/70 px-4 dark:border-white/10">
+          <div className="flex items-center gap-2.5">
+            <img src="/logo.png" alt="MoldGuard Logo" className="h-7 w-7 object-contain rounded-md" />
+            <div className="flex flex-col leading-tight">
+              <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
+                {t('app.name')}
+              </span>
+              <span className="text-xs text-slate-500 dark:text-zinc-400">{t('app.tagline')}</span>
+            </div>
           </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
-              MoldGuard
-            </span>
-            <span className="text-xs text-slate-500 dark:text-zinc-400">Sensors</span>
-          </div>
+          <LanguageSwitcher />
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-3">
@@ -126,20 +137,20 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
                     </PopoverTrigger>
                   </TooltipTrigger>
                   <TooltipContent side="top" align="center" sideOffset={8} className="bg-slate-900 text-white border-none dark:bg-zinc-800 [&_svg]:!bg-slate-900 [&_svg]:!fill-slate-900 dark:[&_svg]:!bg-zinc-800 dark:[&_svg]:!fill-zinc-800">
-                    <p>Log out</p>
+                    <p>{t('nav.logout')}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
               <PopoverContent className="w-auto p-3 bg-slate-900 border-none shadow-xl dark:bg-zinc-800" side="top" align="center" sideOffset={8}>
                 <div className="flex flex-col gap-2">
-                  <p className="text-sm font-medium text-white text-center">Log out?</p>
+                  <p className="text-sm font-medium text-white text-center">{t('nav.logoutConfirm')}</p>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setIsConfirmingLogout(false)}
                       className="rounded px-3 py-1 text-xs font-medium bg-slate-700 text-slate-200 hover:bg-slate-600 dark:bg-zinc-700 dark:hover:bg-zinc-600 transition-colors"
                     >
-                      No
+                      {t('nav.no')}
                     </button>
                     <button
                       onClick={() => {
@@ -148,14 +159,14 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
                       }}
                       className="rounded px-3 py-1 text-xs font-medium bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
                     >
-                      Yes
+                      {t('nav.yes')}
                     </button>
                   </div>
                 </div>
               </PopoverContent>
             </Popover>
           </div>
-          <p className="mt-2 px-1 text-xs text-slate-400 dark:text-zinc-600">v2.4.0</p>
+          <p className="mt-2 px-1 text-xs text-slate-400 dark:text-zinc-600">{t('app.version')}</p>
         </div>
       </aside>
 
@@ -167,21 +178,23 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
             </div>
             <div className="flex min-w-0 flex-col leading-tight">
               <span className="truncate text-sm font-bold text-slate-900 dark:text-zinc-100">
-                Mold Prevention
+                {t('nav.mobileTitle')}
               </span>
-              <span className="text-xs text-slate-500 dark:text-zinc-400">Sensors</span>
+              <span className="text-xs text-slate-500 dark:text-zinc-400">{t('app.tagline')}</span>
             </div>
           </div>
 
-          <DropdownMenu>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-3 rounded-3xl border border-slate-200/80 bg-slate-100/70 px-3 py-2 shadow-sm transition-colors hover:bg-slate-100 dark:border-white/5 dark:bg-zinc-900/70 dark:hover:bg-zinc-800/70">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-sm">
-                  <User className="h-5 w-5" />
+              <button className="flex items-center gap-2 rounded-3xl border border-slate-200/80 bg-slate-100/70 px-2.5 py-1.5 shadow-sm transition-colors hover:bg-slate-100 dark:border-white/5 dark:bg-zinc-900/70 dark:hover:bg-zinc-800/70">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-sm">
+                  <User className="h-4 w-4" />
                 </div>
                 <div className="flex min-w-0 flex-col items-start text-left">
                   <span className="truncate text-lg font-medium text-slate-800 dark:text-zinc-100">
-                    Hi, {displayName}
+                    {t('nav.hi')} {displayName}
                   </span>
                 </div>
                 <ChevronDown className="h-5 w-5 text-slate-500 dark:text-zinc-400" />
@@ -200,7 +213,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
                   className="flex h-14 items-center gap-4 rounded-2xl px-4 text-lg text-slate-700 dark:text-zinc-200"
                 >
                   <Settings className="h-5 w-5 text-slate-600 dark:text-zinc-300" />
-                  <span>Settings</span>
+                  <span>{t('nav.settings')}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={(event) => {
@@ -211,11 +224,12 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
                   variant="destructive"
                 >
                   <LogOut className="h-5 w-5" />
-                  <span>Logout</span>
+                  <span>{t('nav.logout')}</span>
                 </DropdownMenuItem>
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </div>
       </header>
 

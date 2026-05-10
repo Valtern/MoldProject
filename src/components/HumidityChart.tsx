@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { gsap } from 'gsap';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
@@ -18,6 +19,7 @@ interface HumidityChartProps {
 }
 
 export function HumidityChart({ deviceID }: HumidityChartProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<Array<{time: string, humidity: number}>>([]);
 
@@ -96,8 +98,15 @@ export function HumidityChart({ deviceID }: HumidityChartProps) {
 
       downsampled.push(allPoints[allPoints.length - 1]); // always keep last
       setData(downsampled);
-    }, (error) => {
-      console.error('[HumidityChart] Listener error:', error);
+    }, (error: any) => {
+      // Infrastructure/config issues shouldn't spam the error counter
+      if (error?.code === 'permission-denied') {
+        console.warn('[HumidityChart] Firestore permission denied — check security rules:', error.message);
+      } else if (error?.message?.includes('index') || error?.code === 'failed-precondition') {
+        console.warn('[HumidityChart] Firestore index required. Create it in Firebase console:', error.message);
+      } else {
+        console.error('[HumidityChart] Listener error:', error);
+      }
     });
 
     return () => unsubscribe();
@@ -142,11 +151,11 @@ export function HumidityChart({ deviceID }: HumidityChartProps) {
     >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          Humidity — Last 24 Hours
+          {t('dashboard.chart.title')} — {t('dashboard.chart.subtitle')}
         </h2>
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">Safe range 40-60%</span>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">{t('dashboard.status.safe')} 40-60%</span>
         </div>
       </div>
 

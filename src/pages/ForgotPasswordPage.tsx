@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useTheme } from 'next-themes';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Mail, ArrowLeft, Loader2, CheckCircle, Moon, Sun } from 'lucide-react';
 
 interface ForgotPasswordPageProps {
@@ -9,6 +11,7 @@ interface ForgotPasswordPageProps {
 }
 
 export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -35,7 +38,7 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
     setSuccess(false);
 
     if (!email.trim()) {
-      setError('Please enter your email address');
+      setError(t('auth.forgotPassword.errors.emptyEmail'));
       return;
     }
 
@@ -46,14 +49,14 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
       setSuccess(true);
       setCooldown(60); // Start 60 second cooldown
     } catch (err: any) {
-      let errorMessage = 'Failed to send reset email. Please try again.';
-      
+      let errorMessage = t('auth.forgotPassword.errors.generic');
+
       switch (err.code) {
         case 'auth/invalid-email':
-          errorMessage = 'Please enter a valid email address.';
+          errorMessage = t('auth.forgotPassword.errors.invalidEmail');
           break;
         case 'auth/user-not-found':
-          errorMessage = 'No account found with this email address.';
+          errorMessage = t('auth.forgotPassword.errors.userNotFound');
           break;
         default:
           errorMessage = err.message || errorMessage;
@@ -88,17 +91,18 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
           className="flex items-center gap-2 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm">Back to login</span>
+          <span className="text-sm">{t('auth.forgotPassword.backToLogin')}</span>
         </button>
 
         {/* Card */}
         <div className="relative bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl dark:shadow-black/50 p-8 md:p-10">
-          {/* Theme Toggle - inside card top-right */}
-          <div className="absolute top-4 right-4">
+          {/* Theme Toggle + Language Switcher - inside card top-right */}
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            <LanguageSwitcher />
             <button
               onClick={toggleTheme}
               className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 flex items-center justify-center"
-              aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+              aria-label={isDark ? t('theme.switchToLight') : t('theme.switchToDark')}
             >
               {isDark ? (
                 <Sun className="w-4 h-4 text-amber-400" />
@@ -114,10 +118,10 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
               <Mail className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             </div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
-              Reset Password
+              {t('auth.forgotPassword.title')}
             </h1>
             <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1.5 text-center">
-              Enter your email and we'll send you a reset link
+              {t('auth.forgotPassword.subtitle')}
             </p>
           </div>
 
@@ -128,10 +132,10 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
                 <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
-                    Reset email sent
+                    {t('auth.forgotPassword.success.title')}
                   </p>
                   <p className="text-sm text-emerald-700 dark:text-emerald-300 mt-1">
-                    Check your inbox for the password reset link
+                    {t('auth.forgotPassword.success.message')}
                   </p>
                 </div>
               </div>
@@ -142,11 +146,11 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
           <form onSubmit={handleResetPassword} className="space-y-5">
             {/* Email Input */}
             <div>
-              <label 
-                htmlFor="email" 
+              <label
+                htmlFor="email"
                 className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-2"
               >
-                Email
+                {t('auth.forgotPassword.email')}
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -158,7 +162,7 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-400 transition-all duration-200"
-                  placeholder="Enter your email"
+                  placeholder={t('auth.forgotPassword.emailPlaceholder')}
                   disabled={loading || success}
                 />
               </div>
@@ -183,14 +187,14 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Sending...
+                  {t('auth.forgotPassword.sending')}
                 </>
               ) : cooldown > 0 ? (
-                `Resend in ${cooldown}s`
+                t('auth.forgotPassword.resendIn', { seconds: cooldown })
               ) : success ? (
-                'Email Sent'
+                t('auth.forgotPassword.emailSent')
               ) : (
-                'Send Reset Link'
+                t('auth.forgotPassword.sendResetLink')
               )}
             </button>
           </form>

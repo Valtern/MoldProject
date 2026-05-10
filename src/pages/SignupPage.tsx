@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useTheme } from 'next-themes';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, Loader2, User, Moon, Sun } from 'lucide-react';
 
 interface SignupPageProps {
@@ -9,6 +11,7 @@ interface SignupPageProps {
 }
 
 export function SignupPage({ onBackToLogin }: SignupPageProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -25,22 +28,22 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
 
   const validateForm = () => {
     if (!email.trim()) {
-      setError('Please enter your email address');
+      setError(t('auth.signup.errors.emptyEmail'));
       return false;
     }
-    
+
     if (!password.trim()) {
-      setError('Please enter a password');
+      setError(t('auth.signup.errors.emptyPassword'));
       return false;
     }
-    
+
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError(t('auth.signup.errors.passwordTooShort'));
       return false;
     }
-    
+
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('auth.signup.errors.passwordMismatch'));
       return false;
     }
     
@@ -63,20 +66,20 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
       await auth.signOut();
       onBackToLogin();
     } catch (err: any) {
-      let errorMessage = 'Failed to create account. Please try again.';
-      
+      let errorMessage = t('auth.signup.errors.generic');
+
       switch (err.code) {
         case 'auth/email-already-in-use':
-          errorMessage = 'An account with this email already exists.';
+          errorMessage = t('auth.signup.errors.emailInUse');
           break;
         case 'auth/invalid-email':
-          errorMessage = 'Please enter a valid email address.';
+          errorMessage = t('auth.signup.errors.invalidEmail');
           break;
         case 'auth/weak-password':
-          errorMessage = 'Password is too weak. Please use a stronger password.';
+          errorMessage = t('auth.signup.errors.weakPassword');
           break;
         case 'auth/operation-not-allowed':
-          errorMessage = 'Email/password accounts are not enabled.';
+          errorMessage = t('auth.signup.errors.operationNotAllowed');
           break;
         default:
           errorMessage = err.message || errorMessage;
@@ -111,17 +114,18 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
           className="flex items-center gap-2 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm">Back to login</span>
+          <span className="text-sm">{t('auth.signup.backToLogin')}</span>
         </button>
 
         {/* Card */}
         <div className="relative bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl dark:shadow-black/50 p-8 md:p-10">
-          {/* Theme Toggle - inside card top-right */}
-          <div className="absolute top-4 right-4">
+          {/* Theme Toggle + Language Switcher - inside card top-right */}
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            <LanguageSwitcher />
             <button
               onClick={toggleTheme}
               className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 flex items-center justify-center"
-              aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+              aria-label={isDark ? t('theme.switchToLight') : t('theme.switchToDark')}
             >
               {isDark ? (
                 <Sun className="w-4 h-4 text-amber-400" />
@@ -136,10 +140,10 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
               <User className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             </div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
-              Create Account
+              {t('auth.signup.title')}
             </h1>
             <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1.5 text-center">
-              Sign up to start monitoring your spaces
+              {t('auth.signup.subtitle')}
             </p>
           </div>
 
@@ -147,11 +151,11 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
           <form onSubmit={handleSignup} className="space-y-5">
             {/* Email Input */}
             <div>
-              <label 
-                htmlFor="email" 
+              <label
+                htmlFor="email"
                 className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-2"
               >
-                Email
+                {t('auth.signup.email')}
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -163,7 +167,7 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-400 transition-all duration-200"
-                  placeholder="Enter your email"
+                  placeholder={t('auth.signup.emailPlaceholder')}
                   disabled={loading}
                 />
               </div>
@@ -171,11 +175,11 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
 
             {/* Password Input */}
             <div>
-              <label 
-                htmlFor="password" 
+              <label
+                htmlFor="password"
                 className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-2"
               >
-                Password
+                {t('auth.signup.password')}
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -187,7 +191,7 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-11 pr-11 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-400 transition-all duration-200"
-                  placeholder="Create a password (min 6 characters)"
+                  placeholder={t('auth.signup.passwordPlaceholder')}
                   disabled={loading}
                 />
                 <button
@@ -207,11 +211,11 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
 
             {/* Confirm Password Input */}
             <div>
-              <label 
-                htmlFor="confirmPassword" 
+              <label
+                htmlFor="confirmPassword"
                 className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-2"
               >
-                Confirm Password
+                {t('auth.signup.confirmPassword')}
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -223,7 +227,7 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full pl-11 pr-11 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-400 transition-all duration-200"
-                  placeholder="Confirm your password"
+                  placeholder={t('auth.signup.confirmPasswordPlaceholder')}
                   disabled={loading}
                 />
                 <button
@@ -260,10 +264,10 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Creating account...
+                  {t('auth.signup.creatingAccount')}
                 </>
               ) : (
-                'Create Account'
+                t('auth.signup.createAccount')
               )}
             </button>
           </form>
@@ -272,7 +276,7 @@ export function SignupPage({ onBackToLogin }: SignupPageProps) {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-400 dark:text-zinc-600">
-            By creating an account, you agree to our terms and conditions
+            {t('auth.signup.footer')}
           </p>
         </div>
       </div>

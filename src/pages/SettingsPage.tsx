@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Sliders, Bell, Mail, Monitor, Moon, Sun, AlertTriangle, Filter } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
@@ -6,6 +7,7 @@ import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 
 export function SettingsPage() {
+  const { t } = useTranslation();
   // ── Mold Threshold State (4 distinct fields) ────────────────────────────────
   const [generalSafeLimit, setGeneralSafeLimit] = useState<number | string>(60);
   const [generalCriticalLimit, setGeneralCriticalLimit] = useState<number | string>(80);
@@ -88,18 +90,18 @@ export function SettingsPage() {
     const bc = Number(blackMoldCriticalLimit);
 
     if (isNaN(gs) || isNaN(gc) || isNaN(bs) || isNaN(bc)) {
-      errors.push('All threshold fields must be valid numbers.');
+      errors.push(t('settings.validation.nan'));
       return errors;
     }
 
     if (gs >= gc) {
-      errors.push('General Mold: Safe Limit must be less than Critical Limit.');
+      errors.push(t('settings.validation.generalOrder'));
     }
     if (bs >= bc) {
-      errors.push('Black Mold: Safe Limit must be less than Critical Limit.');
+      errors.push(t('settings.validation.blackMoldOrder'));
     }
     if (bc > 90) {
-      errors.push('Black Mold Critical Limit cannot exceed 90% RH (biological ceiling for Stachybotrys chartarum).');
+      errors.push(t('settings.validation.maxCeiling', { organism: t('settings.thresholds.notice.organism') }));
     }
 
     return errors;
@@ -109,7 +111,7 @@ export function SettingsPage() {
     const errors = validate();
     setValidationErrors(errors);
     if (errors.length > 0) {
-      toast.error('Please fix validation errors before saving.');
+      toast.error(t('settings.validation.fixBeforeSave'));
       return;
     }
 
@@ -129,10 +131,10 @@ export function SettingsPage() {
         emailAlertLevels,
         themePreference: theme || 'system'
       }, { merge: true });
-      toast.success('Settings saved successfully!');
+      toast.success(t('settings.save.success'));
     } catch (error) {
       console.error(error);
-      toast.error('Failed to save settings.');
+      toast.error(t('settings.save.error'));
     } finally {
       setIsSaving(false);
     }
@@ -146,9 +148,9 @@ export function SettingsPage() {
       <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
       {/* Page Header */}
       <div className="mb-4 md:mb-6">
-        <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Data Management</h1>
+        <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">{t('settings.title')}</h1>
         <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-          Manage data, alerts, and system settings
+          {t('settings.subtitle')}
         </p>
       </div>
 
@@ -156,7 +158,7 @@ export function SettingsPage() {
       <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-3 md:mb-4">
         <div className="flex items-center gap-2 mb-4">
           <Sliders className="w-4 h-4 text-emerald-500" />
-          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Threshold Configuration</h2>
+          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{t('settings.thresholds.title')}</h2>
         </div>
 
         {/* Validation Errors */}
@@ -174,12 +176,12 @@ export function SettingsPage() {
         {/* ── Section 1: General Mold Thresholds ── */}
         <div className="mb-5">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
-            General Mold Thresholds
+            {t('settings.thresholds.general.title')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div>
               <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-                Safe Limit (% RH)
+                {t('settings.thresholds.general.safeLimit')}
               </label>
               <input
                 type="number"
@@ -190,13 +192,13 @@ export function SettingsPage() {
                 max="100"
               />
               <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1.5">
-                Humidity below this value is considered safe
+                {t('settings.thresholds.general.safeLimitDesc')}
               </p>
             </div>
 
             <div>
               <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-                Critical Limit (% RH)
+                {t('settings.thresholds.general.criticalLimit')}
               </label>
               <input
                 type="number"
@@ -207,7 +209,7 @@ export function SettingsPage() {
                 max="100"
               />
               <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1.5">
-                Humidity above this triggers critical general mold alerts
+                {t('settings.thresholds.general.criticalLimitDesc')}
               </p>
             </div>
           </div>
@@ -219,12 +221,12 @@ export function SettingsPage() {
         {/* ── Section 2: Toxic Black Mold Thresholds ── */}
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
-            Toxic Black Mold Thresholds
+            {t('settings.thresholds.blackMold.title')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div>
               <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-                Safe Limit (% RH)
+                {t('settings.thresholds.blackMold.safeLimit')}
               </label>
               <input
                 type="number"
@@ -235,13 +237,13 @@ export function SettingsPage() {
                 max="100"
               />
               <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1.5">
-                Below this, black mold colonization risk is minimal
+                {t('settings.thresholds.blackMold.safeLimitDesc')}
               </p>
             </div>
 
             <div>
               <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-                Critical Limit (% RH)
+                {t('settings.thresholds.blackMold.criticalLimit')}
               </label>
               <input
                 type="number"
@@ -252,7 +254,7 @@ export function SettingsPage() {
                 max="90"
               />
               <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1.5">
-                Maximum configurable: 90% RH
+                {t('settings.thresholds.blackMold.criticalLimitDesc')}
               </p>
             </div>
           </div>
@@ -261,9 +263,7 @@ export function SettingsPage() {
           <div className="mt-3 p-3 rounded-md bg-amber-500/5 border border-amber-500/15 flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              <span className="font-semibold text-amber-400">90% RH</span> is the biological threshold for guaranteed{' '}
-              <em className="text-zinc-300">Stachybotrys chartarum</em> growth and triggers a system override.
-              Setting the critical limit above this value is not permitted.
+              <span className="font-semibold text-amber-400">{t('settings.thresholds.notice.title')}</span> {t('settings.thresholds.notice.text', { organism: t('settings.thresholds.notice.organism') })}
             </p>
           </div>
         </div>
@@ -273,13 +273,13 @@ export function SettingsPage() {
       <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-3 md:mb-4">
         <div className="flex items-center gap-2 mb-4">
           <Bell className="w-4 h-4 text-emerald-500" />
-          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Alert Preferences</h2>
+          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{t('settings.alerts.title')}</h2>
         </div>
 
         <div className="space-y-4">
           <div>
             <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-              Email Address for Alerts
+              {t('settings.alerts.email')}
             </label>
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-zinc-500 dark:text-zinc-400 absolute ml-3" />
@@ -287,7 +287,7 @@ export function SettingsPage() {
                 type="email"
                 value={alertEmail}
                 onChange={(e) => setAlertEmail(e.target.value)}
-                placeholder="Enter email address"
+                placeholder={t('settings.alerts.emailPlaceholder')}
                 className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md pl-10 pr-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
               />
             </div>
@@ -295,9 +295,9 @@ export function SettingsPage() {
 
           <div className="flex items-center justify-between pt-2">
             <div>
-              <p className="text-sm text-zinc-900 dark:text-zinc-100">Enable Email Alerts</p>
+              <p className="text-sm text-zinc-900 dark:text-zinc-100">{t('settings.alerts.enable')}</p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                Receive automated mold warnings via email
+                {t('settings.alerts.enableDesc')}
               </p>
             </div>
             <button
@@ -324,18 +324,18 @@ export function SettingsPage() {
       <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-3 md:mb-4">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-4 h-4 text-emerald-500" />
-          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Notification Preferences</h2>
+          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{t('settings.notifications.title')}</h2>
         </div>
 
         <div>
           <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-3">
-            Receive email warnings for these risk levels
+            {t('settings.notifications.label')}
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {[
-              { value: 'Low', label: 'Low Risk', color: 'emerald' },
-              { value: 'Medium', label: 'Medium Risk', color: 'amber' },
-              { value: 'High', label: 'High Risk', color: 'red' },
+              { value: 'Low', label: t('settings.notifications.low'), color: 'emerald' },
+              { value: 'Medium', label: t('settings.notifications.medium'), color: 'amber' },
+              { value: 'High', label: t('settings.notifications.high'), color: 'red' },
             ].map((option) => {
               const isActive = emailAlertLevels.includes(option.value);
               return (
@@ -361,7 +361,7 @@ export function SettingsPage() {
             })}
           </div>
           <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-2">
-            Select one, multiple, or all risk levels. You will only receive emails for the levels you choose.
+            {t('settings.notifications.hint')}
           </p>
         </div>
       </div>
@@ -370,7 +370,7 @@ export function SettingsPage() {
       <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-4 md:mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Monitor className="w-4 h-4 text-emerald-500" />
-          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Appearance</h2>
+          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{t('settings.appearance.title')}</h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -381,7 +381,7 @@ export function SettingsPage() {
             }`}
           >
             <Sun className="w-6 h-6 mb-2" />
-            <span className="text-sm font-medium">Light</span>
+            <span className="text-sm font-medium">{t('settings.appearance.light')}</span>
           </button>
           
           <button
@@ -391,7 +391,7 @@ export function SettingsPage() {
             }`}
           >
             <Moon className="w-6 h-6 mb-2" />
-            <span className="text-sm font-medium">Dark</span>
+            <span className="text-sm font-medium">{t('settings.appearance.dark')}</span>
           </button>
 
           <button
@@ -401,15 +401,15 @@ export function SettingsPage() {
             }`}
           >
             <Monitor className="w-6 h-6 mb-2" />
-            <span className="text-sm font-medium">System</span>
+            <span className="text-sm font-medium">{t('settings.appearance.system')}</span>
           </button>
         </div>
 
         {/* Click Ripple Toggle */}
         <div className="flex items-center justify-between mt-5 pt-4 border-t border-slate-200/60 dark:border-white/5">
           <div>
-            <p className="text-sm text-zinc-900 dark:text-zinc-100">Click Ripple Effect</p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Show wave ripple animation on click</p>
+            <p className="text-sm text-zinc-900 dark:text-zinc-100">{t('settings.appearance.ripple.title')}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{t('settings.appearance.ripple.desc')}</p>
           </div>
           <button
             onClick={() => {
@@ -441,7 +441,7 @@ export function SettingsPage() {
             disabled:opacity-50 disabled:cursor-not-allowed
           "
         >
-          {isSaving ? 'Saving...' : 'Save Changes'}
+          {isSaving ? t('settings.save.saving') : t('settings.save.button')}
         </button>
       </div>
       </div>

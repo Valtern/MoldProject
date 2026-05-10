@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { gsap } from 'gsap';
 import type { GaugeData } from '@/types';
 
@@ -15,6 +16,7 @@ const statusConfig = {
 };
 
 export function StatCard({ data, index, status = 'safe' }: StatCardProps) {
+  const { t } = useTranslation();
   const cardRef = useRef<HTMLDivElement>(null);
   const valueRef = useRef<HTMLSpanElement>(null);
   const [displayValue, setDisplayValue] = useState(0);
@@ -81,7 +83,7 @@ export function StatCard({ data, index, status = 'safe' }: StatCardProps) {
       <div className="flex items-center gap-2">
         <span className={`w-1.5 h-1.5 rounded-full ${config.dotClass}`} />
         <span className={`text-xs ${config.textClass}`}>
-          {data.caption || 'Normal'}
+          {data.caption || t('dashboard.status.safe')}
         </span>
       </div>
     </div>

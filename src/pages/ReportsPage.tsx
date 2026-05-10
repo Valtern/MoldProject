@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Activity, Clock, ShieldCheck, Thermometer, Droplets, Sun, Zap, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, limit, onSnapshot, getDocs, doc, deleteDoc } from 'firebase/firestore';
@@ -60,6 +61,7 @@ interface ReportsPageProps {
 }
 
 export function ReportsPage({ availableRooms }: ReportsPageProps) {
+  const { t } = useTranslation();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   
@@ -116,8 +118,14 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
 
         console.log('[Reports] Alerts fetched:', filtered.length, 'of', merged.length, '(after 3-month filter)');
         setAlerts(filtered);
-      }, (error) => {
-        console.error(`[Reports] Alerts chunk ${idx} listener error:`, error);
+      }, (error: any) => {
+        if (error?.code === 'permission-denied') {
+          console.warn(`[Reports] Alerts chunk ${idx} permission denied — check security rules:`, error.message);
+        } else if (error?.message?.includes('index') || error?.code === 'failed-precondition') {
+          console.warn(`[Reports] Alerts chunk ${idx} requires Firestore index:`, error.message);
+        } else {
+          console.error(`[Reports] Alerts chunk ${idx} listener error:`, error);
+        }
       });
       unsubscribers.push(unsubAlerts);
 
@@ -137,8 +145,14 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
         const merged = Object.values(logsByChunk).flat();
         merged.sort((a, b) => toEpoch(b.timestamp) - toEpoch(a.timestamp));
         setRecentActivity(merged.slice(0, 10));
-      }, (error) => {
-        console.error(`[Reports] Activity chunk ${idx} listener error:`, error);
+      }, (error: any) => {
+        if (error?.code === 'permission-denied') {
+          console.warn(`[Reports] Activity chunk ${idx} permission denied — check security rules:`, error.message);
+        } else if (error?.message?.includes('index') || error?.code === 'failed-precondition') {
+          console.warn(`[Reports] Activity chunk ${idx} requires Firestore index:`, error.message);
+        } else {
+          console.error(`[Reports] Activity chunk ${idx} listener error:`, error);
+        }
       });
       unsubscribers.push(unsubLogs);
     });
@@ -220,8 +234,14 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
 
         setChartData(aggregated);
       })
-      .catch((error) => {
-        console.error('[Reports] Chart chunked query error:', error);
+      .catch((error: any) => {
+        if (error?.code === 'permission-denied') {
+          console.warn('[Reports] Chart query permission denied — check security rules:', error.message);
+        } else if (error?.message?.includes('index') || error?.code === 'failed-precondition') {
+          console.warn('[Reports] Chart query requires Firestore index:', error.message);
+        } else {
+          console.error('[Reports] Chart chunked query error:', error);
+        }
       });
 
     return () => { cancelled = true; };
@@ -254,10 +274,10 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
   const handleDismissAlert = async (alertId: string) => {
     try {
       await deleteDoc(doc(db, 'AnalyticsAlerts', alertId));
-      toast.success('Alert dismissed.');
+      toast.success(t('reports.alertDismissed'));
     } catch (error) {
       console.error('[Reports] Failed to dismiss alert:', error);
-      toast.error('Failed to dismiss alert. Please try again.');
+      toast.error(t('reports.alertDismissFailed'));
     }
   };
 
@@ -299,14 +319,14 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
         <div className="xl:col-span-1 flex flex-col gap-4">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
-            <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100">Predictive Alerts</h2>
+            <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100">{t('reports.predictiveAlerts')}</h2>
           </div>
           
           {alerts.length === 0 ? (
             <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-8 flex flex-col items-center justify-center text-center">
               <ShieldCheck className="w-8 h-8 text-emerald-500 mb-3" />
-              <p className="text-zinc-900 dark:text-zinc-100 font-medium">No active risks</p>
-              <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">Our predictive models indicate all rooms are perfectly safe.</p>
+              <p className="text-zinc-900 dark:text-zinc-100 font-medium">{t('reports.noActiveRisks')}</p>
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">{t('reports.allRoomsSafe')}</p>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -332,10 +352,10 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
                       <button
                         onClick={() => handleDismissAlert(alert.id)}
                         className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                        title="Dismiss alert"
+                        title={t('reports.dismissAlert')}
                       >
                         <X className="w-3 h-3" />
-                        Dismiss
+                        {t('reports.dismiss')}
                       </button>
                     </div>
                   </div>
@@ -345,7 +365,7 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
                     {/* General Mold Risk */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">General Mold Risk</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">{t('reports.generalMoldRisk')}</span>
                         <span className={`text-xs font-semibold ${severityTextColor(alert.generalMoldProbability ?? 0)}`}>
                           {(alert.generalMoldProbability ?? 0).toFixed(1)}%
                         </span>
@@ -361,7 +381,7 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
                     {/* Toxic Black Mold Risk */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">Toxic Black Mold Risk</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">{t('reports.blackMoldRisk')}</span>
                         <span className={`text-xs font-semibold ${severityTextColor(alert.blackMoldProbability ?? 0)}`}>
                           {(alert.blackMoldProbability ?? 0).toFixed(1)}%
                         </span>
@@ -410,7 +430,7 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
-                    Previous
+                    {t('reports.previous')}
                   </button>
                   <span className="text-xs text-zinc-500">
                     {alertPage + 1} / {totalAlertPages}
@@ -420,7 +440,7 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
                     disabled={alertPage >= totalAlertPages - 1}
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
-                    Next
+                    {t('reports.next')}
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -435,9 +455,9 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
           {/* Top: Page Header & Filter */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Analytics</h1>
+              <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">{t('reports.title')}</h1>
               <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                Advanced insights and predictive analysis
+                {t('reports.subtitle')}
               </p>
             </div>
             <div className="flex bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 p-1 rounded-lg">
@@ -461,16 +481,16 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
           <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
-                <Activity className="w-4 h-4" /> Trend Aggregation ({timeframe})
+                <Activity className="w-4 h-4" /> {t('reports.trendAggregation')} ({timeframe})
               </h2>
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-zinc-500 dark:text-zinc-400">Humidity</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">{t('reports.humidity')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  <span className="text-zinc-500 dark:text-zinc-400">Temperature</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">{t('reports.temperature')}</span>
                 </div>
               </div>
             </div>
@@ -478,8 +498,8 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
             <div className="h-64">
               {chartData.length === 0 ? (
                 <div className="w-full h-full flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-400 text-sm">
-                  <p>Waiting for database index calculation...</p>
-                  <p className="mt-1 text-xs opacity-75">Verify console permissions if this persists.</p>
+                  <p>{t('reports.waitingIndex')}</p>
+                  <p className="mt-1 text-xs opacity-75">{t('reports.checkConsole')}</p>
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -552,13 +572,13 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2 mb-2">
               <Activity className="w-5 h-5 text-emerald-500" />
-              <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100">Global Stream</h2>
+              <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100">{t('reports.globalStream')}</h2>
             </div>
             
             <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg overflow-hidden">
               {recentActivity.length === 0 ? (
                  <div className="p-8 text-center text-zinc-500 dark:text-zinc-400 text-sm">
-                   Waiting for IoT hardware data limit(10)...
+                   {t('reports.waitingData')}
                  </div>
               ) : (
                  <div className="divide-y divide-slate-200/60 dark:divide-zinc-800/50">

@@ -15,6 +15,7 @@ import { LoginPage } from '@/pages/LoginPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { SignupPage } from '@/pages/SignupPage';
 import { useTheme } from 'next-themes';
+import { useTranslation } from 'react-i18next';
 import type { RoomData } from '@/types';
 
 // Navigation context to share between Sidebar and App
@@ -85,6 +86,7 @@ function DashboardPage({
 }
 
 function App() {
+  const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
   const [availableRooms, setAvailableRooms] = useState<any[]>([]);
   const [roomData, setRoomData] = useState<RoomData | null>(null);
@@ -177,9 +179,9 @@ function App() {
               criticalLimit: freshRoom.criticalLimit,
               status: 'safe',
               lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              temperature: { value: 0, min: 0, max: 50, unit: '°C', label: 'Temperature', caption: 'Pending' },
-              humidity: { value: 0, min: 0, max: 100, unit: '%', label: 'Humidity', caption: 'Pending' },
-              lightLevel: { value: 0, min: 0, max: 1000, unit: 'lux', label: 'Light Level', caption: 'Pending' },
+              temperature: { value: 0, min: 0, max: 50, unit: '°C', label: t('dashboard.stats.temperature.label'), caption: t('dashboard.stats.temperature.caption.pending') },
+              humidity: { value: 0, min: 0, max: 100, unit: '%', label: t('dashboard.stats.humidity.label'), caption: t('dashboard.stats.humidity.caption.pending') },
+              lightLevel: { value: 0, min: 0, max: 1000, unit: 'lux', label: t('dashboard.stats.lightLevel.label'), caption: t('dashboard.stats.lightLevel.caption.pending') },
               humidityHistory: [],
               appliances: freshRoom.appliances || [],
             } as any;
@@ -189,8 +191,12 @@ function App() {
       } else {
         setRoomData(null);
       }
-    }, (error) => {
-      console.error('[App] Devices listener error:', error);
+    }, (error: any) => {
+      if (error?.code === 'permission-denied') {
+        console.warn('[App] Devices listener permission denied — check security rules:', error.message);
+      } else {
+        console.error('[App] Devices listener error:', error);
+      }
     });
 
     return () => unsubscribe();
@@ -208,15 +214,15 @@ function App() {
         criticalLimit: selectedRoom.criticalLimit,
         status: 'safe',
         lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        temperature: { value: 0, min: 0, max: 50, unit: '°C', label: 'Temperature', caption: 'Pending' },
-        humidity: { value: 0, min: 0, max: 100, unit: '%', label: 'Humidity', caption: 'Pending' },
-        lightLevel: { value: 0, min: 0, max: 1000, unit: 'lux', label: 'Light Level', caption: 'Pending' },
+        temperature: { value: 0, min: 0, max: 50, unit: '°C', label: t('dashboard.stats.temperature.label'), caption: t('dashboard.stats.temperature.caption.pending') },
+        humidity: { value: 0, min: 0, max: 100, unit: '%', label: t('dashboard.stats.humidity.label'), caption: t('dashboard.stats.humidity.caption.pending') },
+        lightLevel: { value: 0, min: 0, max: 1000, unit: 'lux', label: t('dashboard.stats.lightLevel.label'), caption: t('dashboard.stats.lightLevel.caption.pending') },
         humidityHistory: [],
         appliances: selectedRoom.appliances || [],
       } as any);
       setCurrentPage('dashboard');
     }
-  }, [availableRooms]);
+  }, [availableRooms, t]);
 
   // Handle appliance state changes
   const handleApplianceStateChange = useCallback((id: string, turnOn: boolean) => {
@@ -293,17 +299,17 @@ function App() {
             temperature: {
               ...prev.temperature,
               value: Math.round(newTemp * 10) / 10,
-              caption: newTemp < 18 ? 'Cool' : newTemp > 26 ? 'Warm' : 'Comfortable',
+              caption: newTemp < 18 ? t('dashboard.stats.temperature.caption.cool') : newTemp > 26 ? t('dashboard.stats.temperature.caption.warm') : t('dashboard.stats.temperature.caption.comfortable'),
             },
             humidity: {
               ...prev.humidity,
               value: Math.round(newHumidity),
-              caption: newHumidity < 40 ? 'Dry' : newHumidity >= safeLimit ? 'Humid' : 'Optimal',
+              caption: newHumidity < 40 ? t('dashboard.stats.humidity.caption.dry') : newHumidity >= safeLimit ? t('dashboard.stats.humidity.caption.humid') : t('dashboard.stats.humidity.caption.optimal'),
             },
             lightLevel: {
               ...prev.lightLevel,
               value: Math.round(newLight),
-              caption: newLight < 100 ? 'Dim' : newLight > 500 ? 'Bright' : 'Moderate',
+              caption: newLight < 100 ? t('dashboard.stats.lightLevel.caption.dim') : newLight > 500 ? t('dashboard.stats.lightLevel.caption.bright') : t('dashboard.stats.lightLevel.caption.moderate'),
             },
           };
         });
@@ -366,7 +372,7 @@ function App() {
         <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto flex items-center justify-center min-h-[50vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-            <p className="text-zinc-500 dark:text-zinc-400">Loading...</p>
+            <p className="text-zinc-500 dark:text-zinc-400">{t('app.loading')}</p>
           </div>
         </div>
       );
@@ -378,13 +384,13 @@ function App() {
           return (
             <div className="p-4 md:p-6 lg:p-8 2xl:p-10 w-full max-w-[1920px] mx-auto flex items-center justify-center min-h-[50vh]">
               <div className="text-center space-y-4 2xl:space-y-6">
-                <h2 className="text-2xl 2xl:text-4xl font-medium text-zinc-900 dark:text-zinc-100">Welcome to MoldyBase</h2>
-                <p className="text-zinc-500 text-base 2xl:text-lg dark:text-zinc-400">Please add a room to begin monitoring.</p>
+                <h2 className="text-2xl 2xl:text-4xl font-medium text-zinc-900 dark:text-zinc-100">{t('app.welcome')}</h2>
+                <p className="text-zinc-500 text-base 2xl:text-lg dark:text-zinc-400">{t('app.welcomeSubtitle')}</p>
                 <button
                   onClick={() => setCurrentPage('rooms')}
                   className="px-4 py-2 2xl:px-8 2xl:py-4 2xl:text-lg bg-emerald-500 text-white rounded font-medium hover:bg-emerald-600 transition-colors"
                 >
-                  Manage Rooms
+                  {t('app.manageRooms')}
                 </button>
               </div>
             </div>
