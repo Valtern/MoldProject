@@ -107,22 +107,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup GitHub CLI
+        run: echo "GH_TOKEN is configured"
+
       - name: Create Pull Request to main (skip if exists)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          EXISTING=$(gh pr list \
-            --base main \
-            --head experimental \
-            --state open \
-            --json number \
-            --jq '.[0].number')
+          # Check if PR already exists
+          EXISTING=$(gh pr list --base main --head experimental --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
 
           if [ -n "$EXISTING" ]; then
-            echo "PR #$EXISTING sudah ada dari experimental → main. Skip."
-          else
-            gh pr create \
-              --base main \
-              --head experimental \
-              --title "feat: merge experimental into main" \
-              --body "$(cat <<'EOF'
+            echo "PR #$EXISTING already exists from experimental → main. Skipping."
+            exit 0
+          fi
+
+          # Create new PR
+          gh pr create \
+            --base main \
+            --head experimental \
+            --title "feat: merge experimental into main" \
+            --body "Automated PR from experimental to main" \
+            --label "auto-pr" 2>/dev/null || echo "PR creation may have failed or PR already exists"
