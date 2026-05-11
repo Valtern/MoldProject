@@ -9,7 +9,7 @@
     "tagline": "Sensor",
     "loading": "Memuat...",
     "welcome": "Selamat Datang di MoldyBase",
-    "welcomeSubtitle": "Silakan tambahkan ruangan untuk memulai pemantauan.",
+    "welcomeSubtitle": "Silakan tambah ruangan untuk mulai memantau.",
     "manageRooms": "Kelola Ruangan",
     "version": "v2.4.0",
     "footer": "Dilindungi oleh keamanan tingkat perusahaan"
@@ -69,23 +69,23 @@
         "passwordMismatch": "Kata sandi tidak cocok",
         "emailInUse": "Akun dengan email ini sudah ada.",
         "weakPassword": "Kata sandi terlalu lemah. Gunakan kata sandi yang lebih kuat.",
-        "operationNotAllowed": "Akun email/kata sandi tidak diaktifkan.",
+        "operationNotAllowed": "Akun email/kata sandi belum diaktifkan.",
         "generic": "Gagal membuat akun. Silakan coba lagi."
       }
     },
     "forgotPassword": {
       "title": "Atur Ulang Kata Sandi",
-      "subtitle": "Masukkan email Anda dan kami akan mengirimkan tautan reset",
+      "subtitle": "Masukkan alamat email Anda, dan kami akan mengirimkan link untuk mereset kata sandi",
       "backToLogin": "Kembali ke masuk",
       "email": "Email",
       "emailPlaceholder": "Masukkan email Anda",
-      "sendResetLink": "Kirim Tautan Reset",
+      "sendResetLink": "Kirim Link Reset",
       "sending": "Mengirim...",
       "emailSent": "Email Terkirim",
       "resendIn": "Kirim ulang dalam {{seconds}}d",
       "success": {
         "title": "Email reset terkirim",
-        "message": "Periksa kotak masuk Anda untuk tautan reset kata sandi"
+        "message": "Periksa kotak masuk Anda untuk link reset kata sandi"
       },
       "errors": {
         "emptyEmail": "Silakan masukkan alamat email Anda",
@@ -114,7 +114,7 @@
         }
       },
       "humidity": {
-        "label": "Kelembaban",
+        "label": "Kelembapan",
         "caption": {
           "dry": "Kering",
           "optimal": "Optimal",
@@ -133,7 +133,7 @@
       }
     },
     "chart": {
-      "title": "Riwayat Kelembaban",
+      "title": "Riwayat Kelembapan",
       "subtitle": "24 jam terakhir",
       "noData": "Tidak ada data tersedia",
       "error": "Gagal memuat data grafik"
@@ -141,7 +141,7 @@
     "appliances": {
       "title": "Kontrol Peralatan",
       "fan": "Kipas Ekshaust",
-      "dehumidifier": "Pelembab Udara",
+      "dehumidifier": "Dehumidifier",
       "auto": "Otomatis",
       "manual": "Manual",
       "on": "Nyala",
@@ -161,7 +161,7 @@
     "noDevices": "Belum ada perangkat yang diklaim. Buka {{deviceControls}} untuk mengklaim ESP32 pertama Anda.",
     "deviceControls": "Kontrol Perangkat",
     "summary": {
-      "online": "Daring",
+      "online": "Hidup",
       "warning": "Peringatan",
       "offline": "Mati"
     },
@@ -172,7 +172,7 @@
       "update": "Perbarui Ruangan",
       "deleteConfirm": "Apakah Anda yakin ingin menghapus ruangan ini?"
     },
-    "humidity": "kelembaban"
+    "humidity": "kelembapan"
   },
   "devices": {
     "title": "Kontrol Perangkat",
@@ -186,7 +186,7 @@
       "roomNamePlaceholder": "mis. Kamar Tidur Utama",
       "claim": "Klaim Perangkat",
       "claiming": "Mengklaim...",
-      "success": "Perangkat berhasil diklaim! Sekarang akan muncul dalam daftar perangkat dan ikhtisar ruangan Anda.",
+      "success": "Perangkat berhasil diklaim! Sekarang akan muncul di daftar perangkat dan ringkasan ruangan Anda.",
       "error": {
         "notLoggedIn": "Anda harus masuk untuk mengklaim perangkat.",
         "notFound": "Tidak ada perangkat yang belum diklaim dengan ID ini. Pastikan ESP32 Anda terhubung ke Wi-Fi dan belum diklaim.",
@@ -205,7 +205,7 @@
       "active": "Aktif"
     },
     "status": {
-      "online": "Daring",
+      "online": "Hidup",
       "offline": "Mati",
       "unstable": "Tidak Stabil"
     },
@@ -217,7 +217,7 @@
       "offline": "Mati"
     },
     "legend": {
-      "online": "Daring (< 5m)",
+      "online": "Hidup (< 5m)",
       "unstable": "Tidak Stabil (5-15m)",
       "offline": "Mati (> 15m)"
     },
@@ -236,7 +236,7 @@
     "previous": "Sebelumnya",
     "next": "Berikutnya",
     "trendAggregation": "Agregasi Tren",
-    "humidity": "Kelembaban",
+    "humidity": "Kelembapan",
     "temperature": "Suhu",
     "waitingIndex": "Menunggu perhitungan indeks database...",
     "checkConsole": "Periksa izin konsol jika ini berlanjut.",
@@ -253,9 +253,9 @@
       "general": {
         "title": "Ambang Batas Jamur Umum",
         "safeLimit": "Batas Aman (% RH)",
-        "safeLimitDesc": "Kelembaban di bawah nilai ini dianggap aman",
+        "safeLimitDesc": "Kelembapan di bawah nilai ini dianggap aman",
         "criticalLimit": "Batas Kritis (% RH)",
-        "criticalLimitDesc": "Kelembaban di atas ini memicu peringatan jamur kritis"
+        "criticalLimitDesc": "Kelembapan di atas ini memicu peringatan jamur kritis"
       },
       "blackMold": {
         "title": "Ambang Batas Jamur Hitam Beracun",
