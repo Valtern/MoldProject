@@ -96,21 +96,23 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
 
         {/* Card */}
         <div className="relative bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl dark:shadow-black/50 p-8 md:p-10">
-          {/* Theme Toggle + Language Switcher - inside card top-right */}
-          <div className="absolute top-4 right-4 flex items-center gap-2">
+          {/* Language Switcher - top left */}
+          <div className="absolute top-4 left-4">
             <LanguageSwitcher />
-            <button
-              onClick={toggleTheme}
-              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 flex items-center justify-center"
-              aria-label={isDark ? t('theme.switchToLight') : t('theme.switchToDark')}
-            >
-              {isDark ? (
-                <Sun className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4 text-slate-600" />
-              )}
-            </button>
           </div>
+
+          {/* Theme Toggle - top right */}
+          <button
+            onClick={toggleTheme}
+            className="absolute top-4 right-4 text-slate-500 dark:text-zinc-500 hover:text-amber-500 dark:hover:text-amber-400 transition-all duration-200 focus:outline-none"
+            aria-label={isDark ? t('theme.switchToLight') : t('theme.switchToDark')}
+          >
+            {isDark ? (
+              <Sun className="w-5 h-5" />
+            ) : (
+              <Moon className="w-5 h-5" />
+            )}
+          </button>
 
           {/* Header */}
           <div className="flex flex-col items-center mb-8">
