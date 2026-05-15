@@ -1,16 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Sliders, Bell, Mail, Monitor, Moon, Sun } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Sliders, Bell, Mail, Monitor, Moon, Sun, AlertTriangle, Filter } from 'lucide-react';
 import { db, auth } from '@/lib/firebase';
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 
 export function SettingsPage() {
-  const [safeHumidityLimit, setSafeHumidityLimit] = useState<number | string>(60);
-  const [criticalHumidityLimit, setCriticalHumidityLimit] = useState<number | string>(85);
+  const { t } = useTranslation();
+  // ── Mold Threshold State (4 distinct fields) ────────────────────────────────
+  const [generalSafeLimit, setGeneralSafeLimit] = useState<number | string>(60);
+  const [generalCriticalLimit, setGeneralCriticalLimit] = useState<number | string>(80);
+  const [blackMoldSafeLimit, setBlackMoldSafeLimit] = useState<number | string>(70);
+  const [blackMoldCriticalLimit, setBlackMoldCriticalLimit] = useState<number | string>(90);
+
+  // ── Other Settings State ────────────────────────────────────────────────────
   const [alertEmail, setAlertEmail] = useState<string>('');
   const [alertsEnabled, setAlertsEnabled] = useState<boolean>(false);
+  const [emailAlertLevels, setEmailAlertLevels] = useState<string[]>(['High']);
   const [rippleDisabled, setRippleDisabled] = useState(() => localStorage.getItem('moldguard-ripple-disabled') === 'true');
+  const [isSaving, setIsSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const { theme, setTheme } = useTheme();
 
@@ -24,10 +34,15 @@ export function SettingsPage() {
     getDoc(userSettingsRef).then((snapshot) => {
       if (!snapshot.exists()) {
         setDoc(userSettingsRef, {
-          safeHumidityLimit: 60,
-          criticalHumidityLimit: 85,
+          generalSafeLimit: 60,
+          generalCriticalLimit: 80,
+          blackMoldSafeLimit: 70,
+          blackMoldCriticalLimit: 90,
+          // Legacy field kept for Cloud Function backward compatibility
+          criticalHumidityLimit: 80,
           alertEmail: '',
           alertsEnabled: false,
+          emailAlertLevels: ['High'],
           themePreference: 'system'
         }, { merge: true });
       }
@@ -36,10 +51,25 @@ export function SettingsPage() {
     const unsubscribe = onSnapshot(userSettingsRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
-        setSafeHumidityLimit(data.safeHumidityLimit ?? 60);
-        setCriticalHumidityLimit(data.criticalHumidityLimit ?? 85);
+        // New fields with fallback to legacy values for migration
+        setGeneralSafeLimit(data.generalSafeLimit ?? data.safeHumidityLimit ?? 60);
+        setGeneralCriticalLimit(data.generalCriticalLimit ?? data.criticalHumidityLimit ?? 80);
+        setBlackMoldSafeLimit(data.blackMoldSafeLimit ?? 70);
+        setBlackMoldCriticalLimit(data.blackMoldCriticalLimit ?? 90);
         setAlertEmail(data.alertEmail ?? '');
         setAlertsEnabled(data.alertsEnabled ?? false);
+        // Multi-select levels with migration from legacy single-value field
+        if (Array.isArray(data.emailAlertLevels)) {
+          setEmailAlertLevels(data.emailAlertLevels);
+        } else if (data.emailAlertThreshold) {
+          // Migrate: old threshold "Medium" → ['Medium', 'High'], "Low" → all, "High" → ['High']
+          const legacy = data.emailAlertThreshold;
+          if (legacy === 'Low') setEmailAlertLevels(['Low', 'Medium', 'High']);
+          else if (legacy === 'Medium') setEmailAlertLevels(['Medium', 'High']);
+          else setEmailAlertLevels(['High']);
+        } else {
+          setEmailAlertLevels(['High']);
+        }
         if (data.themePreference) {
           setTheme(data.themePreference);
         }
@@ -51,74 +81,189 @@ export function SettingsPage() {
     return () => unsubscribe();
   }, []);
 
+  // ── Validation ──────────────────────────────────────────────────────────────
+  const validate = (): string[] => {
+    const errors: string[] = [];
+    const gs = Number(generalSafeLimit);
+    const gc = Number(generalCriticalLimit);
+    const bs = Number(blackMoldSafeLimit);
+    const bc = Number(blackMoldCriticalLimit);
+
+    if (isNaN(gs) || isNaN(gc) || isNaN(bs) || isNaN(bc)) {
+      errors.push(t('settings.validation.nan'));
+      return errors;
+    }
+
+    if (gs >= gc) {
+      errors.push(t('settings.validation.generalOrder'));
+    }
+    if (bs >= bc) {
+      errors.push(t('settings.validation.blackMoldOrder'));
+    }
+    if (bc > 90) {
+      errors.push(t('settings.validation.maxCeiling', { organism: t('settings.thresholds.notice.organism') }));
+    }
+
+    return errors;
+  };
+
   const handleSave = async () => {
+    const errors = validate();
+    setValidationErrors(errors);
+    if (errors.length > 0) {
+      toast.error(t('settings.validation.fixBeforeSave'));
+      return;
+    }
+
+    setIsSaving(true);
     try {
       const uid = auth.currentUser?.uid;
       if (!uid) throw new Error('Not authenticated');
       await setDoc(doc(db, 'Settings', uid), {
-        safeHumidityLimit: Number(safeHumidityLimit),
-        criticalHumidityLimit: Number(criticalHumidityLimit),
+        generalSafeLimit: Number(generalSafeLimit),
+        generalCriticalLimit: Number(generalCriticalLimit),
+        blackMoldSafeLimit: Number(blackMoldSafeLimit),
+        blackMoldCriticalLimit: Number(blackMoldCriticalLimit),
+        // Legacy field kept for Cloud Function backward compatibility
+        criticalHumidityLimit: Number(generalCriticalLimit),
         alertEmail,
         alertsEnabled,
+        emailAlertLevels,
         themePreference: theme || 'system'
       }, { merge: true });
-      toast.success('Settings saved successfully!');
+      toast.success(t('settings.save.success'));
     } catch (error) {
       console.error(error);
-      toast.error('Failed to save settings.');
+      toast.error(t('settings.save.error'));
+    } finally {
+      setIsSaving(false);
     }
   };
+
+  // Shared input class for consistency
+  const inputClass = "w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1";
 
   return (
     <div className="w-full max-w-4xl 2xl:max-w-5xl mx-auto transition-all">
       <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
       {/* Page Header */}
       <div className="mb-4 md:mb-6">
-        <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Data Management</h1>
+        <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">{t('settings.title')}</h1>
         <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-          Manage data, alerts, and system settings
+          {t('settings.subtitle')}
         </p>
       </div>
 
-      {/* Threshold Configuration */}
+      {/* ═══ Threshold Configuration ═══ */}
       <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-3 md:mb-4">
         <div className="flex items-center gap-2 mb-4">
           <Sliders className="w-4 h-4 text-emerald-500" />
-          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Threshold Configuration</h2>
+          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{t('settings.thresholds.title')}</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-          <div>
-            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-              Safe Humidity Limit (%)
-            </label>
-            <input
-              type="number"
-              value={safeHumidityLimit}
-              onChange={(e) => setSafeHumidityLimit(e.target.value)}
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
-              min="0"
-              max="100"
-            />
-            <p className="text-xs text-zinc-600 mt-1.5">
-              Humidity below this value is considered safe
-            </p>
+        {/* Validation Errors */}
+        {validationErrors.length > 0 && (
+          <div className="mb-4 p-3 rounded-md bg-red-500/10 border border-red-500/20">
+            {validationErrors.map((err, i) => (
+              <p key={i} className="text-xs text-red-400 flex items-center gap-1.5">
+                <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                {err}
+              </p>
+            ))}
+          </div>
+        )}
+
+        {/* ── Section 1: General Mold Thresholds ── */}
+        <div className="mb-5">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
+            {t('settings.thresholds.general.title')}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+            <div>
+              <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                {t('settings.thresholds.general.safeLimit')}
+              </label>
+              <input
+                type="number"
+                value={generalSafeLimit}
+                onChange={(e) => { setGeneralSafeLimit(e.target.value); setValidationErrors([]); }}
+                className={`${inputClass} focus:border-emerald-500/50 focus:ring-emerald-500/20`}
+                min="0"
+                max="100"
+              />
+              <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1.5">
+                {t('settings.thresholds.general.safeLimitDesc')}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                {t('settings.thresholds.general.criticalLimit')}
+              </label>
+              <input
+                type="number"
+                value={generalCriticalLimit}
+                onChange={(e) => { setGeneralCriticalLimit(e.target.value); setValidationErrors([]); }}
+                className={`${inputClass} focus:border-red-500/50 focus:ring-red-500/20`}
+                min="0"
+                max="100"
+              />
+              <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1.5">
+                {t('settings.thresholds.general.criticalLimitDesc')}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-slate-200/60 dark:border-white/5 my-4" />
+
+        {/* ── Section 2: Toxic Black Mold Thresholds ── */}
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
+            {t('settings.thresholds.blackMold.title')}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+            <div>
+              <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                {t('settings.thresholds.blackMold.safeLimit')}
+              </label>
+              <input
+                type="number"
+                value={blackMoldSafeLimit}
+                onChange={(e) => { setBlackMoldSafeLimit(e.target.value); setValidationErrors([]); }}
+                className={`${inputClass} focus:border-emerald-500/50 focus:ring-emerald-500/20`}
+                min="0"
+                max="100"
+              />
+              <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1.5">
+                {t('settings.thresholds.blackMold.safeLimitDesc')}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                {t('settings.thresholds.blackMold.criticalLimit')}
+              </label>
+              <input
+                type="number"
+                value={blackMoldCriticalLimit}
+                onChange={(e) => { setBlackMoldCriticalLimit(e.target.value); setValidationErrors([]); }}
+                className={`${inputClass} focus:border-red-500/50 focus:ring-red-500/20`}
+                min="0"
+                max="90"
+              />
+              <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1.5">
+                {t('settings.thresholds.blackMold.criticalLimitDesc')}
+              </p>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-              Critical Humidity Limit (%)
-            </label>
-            <input
-              type="number"
-              value={criticalHumidityLimit}
-              onChange={(e) => setCriticalHumidityLimit(e.target.value)}
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20"
-              min="0"
-              max="100"
-            />
-            <p className="text-xs text-zinc-600 mt-1.5">
-              Humidity above this value triggers critical alerts
+          {/* Biological Override Notice */}
+          <div className="mt-3 p-3 rounded-md bg-amber-500/5 border border-amber-500/15 flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <span className="font-semibold text-amber-400">{t('settings.thresholds.notice.title')}</span> {t('settings.thresholds.notice.text', { organism: t('settings.thresholds.notice.organism') })}
             </p>
           </div>
         </div>
@@ -128,13 +273,13 @@ export function SettingsPage() {
       <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-3 md:mb-4">
         <div className="flex items-center gap-2 mb-4">
           <Bell className="w-4 h-4 text-emerald-500" />
-          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Alert Preferences</h2>
+          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{t('settings.alerts.title')}</h2>
         </div>
 
         <div className="space-y-4">
           <div>
             <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-              Email Address for Alerts
+              {t('settings.alerts.email')}
             </label>
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-zinc-500 dark:text-zinc-400 absolute ml-3" />
@@ -142,7 +287,7 @@ export function SettingsPage() {
                 type="email"
                 value={alertEmail}
                 onChange={(e) => setAlertEmail(e.target.value)}
-                placeholder="Enter email address"
+                placeholder={t('settings.alerts.emailPlaceholder')}
                 className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md pl-10 pr-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
               />
             </div>
@@ -150,9 +295,9 @@ export function SettingsPage() {
 
           <div className="flex items-center justify-between pt-2">
             <div>
-              <p className="text-sm text-zinc-900 dark:text-zinc-100">Enable Email Alerts</p>
+              <p className="text-sm text-zinc-900 dark:text-zinc-100">{t('settings.alerts.enable')}</p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                Receive automated mold warnings via email
+                {t('settings.alerts.enableDesc')}
               </p>
             </div>
             <button
@@ -175,11 +320,57 @@ export function SettingsPage() {
         </div>
       </div>
 
+      {/* ═══ Notification Preferences ═══ */}
+      <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-3 md:mb-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="w-4 h-4 text-emerald-500" />
+          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{t('settings.notifications.title')}</h2>
+        </div>
+
+        <div>
+          <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-3">
+            {t('settings.notifications.label')}
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {[
+              { value: 'Low', label: t('settings.notifications.low'), color: 'emerald' },
+              { value: 'Medium', label: t('settings.notifications.medium'), color: 'amber' },
+              { value: 'High', label: t('settings.notifications.high'), color: 'red' },
+            ].map((option) => {
+              const isActive = emailAlertLevels.includes(option.value);
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    setEmailAlertLevels((prev) =>
+                      prev.includes(option.value)
+                        ? prev.filter((l) => l !== option.value)
+                        : [...prev, option.value]
+                    );
+                  }}
+                  className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center transition-all ${
+                    isActive
+                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20'
+                      : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-500 dark:text-zinc-400 hover:border-zinc-600 dark:hover:border-zinc-700'
+                  }`}
+                >
+                  <span className="text-sm font-medium">{option.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-2">
+            {t('settings.notifications.hint')}
+          </p>
+        </div>
+      </div>
+
       {/* Appearance */}
       <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-5 mb-4 md:mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Monitor className="w-4 h-4 text-emerald-500" />
-          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Appearance</h2>
+          <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{t('settings.appearance.title')}</h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -190,7 +381,7 @@ export function SettingsPage() {
             }`}
           >
             <Sun className="w-6 h-6 mb-2" />
-            <span className="text-sm font-medium">Light</span>
+            <span className="text-sm font-medium">{t('settings.appearance.light')}</span>
           </button>
           
           <button
@@ -200,7 +391,7 @@ export function SettingsPage() {
             }`}
           >
             <Moon className="w-6 h-6 mb-2" />
-            <span className="text-sm font-medium">Dark</span>
+            <span className="text-sm font-medium">{t('settings.appearance.dark')}</span>
           </button>
 
           <button
@@ -210,15 +401,15 @@ export function SettingsPage() {
             }`}
           >
             <Monitor className="w-6 h-6 mb-2" />
-            <span className="text-sm font-medium">System</span>
+            <span className="text-sm font-medium">{t('settings.appearance.system')}</span>
           </button>
         </div>
 
         {/* Click Ripple Toggle */}
         <div className="flex items-center justify-between mt-5 pt-4 border-t border-slate-200/60 dark:border-white/5">
           <div>
-            <p className="text-sm text-zinc-900 dark:text-zinc-100">Click Ripple Effect</p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Show wave ripple animation on click</p>
+            <p className="text-sm text-zinc-900 dark:text-zinc-100">{t('settings.appearance.ripple.title')}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{t('settings.appearance.ripple.desc')}</p>
           </div>
           <button
             onClick={() => {
@@ -241,14 +432,16 @@ export function SettingsPage() {
       <div className="flex justify-end">
         <button
           onClick={handleSave}
+          disabled={isSaving}
           className="
             bg-emerald-500 hover:bg-emerald-600 text-zinc-950
             px-5 py-2 rounded-md text-sm font-medium
             transition-colors duration-150
             focus:outline-none focus:ring-2 focus:ring-emerald-500/30
+            disabled:opacity-50 disabled:cursor-not-allowed
           "
         >
-          Save Changes
+          {isSaving ? t('settings.save.saving') : t('settings.save.button')}
         </button>
       </div>
       </div>

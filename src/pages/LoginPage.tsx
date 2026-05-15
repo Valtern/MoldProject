@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useTheme } from 'next-themes';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Mail, Lock, Eye, EyeOff, Loader2, Moon, Sun } from 'lucide-react';
 
 interface LoginPageProps {
@@ -11,6 +13,7 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginPageProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +31,7 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
     setError('');
 
     if (!email.trim() || !password.trim()) {
-      setError('Please enter email and password');
+      setError(t('auth.login.errors.emptyFields'));
       return;
     }
 
@@ -38,23 +41,23 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
       await signInWithEmailAndPassword(auth, email, password);
       onLoginSuccess();
     } catch (err: any) {
-      let errorMessage = 'Login failed. Please try again.';
-      
+      let errorMessage = t('auth.login.errors.generic');
+
       switch (err.code) {
         case 'auth/user-not-found':
-          errorMessage = 'No account found with this email address.';
+          errorMessage = t('auth.login.errors.userNotFound');
           break;
         case 'auth/wrong-password':
-          errorMessage = 'Incorrect password. Please try again.';
+          errorMessage = t('auth.login.errors.wrongPassword');
           break;
         case 'auth/invalid-email':
-          errorMessage = 'Please enter a valid email address.';
+          errorMessage = t('auth.login.errors.invalidEmail');
           break;
         case 'auth/user-disabled':
-          errorMessage = 'This account has been disabled.';
+          errorMessage = t('auth.login.errors.userDisabled');
           break;
         case 'auth/too-many-requests':
-          errorMessage = 'Too many failed attempts. Please try again later.';
+          errorMessage = t('auth.login.errors.tooManyRequests');
           break;
         default:
           errorMessage = err.message || errorMessage;
@@ -85,20 +88,23 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
       <div className="relative z-10 w-full max-w-[420px]">
         {/* Card */}
         <div className="relative bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl dark:shadow-black/50 p-8 md:p-10">
-          {/* Theme Toggle - inside card top-right */}
-          <div className="absolute top-4 right-4">
-            <button
-              onClick={toggleTheme}
-              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 flex items-center justify-center"
-              aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-            >
-              {isDark ? (
-                <Sun className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4 text-slate-600" />
-              )}
-            </button>
+          {/* Language Switcher - top left */}
+          <div className="absolute top-4 left-4">
+            <LanguageSwitcher />
           </div>
+
+          {/* Theme Toggle - top right */}
+          <button
+            onClick={toggleTheme}
+            className="absolute top-4 right-4 text-slate-500 dark:text-zinc-500 hover:text-amber-500 dark:hover:text-amber-400 transition-all duration-200 focus:outline-none"
+            aria-label={isDark ? t('theme.switchToLight') : t('theme.switchToDark')}
+          >
+            {isDark ? (
+              <Sun className="w-5 h-5" />
+            ) : (
+              <Moon className="w-5 h-5" />
+            )}
+          </button>
 
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
@@ -106,10 +112,10 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
               <img src="/logo.png" alt="MoldGuard Logo" className="w-20 h-20 object-contain" />
             </div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
-              MoldGuard
+              {t('auth.login.title')}
             </h1>
             <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1.5">
-              Sign in to your dashboard
+              {t('auth.login.subtitle')}
             </p>
           </div>
 
@@ -117,11 +123,11 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
           <form onSubmit={handleLogin} className="space-y-5">
             {/* Email Input */}
             <div>
-              <label 
-                htmlFor="email" 
+              <label
+                htmlFor="email"
                 className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-2"
               >
-                Email
+                {t('auth.login.email')}
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -133,7 +139,7 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-400 transition-all duration-200"
-                  placeholder="Enter your email"
+                  placeholder={t('auth.login.emailPlaceholder')}
                   disabled={loading}
                 />
               </div>
@@ -141,11 +147,11 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
 
             {/* Password Input */}
             <div>
-              <label 
-                htmlFor="password" 
+              <label
+                htmlFor="password"
                 className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-2"
               >
-                Password
+                {t('auth.login.password')}
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -157,7 +163,7 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-11 pr-11 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:focus:border-emerald-400 transition-all duration-200"
-                  placeholder="Enter your password"
+                  placeholder={t('auth.login.passwordPlaceholder')}
                   disabled={loading}
                 />
                 <button
@@ -194,10 +200,10 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Signing in...
+                  {t('auth.login.signingIn')}
                 </>
               ) : (
-                'Sign in'
+                t('auth.login.signIn')
               )}
             </button>
 
@@ -208,14 +214,14 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
                 onClick={onForgotPassword}
                 className="text-sm text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
               >
-                Forgot password?
+                {t('auth.login.forgotPassword')}
               </button>
               <button
                 type="button"
                 onClick={onSignup}
                 className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
               >
-                Create account
+                {t('auth.login.createAccount')}
               </button>
             </div>
           </form>
@@ -224,7 +230,7 @@ export function LoginPage({ onLoginSuccess, onForgotPassword, onSignup }: LoginP
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-400 dark:text-zinc-600">
-            Protected by enterprise-grade security
+            {t('app.footer')}
           </p>
         </div>
       </div>

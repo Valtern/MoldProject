@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Thermometer, Droplets, Wifi, ChevronRight, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Thermometer, Droplets, Wifi, ChevronRight, Pencil, Trash2, X } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { db, auth } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDoc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { collection, updateDoc, deleteDoc, doc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
-const statusConfig: Record<string, { dotClass: string, textClass: string, bgClass: string, label: string }> = {
-  safe: { dotClass: 'bg-emerald-500', textClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10 border-emerald-500/20', label: 'Safe' },
-  warning: { dotClass: 'bg-amber-500', textClass: 'text-amber-500', bgClass: 'bg-amber-500/10 border-amber-500/20', label: 'Warning' },
-  critical: { dotClass: 'bg-red-500', textClass: 'text-red-500', bgClass: 'bg-red-500/10 border-red-500/20', label: 'Critical Risk' },
-  waiting: { dotClass: 'bg-zinc-400', textClass: 'text-zinc-600 dark:text-zinc-400', bgClass: 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700', label: 'Waiting for data...' },
-};
+function getStatusConfig(t: (key: string) => string): Record<string, { dotClass: string, textClass: string, bgClass: string, label: string }> {
+  return {
+    safe: { dotClass: 'bg-emerald-500', textClass: 'text-emerald-500', bgClass: 'bg-emerald-500/10 border-emerald-500/20', label: t('dashboard.status.safe') },
+    warning: { dotClass: 'bg-amber-500', textClass: 'text-amber-500', bgClass: 'bg-amber-500/10 border-amber-500/20', label: t('dashboard.status.warning') },
+    critical: { dotClass: 'bg-red-500', textClass: 'text-red-500', bgClass: 'bg-red-500/10 border-red-500/20', label: t('dashboard.status.critical') },
+    waiting: { dotClass: 'bg-zinc-400', textClass: 'text-zinc-600 dark:text-zinc-400', bgClass: 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700', label: t('dashboard.status.waiting') },
+  };
+}
 
 interface RoomsPageProps {
   availableRooms: any[];
@@ -17,8 +20,10 @@ interface RoomsPageProps {
 }
 
 function RoomCard({ room, onRoomSelect, openEdit, handleDelete, onStatusUpdate }: any) {
+  const { t } = useTranslation();
   const [latestLog, setLatestLog] = useState<any>(null);
   const [currentStatus, setCurrentStatus] = useState<string>('waiting');
+  const statusConfig = getStatusConfig(t);
 
   useEffect(() => {
     if (!room.deviceID) {
@@ -57,8 +62,12 @@ function RoomCard({ room, onRoomSelect, openEdit, handleDelete, onStatusUpdate }
         setCurrentStatus('waiting');
         if (onStatusUpdate) onStatusUpdate(room.id, 'waiting');
       }
-    }, (error) => {
-      console.error('[RoomCard] Listener error for', room.name, ':', error);
+    }, (error: any) => {
+      if (error?.code === 'permission-denied') {
+        console.warn('[RoomCard] Listener permission denied for', room.name, ':', error.message);
+      } else {
+        console.error('[RoomCard] Listener error for', room.name, ':', error);
+      }
     });
 
     return () => unsubscribe();
@@ -111,7 +120,7 @@ function RoomCard({ room, onRoomSelect, openEdit, handleDelete, onStatusUpdate }
         </div>
         <div className="flex items-center gap-2 text-sm">
           <Droplets className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
-          <span className="text-zinc-500 dark:text-zinc-400">{latestLog?.humidity ?? '--'}% humidity</span>
+          <span className="text-zinc-500 dark:text-zinc-400">{latestLog?.humidity ?? '--'}% {t('rooms.humidity')}</span>
         </div>
       </div>
 
@@ -127,7 +136,7 @@ function RoomCard({ room, onRoomSelect, openEdit, handleDelete, onStatusUpdate }
 }
 
 export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  const { t } = useTranslation();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [roomStatuses, setRoomStatuses] = useState<Record<string, string>>({});
@@ -155,56 +164,10 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
 
   const [formData, setFormData] = useState({
     name: '',
-    deviceID: '',
-    safeLimit: 60,
-    criticalLimit: 85
+    deviceID: ''
   });
 
-  const handleAddOpenChange = async (open: boolean) => {
-    setIsAddOpen(open);
-    if (!open) {
-      resetForm();
-    } else {
-      try {
-        const uid = auth.currentUser?.uid;
-        if (!uid) return;
-        const userSettingsSnap = await getDoc(doc(db, 'Settings', uid));
-        if (userSettingsSnap.exists()) {
-          const data = userSettingsSnap.data();
-          setFormData(prev => ({
-            ...prev,
-            safeLimit: data.safeHumidityLimit ?? 60,
-            criticalLimit: data.criticalHumidityLimit ?? 85
-          }));
-        }
-      } catch (err) {
-        console.error("Failed to fetch global settings fallback", err);
-      }
-    }
-  };
 
-  const handleAddSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const uid = auth.currentUser?.uid;
-      if (!uid) throw new Error('Not authenticated');
-      await addDoc(collection(db, 'Devices'), {
-        userId: uid,
-        name: formData.name,
-        deviceID: formData.deviceID,
-        safeLimit: Number(formData.safeLimit),
-        criticalLimit: Number(formData.criticalLimit),
-        appliances: [
-          { id: 'fan', name: 'Exhaust Fan', icon: 'fan', state: 'auto' }, 
-          { id: 'dehumidifier', name: 'Dehumidifier', icon: 'dehumidifier', state: 'auto' }
-        ]
-      });
-      setIsAddOpen(false);
-      setFormData({ name: '', deviceID: '', safeLimit: 60, criticalLimit: 85 });
-    } catch (err) {
-      console.error("Failed to add room", err);
-    }
-  };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,9 +175,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
     try {
       await updateDoc(doc(db, 'Devices', editingRoom.id), {
         name: formData.name,
-        deviceID: formData.deviceID,
-        safeLimit: Number(formData.safeLimit),
-        criticalLimit: Number(formData.criticalLimit)
+        deviceID: formData.deviceID
       });
       setIsEditOpen(false);
       setEditingRoom(null);
@@ -225,7 +186,7 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if(confirm('Are you sure you want to delete this room?')) {
+    if(confirm(t('rooms.edit.deleteConfirm'))) {
       await deleteDoc(doc(db, 'Devices', id));
     }
   };
@@ -235,14 +196,12 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
     setEditingRoom(room);
     setFormData({
       name: room.name || '',
-      deviceID: room.deviceID || '',
-      safeLimit: room.safeLimit ?? 60,
-      criticalLimit: room.criticalLimit ?? 85
+      deviceID: room.deviceID || ''
     });
     setIsEditOpen(true);
   };
 
-  const resetForm = () => setFormData({ name: '', deviceID: '', safeLimit: 60, criticalLimit: 85 });
+
 
   // Calculate dynamic stats directly from the active cards reporting in
   const statuses = Object.values(roomStatuses);
@@ -254,109 +213,49 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
     <div className="w-full max-w-[1920px] mx-auto transition-all">
       <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
       {/* Page Header */}
-      <div className="mb-4 md:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-        <div>
-          <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">IoT Sensor Nodes</h1>
-          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Monitor all connected sensors in your mold prevention system
-          </p>
-        </div>
-
-        {/* Add Room Trigger */}
-        <Dialog.Root open={isAddOpen} onOpenChange={handleAddOpenChange}>
-          <Dialog.Trigger asChild>
-            <button className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-colors">
-              <Plus className="w-4 h-4" />
-              Add Room
-            </button>
-          </Dialog.Trigger>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
-            <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[calc(100%-2rem)] max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 z-50 focus:outline-none">
-              <div className="flex justify-between items-center mb-5">
-                <Dialog.Title className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Add New Room</Dialog.Title>
-                <Dialog.Close asChild>
-                  <button className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-300">
-                    <X className="w-5 h-5" />
-                  </button>
-                </Dialog.Close>
-              </div>
-              <form onSubmit={handleAddSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Room Name</label>
-                  <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" placeholder="e.g. Living Room" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Device ID</label>
-                  <input required value={formData.deviceID} onChange={e => setFormData({...formData, deviceID: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" placeholder="e.g. ESP32_01" />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Safe Humidity Limit (%)</label>
-                    <input type="number" required value={formData.safeLimit} onChange={e => setFormData({...formData, safeLimit: Number(e.target.value)})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Critical Limit (%)</label>
-                    <input type="number" required value={formData.criticalLimit} onChange={e => setFormData({...formData, criticalLimit: Number(e.target.value)})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500" />
-                  </div>
-                </div>
-                <div className="pt-4 flex justify-end">
-                  <button type="submit" className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md transition-colors">
-                    Save Room
-                  </button>
-                </div>
-              </form>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-
-        {/* Edit Room Modal (Shared state) */}
-        <Dialog.Root open={isEditOpen} onOpenChange={(open) => { setIsEditOpen(open); if(!open) setEditingRoom(null); }}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
-            <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[calc(100%-2rem)] max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 z-50 focus:outline-none">
-              <div className="flex justify-between items-center mb-5">
-                <Dialog.Title className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Edit Room</Dialog.Title>
-                <Dialog.Close asChild>
-                  <button className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-300">
-                    <X className="w-5 h-5" />
-                  </button>
-                </Dialog.Close>
-              </div>
-              <form onSubmit={handleEditSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Room Name</label>
-                  <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Device ID</label>
-                  <input required value={formData.deviceID} onChange={e => setFormData({...formData, deviceID: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Safe Humidity Limit (%)</label>
-                    <input type="number" required value={formData.safeLimit} onChange={e => setFormData({...formData, safeLimit: Number(e.target.value)})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-300">Critical Limit (%)</label>
-                    <input type="number" required value={formData.criticalLimit} onChange={e => setFormData({...formData, criticalLimit: Number(e.target.value)})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500" />
-                  </div>
-                </div>
-                <div className="pt-4 flex justify-end">
-                  <button type="submit" className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md transition-colors">
-                    Update Room
-                  </button>
-                </div>
-              </form>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">{t('rooms.title')}</h1>
+        <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          {t('rooms.subtitle')}
+        </p>
       </div>
+
+      {/* Edit Room Modal */}
+      <Dialog.Root open={isEditOpen} onOpenChange={(open) => { setIsEditOpen(open); if(!open) setEditingRoom(null); }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
+          <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[calc(100%-2rem)] max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 z-50 focus:outline-none">
+            <div className="flex justify-between items-center mb-5">
+              <Dialog.Title className="text-lg font-medium text-zinc-900 dark:text-zinc-100">{t('rooms.edit.title')}</Dialog.Title>
+              <Dialog.Close asChild>
+                <button className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-300">
+                  <X className="w-5 h-5" />
+                </button>
+              </Dialog.Close>
+            </div>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">{t('rooms.edit.roomName')}</label>
+                <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">{t('rooms.edit.deviceId')}</label>
+                <input required value={formData.deviceID} onChange={e => setFormData({...formData, deviceID: e.target.value})} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500" />
+              </div>
+
+              <div className="pt-4 flex justify-end">
+                <button type="submit" className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md transition-colors">
+                  {t('rooms.edit.update')}
+                </button>
+              </div>
+            </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {availableRooms.length === 0 ? (
         <div className="text-center py-12 border border-zinc-200 dark:border-zinc-800 rounded-lg border-dashed">
-          <p className="text-zinc-500 dark:text-zinc-400">No rooms configured yet.</p>
+          <p className="text-zinc-500 dark:text-zinc-400">{t('rooms.noDevices', { deviceControls: t('rooms.deviceControls') })}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 2xl:gap-6 transition-all">
@@ -377,15 +276,15 @@ export function RoomsPage({ availableRooms, onRoomSelect }: RoomsPageProps) {
       <div className="mt-4 md:mt-6 grid grid-cols-3 gap-2 md:gap-4 max-w-full">
         <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-2 md:p-3 text-center">
           <p className="text-xl md:text-2xl font-semibold text-emerald-500">{safeCount}</p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Online</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{t('rooms.summary.online')}</p>
         </div>
         <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-2 md:p-3 text-center">
           <p className="text-xl md:text-2xl font-semibold text-amber-500">{warningCount}</p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Warning</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{t('rooms.summary.warning')}</p>
         </div>
         <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-2 md:p-3 text-center">
           <p className="text-xl md:text-2xl font-semibold text-red-500">{criticalCount}</p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Offline</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{t('rooms.summary.offline')}</p>
         </div>
       </div>
       </div>

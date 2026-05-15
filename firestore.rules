@@ -9,9 +9,16 @@ service cloud.firestore {
 
     // 2. DEVICES COLLECTION
     match /Devices/{documentId} {
+      // Owner can read, update, and delete their own claimed devices
       allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Any authenticated user can read unclaimed devices (for the claim flow)
+      allow read: if request.auth != null && resource.data.status == "unclaimed";
+      // Any authenticated user can claim an unclaimed device (must assign to own UID)
+      allow update: if request.auth != null && resource.data.status == "unclaimed" && request.resource.data.userId == request.auth.uid;
+      // Owner can create devices directly (backward compatibility)
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
+
 
     // 3. SENSOR LOGS & ANALYTICS ALERTS
     match /SensorLogs/{logId} {
@@ -21,7 +28,8 @@ service cloud.firestore {
 
     match /AnalyticsAlerts/{alertId} {
       allow read: if request.auth != null;
-      allow write: if false; // Physically blocks hackers from faking AI warnings
+      allow create, update: if false; // Only Cloud Functions can generate alerts
+      allow delete: if request.auth != null; // Allow authenticated users to dismiss
     }
 
   }

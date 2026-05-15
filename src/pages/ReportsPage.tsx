@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Activity, Clock, ShieldCheck, Thermometer, Droplets, Zap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { AlertTriangle, Activity, Clock, ShieldCheck, Thermometer, Droplets, Sun, Zap, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, limit, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, onSnapshot, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { toast } from 'sonner';
 import {
   AreaChart,
   Area,
@@ -34,17 +36,42 @@ function toEpoch(timestamp: any): number {
 
 const FIRESTORE_IN_LIMIT = 10;
 
+// ── Severity Color Helper ────────────────────────────────────────────────────
+// Returns a Tailwind background class based on the probability percentage.
+function severityBarColor(value: number): string {
+  if (value >= 80) return 'bg-red-500';
+  if (value >= 40) return 'bg-amber-500';
+  return 'bg-emerald-500';
+}
+
+function severityTextColor(value: number): string {
+  if (value >= 80) return 'text-red-400';
+  if (value >= 40) return 'text-amber-400';
+  return 'text-emerald-400';
+}
+
+function severityBorderColor(value: number): string {
+  if (value >= 80) return 'border-red-500/50';
+  if (value >= 40) return 'border-amber-500/30';
+  return 'border-emerald-500/30';
+}
+
 interface ReportsPageProps {
   availableRooms: any[];
 }
 
 export function ReportsPage({ availableRooms }: ReportsPageProps) {
+  const { t } = useTranslation();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   
   // Bar Chart State
   const [timeframe, setTimeframe] = useState<'24h' | '7d' | '30d'>('24h');
   const [chartData, setChartData] = useState<any[]>([]);
+
+  // Predictive Alerts Pagination
+  const ALERTS_PER_PAGE = 5;
+  const [alertPage, setAlertPage] = useState(0);
 
   // Derive the user's device IDs from their isolated rooms
   const userDeviceIds = availableRooms.map(room => room.deviceID).filter(Boolean);
@@ -91,8 +118,14 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
 
         console.log('[Reports] Alerts fetched:', filtered.length, 'of', merged.length, '(after 3-month filter)');
         setAlerts(filtered);
-      }, (error) => {
-        console.error(`[Reports] Alerts chunk ${idx} listener error:`, error);
+      }, (error: any) => {
+        if (error?.code === 'permission-denied') {
+          console.warn(`[Reports] Alerts chunk ${idx} permission denied — check security rules:`, error.message);
+        } else if (error?.message?.includes('index') || error?.code === 'failed-precondition') {
+          console.warn(`[Reports] Alerts chunk ${idx} requires Firestore index:`, error.message);
+        } else {
+          console.error(`[Reports] Alerts chunk ${idx} listener error:`, error);
+        }
       });
       unsubscribers.push(unsubAlerts);
 
@@ -112,8 +145,14 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
         const merged = Object.values(logsByChunk).flat();
         merged.sort((a, b) => toEpoch(b.timestamp) - toEpoch(a.timestamp));
         setRecentActivity(merged.slice(0, 10));
-      }, (error) => {
-        console.error(`[Reports] Activity chunk ${idx} listener error:`, error);
+      }, (error: any) => {
+        if (error?.code === 'permission-denied') {
+          console.warn(`[Reports] Activity chunk ${idx} permission denied — check security rules:`, error.message);
+        } else if (error?.message?.includes('index') || error?.code === 'failed-precondition') {
+          console.warn(`[Reports] Activity chunk ${idx} requires Firestore index:`, error.message);
+        } else {
+          console.error(`[Reports] Activity chunk ${idx} listener error:`, error);
+        }
       });
       unsubscribers.push(unsubLogs);
     });
@@ -195,8 +234,14 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
 
         setChartData(aggregated);
       })
-      .catch((error) => {
-        console.error('[Reports] Chart chunked query error:', error);
+      .catch((error: any) => {
+        if (error?.code === 'permission-denied') {
+          console.warn('[Reports] Chart query permission denied — check security rules:', error.message);
+        } else if (error?.message?.includes('index') || error?.code === 'failed-precondition') {
+          console.warn('[Reports] Chart query requires Firestore index:', error.message);
+        } else {
+          console.error('[Reports] Chart chunked query error:', error);
+        }
       });
 
     return () => { cancelled = true; };
@@ -225,6 +270,28 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
     return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   };
 
+  // ── Predictive Alert Dismiss Handler ────────────────────────────────────────
+  const handleDismissAlert = async (alertId: string) => {
+    try {
+      await deleteDoc(doc(db, 'AnalyticsAlerts', alertId));
+      toast.success(t('reports.alertDismissed'));
+    } catch (error) {
+      console.error('[Reports] Failed to dismiss alert:', error);
+      toast.error(t('reports.alertDismissFailed'));
+    }
+  };
+
+  // ── Pagination Derived Values ───────────────────────────────────────────────
+  const totalAlertPages = Math.max(1, Math.ceil(alerts.length / ALERTS_PER_PAGE));
+  const paginatedAlerts = alerts.slice(alertPage * ALERTS_PER_PAGE, (alertPage + 1) * ALERTS_PER_PAGE);
+
+  // Reset to first page if current page is out of bounds (e.g. after dismissals)
+  useEffect(() => {
+    if (alertPage >= totalAlertPages) {
+      setAlertPage(Math.max(0, totalAlertPages - 1));
+    }
+  }, [alerts.length]);
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -252,60 +319,132 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
         <div className="xl:col-span-1 flex flex-col gap-4">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
-            <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100">Predictive Alerts</h2>
+            <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100">{t('reports.predictiveAlerts')}</h2>
           </div>
           
           {alerts.length === 0 ? (
             <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-8 flex flex-col items-center justify-center text-center">
               <ShieldCheck className="w-8 h-8 text-emerald-500 mb-3" />
-              <p className="text-zinc-900 dark:text-zinc-100 font-medium">No active risks</p>
-              <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">Our predictive models indicate all rooms are perfectly safe.</p>
+              <p className="text-zinc-900 dark:text-zinc-100 font-medium">{t('reports.noActiveRisks')}</p>
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">{t('reports.allRoomsSafe')}</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
-              {alerts.map((alert) => (
+            <div className="flex flex-col gap-3">
+              {paginatedAlerts.map((alert) => (
                 <div 
                   key={alert.id}
-                  className={`bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border shadow-lg dark:shadow-xl rounded-lg p-4 transition-colors ${
-                    alert.riskLevel === 'High' 
-                      ? 'border-red-500/50' 
-                      : 'border-amber-500/30'
-                  }`}
+                  className={`bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border shadow-lg dark:shadow-xl rounded-lg p-4 transition-colors ${severityBorderColor(Math.max(alert.generalMoldProbability ?? 0, alert.blackMoldProbability ?? 0))}`}
                 >
+                  {/* Header Row: Device ID, Time, Dismiss */}
                   <div className="flex items-start justify-between">
                     <div>
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium outline outline-1 outline-transparent ${
-                        alert.riskLevel === 'High' 
-                          ? 'bg-red-500/10 text-red-500 outline-red-500/20' 
-                          : 'bg-amber-500/10 text-amber-500 outline-amber-500/20'
-                      }`}>
-                        {alert.riskLevel} Risk
-                      </span>
-                      <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mt-2">
+                      <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                         {alert.deviceID}
                       </h3>
                       <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
                         {alert.message}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
                       <span className="text-xs text-zinc-500 dark:text-zinc-500">
                         {formatLocalTime(alert.timestamp)}
                       </span>
+                      <button
+                        onClick={() => handleDismissAlert(alert.id)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        title={t('reports.dismissAlert')}
+                      >
+                        <X className="w-3 h-3" />
+                        {t('reports.dismiss')}
+                      </button>
                     </div>
                   </div>
-                  {alert.averageHumidity && (
-                     <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-zinc-800 flex items-center justify-between text-sm">
-                       <span className="text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                         <Droplets className="w-3.5 h-3.5" /> Avg Humidity
-                       </span>
-                       <span className={`font-medium ${alert.averageHumidity > 65 ? 'text-red-400' : 'text-amber-400'}`}>
-                         {Math.round(alert.averageHumidity * 10) / 10}%
-                       </span>
-                     </div>
+
+                  {/* Dual Probability Progress Bars */}
+                  <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-zinc-800 flex flex-col gap-2.5">
+                    {/* General Mold Risk */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">{t('reports.generalMoldRisk')}</span>
+                        <span className={`text-xs font-semibold ${severityTextColor(alert.generalMoldProbability ?? 0)}`}>
+                          {(alert.generalMoldProbability ?? 0).toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-zinc-200/60 dark:bg-zinc-800 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${severityBarColor(alert.generalMoldProbability ?? 0)}`}
+                          style={{ width: `${Math.min(100, Math.max(0, alert.generalMoldProbability ?? 0))}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Toxic Black Mold Risk */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">{t('reports.blackMoldRisk')}</span>
+                        <span className={`text-xs font-semibold ${severityTextColor(alert.blackMoldProbability ?? 0)}`}>
+                          {(alert.blackMoldProbability ?? 0).toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-zinc-200/60 dark:bg-zinc-800 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${severityBarColor(alert.blackMoldProbability ?? 0)}`}
+                          style={{ width: `${Math.min(100, Math.max(0, alert.blackMoldProbability ?? 0))}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Compact 24h Environmental Averages */}
+                  {(alert.averageTemperature != null || alert.averageHumidity != null || alert.averageLightLevel != null) && (
+                    <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-zinc-800 flex items-center justify-between gap-2">
+                      {alert.averageTemperature != null && (
+                        <span className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
+                          <Thermometer className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                          {alert.averageTemperature.toFixed(1)}°C
+                        </span>
+                      )}
+                      {alert.averageHumidity != null && (
+                        <span className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
+                          <Droplets className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                          {alert.averageHumidity.toFixed(1)}%
+                        </span>
+                      )}
+                      {alert.averageLightLevel != null && (
+                        <span className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
+                          <Sun className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
+                          {alert.averageLightLevel.toFixed(1)} lux
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}
+
+              {/* Pagination Controls */}
+              {alerts.length > ALERTS_PER_PAGE && (
+                <div className="flex items-center justify-between mt-1">
+                  <button
+                    onClick={() => setAlertPage(p => Math.max(0, p - 1))}
+                    disabled={alertPage === 0}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    {t('reports.previous')}
+                  </button>
+                  <span className="text-xs text-zinc-500">
+                    {alertPage + 1} / {totalAlertPages}
+                  </span>
+                  <button
+                    onClick={() => setAlertPage(p => Math.min(totalAlertPages - 1, p + 1))}
+                    disabled={alertPage >= totalAlertPages - 1}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {t('reports.next')}
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -316,9 +455,9 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
           {/* Top: Page Header & Filter */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Analytics</h1>
+              <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">{t('reports.title')}</h1>
               <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                Advanced insights and predictive analysis
+                {t('reports.subtitle')}
               </p>
             </div>
             <div className="flex bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 p-1 rounded-lg">
@@ -342,16 +481,16 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
           <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
-                <Activity className="w-4 h-4" /> Trend Aggregation ({timeframe})
+                <Activity className="w-4 h-4" /> {t('reports.trendAggregation')} ({timeframe})
               </h2>
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-zinc-500 dark:text-zinc-400">Humidity</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">{t('reports.humidity')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  <span className="text-zinc-500 dark:text-zinc-400">Temperature</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">{t('reports.temperature')}</span>
                 </div>
               </div>
             </div>
@@ -359,8 +498,8 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
             <div className="h-64">
               {chartData.length === 0 ? (
                 <div className="w-full h-full flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-400 text-sm">
-                  <p>Waiting for database index calculation...</p>
-                  <p className="mt-1 text-xs opacity-75">Verify console permissions if this persists.</p>
+                  <p>{t('reports.waitingIndex')}</p>
+                  <p className="mt-1 text-xs opacity-75">{t('reports.checkConsole')}</p>
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -433,13 +572,13 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2 mb-2">
               <Activity className="w-5 h-5 text-emerald-500" />
-              <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100">Global Stream</h2>
+              <h2 className="text-base font-medium text-zinc-900 dark:text-zinc-100">{t('reports.globalStream')}</h2>
             </div>
             
             <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg overflow-hidden">
               {recentActivity.length === 0 ? (
                  <div className="p-8 text-center text-zinc-500 dark:text-zinc-400 text-sm">
-                   Waiting for IoT hardware data limit(10)...
+                   {t('reports.waitingData')}
                  </div>
               ) : (
                  <div className="divide-y divide-slate-200/60 dark:divide-zinc-800/50">

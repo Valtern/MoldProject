@@ -1,0 +1,316 @@
+{
+  "language": {
+    "en": "English",
+    "id": "Indonesian",
+    "switch": "Switch language"
+  },
+  "app": {
+    "name": "MoldGuard",
+    "tagline": "Sensors",
+    "loading": "Loading...",
+    "welcome": "Welcome to MoldyBase",
+    "welcomeSubtitle": "Please add a room to begin monitoring.",
+    "manageRooms": "Manage Rooms",
+    "version": "v2.4.0",
+    "footer": "Protected by enterprise-grade security"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "rooms": "Sensors",
+    "devices": "Device",
+    "reports": "Analytics",
+    "settings": "Settings",
+    "logout": "Log out",
+    "logoutConfirm": "Log out?",
+    "yes": "Yes",
+    "no": "No",
+    "hi": "Hi,",
+    "mobileTitle": "Mold Prevention"
+  },
+  "auth": {
+    "login": {
+      "title": "MoldGuard",
+      "subtitle": "Sign in to your dashboard",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "signIn": "Sign in",
+      "signingIn": "Signing in...",
+      "forgotPassword": "Forgot password?",
+      "createAccount": "Create account",
+      "errors": {
+        "emptyFields": "Please enter email and password",
+        "userNotFound": "No account found with this email address.",
+        "wrongPassword": "Incorrect password. Please try again.",
+        "invalidEmail": "Please enter a valid email address.",
+        "userDisabled": "This account has been disabled.",
+        "tooManyRequests": "Too many failed attempts. Please try again later.",
+        "generic": "Login failed. Please try again."
+      }
+    },
+    "signup": {
+      "title": "Create Account",
+      "subtitle": "Sign up to start monitoring your spaces",
+      "backToLogin": "Back to login",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Create a password (min 6 characters)",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm your password",
+      "createAccount": "Create Account",
+      "creatingAccount": "Creating account...",
+      "footer": "By creating an account, you agree to our terms and conditions",
+      "errors": {
+        "emptyEmail": "Please enter your email address",
+        "emptyPassword": "Please enter a password",
+        "passwordTooShort": "Password must be at least 6 characters",
+        "passwordMismatch": "Passwords do not match",
+        "emailInUse": "An account with this email already exists.",
+        "weakPassword": "Password is too weak. Please use a stronger password.",
+        "operationNotAllowed": "Email/password accounts are not enabled.",
+        "generic": "Failed to create account. Please try again."
+      }
+    },
+    "forgotPassword": {
+      "title": "Reset Password",
+      "subtitle": "Enter your email and we'll send you a reset link",
+      "backToLogin": "Back to login",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "sendResetLink": "Send Reset Link",
+      "sending": "Sending...",
+      "emailSent": "Email Sent",
+      "resendIn": "Resend in {{seconds}}s",
+      "success": {
+        "title": "Reset email sent",
+        "message": "Check your inbox for the password reset link"
+      },
+      "errors": {
+        "emptyEmail": "Please enter your email address",
+        "invalidEmail": "Please enter a valid email address.",
+        "userNotFound": "No account found with this email address.",
+        "generic": "Failed to send reset email. Please try again."
+      }
+    }
+  },
+  "dashboard": {
+    "status": {
+      "safe": "Safe",
+      "warning": "Warning",
+      "critical": "Critical Risk",
+      "waiting": "Waiting for data...",
+      "updatedAt": "Updated at {{time}}"
+    },
+    "stats": {
+      "temperature": {
+        "label": "Temperature",
+        "caption": {
+          "cool": "Cool",
+          "comfortable": "Comfortable",
+          "warm": "Warm",
+          "pending": "Pending"
+        }
+      },
+      "humidity": {
+        "label": "Humidity",
+        "caption": {
+          "dry": "Dry",
+          "optimal": "Optimal",
+          "humid": "Humid",
+          "pending": "Pending"
+        }
+      },
+      "lightLevel": {
+        "label": "Light Level",
+        "caption": {
+          "dim": "Dim",
+          "moderate": "Moderate",
+          "bright": "Bright",
+          "pending": "Pending"
+        }
+      }
+    },
+    "chart": {
+      "title": "Humidity History",
+      "subtitle": "Last 24 hours",
+      "noData": "No data available",
+      "error": "Failed to load chart data"
+    },
+    "appliances": {
+      "title": "Appliance Control",
+      "fan": "Exhaust Fan",
+      "dehumidifier": "Dehumidifier",
+      "auto": "Auto",
+      "manual": "Manual",
+      "on": "On",
+      "off": "Off",
+      "turnOn": "Turn On",
+      "turnOff": "Turn Off",
+      "noAppliances": "No appliances connected",
+      "autoDesc": "Devices are controlled automatically by the ESP32 logic.",
+      "manualDesc": "Manual override is active — you control the devices.",
+      "autoFooter": "The ESP32 manages appliances automatically based on sensor readings.",
+      "manualFooter": "Overrides are sent to the ESP32 on its next data push cycle."
+    }
+  },
+  "rooms": {
+    "title": "IoT Sensor Nodes",
+    "subtitle": "Monitor all connected sensors in your mold prevention system",
+    "noDevices": "No claimed devices yet. Go to {{deviceControls}} to claim your first ESP32.",
+    "deviceControls": "Device Controls",
+    "summary": {
+      "online": "Online",
+      "warning": "Warning",
+      "offline": "Offline"
+    },
+    "edit": {
+      "title": "Edit Room",
+      "roomName": "Room Name",
+      "deviceId": "Device ID",
+      "update": "Update Room",
+      "deleteConfirm": "Are you sure you want to delete this room?"
+    },
+    "humidity": "humidity"
+  },
+  "devices": {
+    "title": "Device Controls",
+    "subtitle": "Manage and control your connected devices and appliances",
+    "claimDevice": {
+      "title": "Claim a Device",
+      "description": "Enter the Custom Device ID assigned on your ESP32 hardware via the captive portal setup. The device must have connected to the server at least once to be discoverable.",
+      "deviceId": "Device ID",
+      "deviceIdPlaceholder": "e.g. MasterBed_01",
+      "roomName": "Friendly Room Name",
+      "roomNamePlaceholder": "e.g. Master Bedroom",
+      "claim": "Claim Device",
+      "claiming": "Claiming...",
+      "success": "Device claimed successfully! It will now appear in your device list and room overview.",
+      "error": {
+        "notLoggedIn": "You must be logged in to claim a device.",
+        "notFound": "No unclaimed device found with this ID. Ensure your ESP32 is connected to Wi-Fi and hasn't already been claimed.",
+        "permissionDenied": "Permission denied. The device may already be claimed or you are not authorized.",
+        "generic": "An unexpected error occurred. Please try again."
+      }
+    },
+    "table": {
+      "deviceId": "Device ID",
+      "assignedRoom": "Assigned Room",
+      "wifiSignal": "Wi-Fi Signal",
+      "sensors": "Sensors",
+      "status": "Status",
+      "unassigned": "Unassigned",
+      "waiting": "Waiting for data...",
+      "active": "Active"
+    },
+    "status": {
+      "online": "Online",
+      "offline": "Offline",
+      "unstable": "Unstable"
+    },
+    "wifi": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "fair": "Fair",
+      "poor": "Poor",
+      "offline": "Offline"
+    },
+    "legend": {
+      "online": "Online (< 5m)",
+      "unstable": "Unstable (5-15m)",
+      "offline": "Offline (> 15m)"
+    },
+    "noDevices": "No claimed devices yet. Use the form above to claim your first ESP32 device."
+  },
+  "reports": {
+    "title": "Analytics",
+    "subtitle": "Advanced insights and predictive analysis",
+    "predictiveAlerts": "Predictive Alerts",
+    "noActiveRisks": "No active risks",
+    "allRoomsSafe": "Our predictive models indicate all rooms are perfectly safe.",
+    "dismiss": "Dismiss",
+    "dismissAlert": "Dismiss alert",
+    "generalMoldRisk": "General Mold Risk",
+    "blackMoldRisk": "Toxic Black Mold Risk",
+    "previous": "Previous",
+    "next": "Next",
+    "trendAggregation": "Trend Aggregation",
+    "humidity": "Humidity",
+    "temperature": "Temperature",
+    "waitingIndex": "Waiting for database index calculation...",
+    "checkConsole": "Verify console permissions if this persists.",
+    "globalStream": "Global Stream",
+    "waitingData": "Waiting for IoT hardware data limit(10)...",
+    "alertDismissed": "Alert dismissed.",
+    "alertDismissFailed": "Failed to dismiss alert. Please try again."
+  },
+  "settings": {
+    "title": "Data Management",
+    "subtitle": "Manage data, alerts, and system settings",
+    "thresholds": {
+      "title": "Threshold Configuration",
+      "general": {
+        "title": "General Mold Thresholds",
+        "safeLimit": "Safe Limit (% RH)",
+        "safeLimitDesc": "Humidity below this value is considered safe",
+        "criticalLimit": "Critical Limit (% RH)",
+        "criticalLimitDesc": "Humidity above this triggers critical general mold alerts"
+      },
+      "blackMold": {
+        "title": "Toxic Black Mold Thresholds",
+        "safeLimit": "Safe Limit (% RH)",
+        "safeLimitDesc": "Below this, black mold colonization risk is minimal",
+        "criticalLimit": "Critical Limit (% RH)",
+        "criticalLimitDesc": "Maximum configurable: 90% RH"
+      },
+      "notice": {
+        "title": "90% RH",
+        "text": "is the biological threshold for guaranteed {{organism}} growth and triggers a system override. Setting the critical limit above this value is not permitted.",
+        "organism": "Stachybotrys chartarum"
+      }
+    },
+    "alerts": {
+      "title": "Alert Preferences",
+      "email": "Email Address for Alerts",
+      "emailPlaceholder": "Enter email address",
+      "enable": "Enable Email Alerts",
+      "enableDesc": "Receive automated mold warnings via email"
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "label": "Receive email warnings for these risk levels",
+      "low": "Low Risk",
+      "medium": "Medium Risk",
+      "high": "High Risk",
+      "hint": "Select one, multiple, or all risk levels. You will only receive emails for the levels you choose."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "ripple": {
+        "title": "Click Ripple Effect",
+        "desc": "Show wave ripple animation on click"
+      }
+    },
+    "validation": {
+      "nan": "All threshold fields must be valid numbers.",
+      "generalOrder": "General Mold: Safe Limit must be less than Critical Limit.",
+      "blackMoldOrder": "Black Mold: Safe Limit must be less than Critical Limit.",
+      "maxCeiling": "Black Mold Critical Limit cannot exceed 90% RH (biological ceiling for {{organism}}).",
+      "fixBeforeSave": "Please fix validation errors before saving."
+    },
+    "save": {
+      "button": "Save Changes",
+      "saving": "Saving...",
+      "success": "Settings saved successfully!",
+      "error": "Failed to save settings."
+    }
+  },
+  "theme": {
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode"
+  }
+}

@@ -3,6 +3,7 @@ import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'sonner'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import './index.css'
+import './lib/i18n'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
