@@ -2,6 +2,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isValidFileOwner() {
+      return request.resource.data.userId == request.auth.uid;
+    }
+
     // 1. SETTINGS COLLECTION
     match /Settings/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
@@ -19,7 +32,6 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
-
     // 3. SENSOR LOGS & ANALYTICS ALERTS
     match /SensorLogs/{logId} {
       allow read: if request.auth != null;
@@ -30,6 +42,38 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create, update: if false; // Only Cloud Functions can generate alerts
       allow delete: if request.auth != null; // Allow authenticated users to dismiss
+    }
+
+    // 4. FILE METADATA COLLECTION
+    match /Users/{userId}/FileMetadata/{fileId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() && isOwner(userId) &&
+        request.resource.data.userId == userId;
+      allow update: if isAuthenticated() && isOwner(userId) &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.storagePath == resource.data.storagePath &&
+        request.resource.data.uploadedAt == resource.data.uploadedAt;
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Legacy top-level metadata collection
+    match /FileMetadata/{fileId} {
+      // Owners can read their own file metadata.
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      
+      // Authenticated users can create metadata for their own uploaded files.
+      allow create: if isAuthenticated() && isValidFileOwner();
+      
+      // Owner can update their own files
+      allow update: if isAuthenticated() && isOwner(resource.data.userId) &&
+        (
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.storagePath == resource.data.storagePath &&
+          request.resource.data.uploadedAt == resource.data.uploadedAt
+        );
+      
+      // Owner can delete their own files
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
 
   }

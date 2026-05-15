@@ -11,6 +11,7 @@ import { RoomsPage } from '@/pages/RoomsPage';
 import { DevicesPage } from '@/pages/DevicesPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { StoragePage } from '@/pages/StoragePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { SignupPage } from '@/pages/SignupPage';
@@ -19,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 import type { RoomData } from '@/types';
 
 // Navigation context to share between Sidebar and App
-export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings';
+export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings' | 'storage';
 export type AuthPageId = 'login' | 'forgot-password' | 'signup';
 
 function DashboardPage({
@@ -408,6 +409,8 @@ function App() {
         return <DevicesPage availableRooms={availableRooms} />;
       case 'reports':
         return <ReportsPage availableRooms={availableRooms} />;
+      case 'storage':
+        return <StoragePage />;
       case 'settings':
         return <SettingsPage />;
       default:
