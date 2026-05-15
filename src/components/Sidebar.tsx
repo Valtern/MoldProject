@@ -10,6 +10,7 @@ import {
   LogOut,
   ChevronDown,
   User,
+  Info,
 } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { auth } from '@/lib/firebase';
@@ -35,6 +36,7 @@ function getNavItems(t: (key: string) => string): NavItem[] {
 function getDesktopNavItems(t: (key: string) => string): NavItem[] {
   return [
     ...getNavItems(t),
+    { id: 'about', label: t('nav.about'), icon: Info },
     { id: 'settings', label: t('nav.settings'), icon: Settings },
   ];
 }
