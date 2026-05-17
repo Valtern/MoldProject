@@ -176,7 +176,7 @@ export function AboutPage() {
                   }}
                 >
                   <div
-                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-white text-base font-semibold"
+                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white text-base font-semibold"
                     style={{
                       background: 'linear-gradient(135deg, #51a2ff 0%, #615fff 100%)',
                     }}
