@@ -1,0 +1,63 @@
+@startuml
+!pragma layout smetana
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+
+title System Activity - Data Flow & Runtime Workflow
+
+start
+partition "Edge / Devices" as Edge {
+  :Collect sensor data (ESP32);
+  :Send data to Gateway (HTTP / MQTT);
+}
+
+partition "Gateway / Ingress" as Gateway {
+  :Receive sensor payload;
+  :Validate basic schema;
+  :Forward payload to Cloud Functions (HTTPS webhook);
+}
+
+partition "Cloud / Processing" as Functions {
+  :Receive and authenticate request;
+  :Enrich data (timestamp, device meta);
+  :Write sensor log to Firestore;
+  if (threshold exceeded?) then (yes)
+    :Create alert document in Firestore;
+    :Trigger notification (Email / Push);
+  else (no)
+  endif
+  :Acknowledge ingestion to gateway;
+}
+
+partition "Data / Storage" as Firestore {
+  :Persist sensor log (realtime collection);
+  :Update aggregated counters / indexes;
+}
+
+partition "Frontend / User" as Hosting {
+  :User opens dashboard;
+  :Frontend listens to Firestore realtime updates;
+  :Render latest status, charts, alerts;
+}
+
+partition "Analytics / Batch" as Analytics {
+  :Periodic export from Firestore;
+  :Run batch analytics and model training;
+}
+
+stop
+
+note right
+  Cloud Functions perform validation, threshold checks,
+  notification triggers, and export scheduling.
+end note
+
+note left
+  Web UI served from Firebase Hosting. Uses
+  client SDK for realtime updates.
+end note
+
+@enduml

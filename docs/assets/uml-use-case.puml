@@ -1,0 +1,56 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Guest" as guest
+actor "Authenticated User" as authUser
+actor "External Services" as extSvc
+
+rectangle "MoldProject System" {
+  ' Dikelompokkan berdasarkan fungsi agar rapi
+  
+  ' Authentication
+  usecase "Sign Up" as UC_SignUp
+  usecase "Login" as UC_Login
+  usecase "Forgot Password" as UC_Forgot
+  usecase "Logout" as UC_Logout
+
+  ' General Settings
+  usecase "Switch Language" as UC_Lang
+  usecase "Switch Theme" as UC_Theme
+
+  ' Core Features
+  usecase "View Dashboard" as UC_Dash
+  usecase "Manage / Select Rooms" as UC_Rooms
+  usecase "View Reports" as UC_Reports
+  usecase "Manage Settings" as UC_Settings
+  usecase "View Devices" as UC_Devices
+}
+
+' Relasi Guest
+guest --> UC_SignUp
+guest --> UC_Login
+guest --> UC_Forgot
+guest --> UC_Lang
+guest --> UC_Theme
+
+' Relasi Extend (Forgot Password memperluas fungsi Login)
+UC_Forgot .> UC_Login : <<extend>>
+
+' Relasi Authenticated User
+authUser --> UC_Logout
+authUser --> UC_Lang
+authUser --> UC_Theme
+authUser --> UC_Dash
+authUser --> UC_Rooms
+authUser --> UC_Reports
+authUser --> UC_Settings
+authUser --> UC_Devices
+
+' Relasi ke External Services (Aktor Sekunder)
+UC_Login --> extSvc
+UC_Reports --> extSvc
+UC_Settings --> extSvc
+UC_Devices --> extSvc
+
+@enduml

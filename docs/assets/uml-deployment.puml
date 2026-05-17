@@ -1,0 +1,45 @@
+@startuml
+!pragma layout smetana
+skinparam shadowing false
+skinparam node {
+  BackgroundColor #F8F9FA
+  BorderColor #333333
+}
+
+title Deployment Diagram - MoldProject
+
+node "ESP32 Devices\n(Edge Sensors)" as ESP32
+node "Wi-Fi / Gateway" as Gateway
+
+node "Firebase Hosting\n(Frontend)" as Hosting
+node "Firebase Authentication" as Auth
+database "Firestore (Realtime DB)" as Firestore
+cloud "Cloud Functions (Backend)" as Functions
+component "Email Service (SMTP/SES)" as Email
+node "GCP Analytics Cluster\n(Hadoop/HDFS / Batch)" as Analytics
+
+ESP32 --> Gateway : HTTP / MQTT
+Gateway --> Functions : HTTPS (webhook)
+Functions --> Firestore : read / write
+Hosting --> Auth : signIn / token
+Hosting --> Firestore : read / write (client SDK)
+Functions --> Email : send notification
+Functions --> Analytics : export data / batch job
+Firestore --> Analytics : export / export-trigger
+
+note right of ESP32
+  - Edge devices (ESP32)
+  - Send sensor logs (temp, humidity, wifi)
+end note
+
+note left of Hosting
+  - Web UI served from Firebase Hosting
+  - Uses Firebase SDK to read/write Firestore
+end note
+
+note bottom of Analytics
+  - Periodic batch ingestion from Firestore
+  - Long-term analytics and model training
+end note
+
+@enduml

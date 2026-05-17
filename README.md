@@ -169,6 +169,34 @@ cp .env.example .env
 
 ---
 
+## System Architecture Diagrams
+
+Complete visualization of the MoldGuard system covering use cases, data flow, and deployment topology:
+
+### Use Case Diagram
+
+![Use Case Diagram](docs/assets/uml-use-case.png)
+
+Displays all actors (Guest, Authenticated User, External Services) and use cases within the system, including the `<<extend>>` relationship where Forgot Password extends the Login functionality.
+
+### System Activity Diagram
+
+![System Activity Diagram](docs/assets/uml-system-activity.png)
+
+Visualizes data flow and runtime workflow, from edge devices (ESP32) collecting sensor data, through the gateway, Cloud Functions for processing, Firestore for storage, to the frontend dashboard and analytics batch pipeline.
+
+### Deployment Diagram
+
+![Deployment Diagram](docs/assets/uml-deployment.png)
+
+Illustrates the runtime architecture and data flow between components: ESP32 edge devices, Firebase Hosting (frontend), Firebase Authentication, Firestore (database), Cloud Functions (backend), Email Service, and GCP Analytics Cluster.
+
+**For comprehensive documentation**, refer to [docs/uml-diagrams.md](docs/uml-diagrams.md).
+
+---
+
 ## License
 
 This project was developed as part of an academic coursework submission and is intended for educational and portfolio demonstration purposes.
+
+
