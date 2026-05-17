@@ -6,7 +6,6 @@ import {
   Zap,
   BarChart3,
   Settings,
-  Shield,
   LogOut,
   ChevronDown,
   User,
@@ -172,8 +171,8 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
       <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-slate-200/60 bg-white/95 backdrop-blur-xl dark:border-white/5 dark:bg-zinc-950/95 md:hidden">
         <div className="mx-auto flex h-full max-w-[1920px] items-center justify-between px-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/20">
-              <Shield className="h-5 w-5" strokeWidth={2} />
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
+              <LayoutDashboard className="h-5 w-5" />
             </div>
             <div className="flex min-w-0 flex-col leading-tight">
               <span className="truncate text-sm font-bold text-slate-900 dark:text-zinc-100">
@@ -242,7 +241,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
               key={item.id}
               onClick={() => handlePageChange(item.id)}
               className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-all duration-150 ${isActive
-                  ? 'bg-blue-500/15 text-blue-500'
+                  ? 'bg-emerald-500/15 text-emerald-500'
                   : 'text-slate-500 hover:bg-slate-100/60 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-800/30 dark:hover:text-zinc-100'
                 }`}
             >
