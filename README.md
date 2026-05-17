@@ -191,7 +191,7 @@ Visualizes data flow and runtime workflow, from edge devices (ESP32) collecting 
 
 Illustrates the runtime architecture and data flow between components: ESP32 edge devices, Firebase Hosting (frontend), Firebase Authentication, Firestore (database), Cloud Functions (backend), Email Service, and GCP Analytics Cluster.
 
-**For comprehensive documentation**, refer to [docs/uml-diagrams.md](docs/uml-diagrams.md).
+**For comprehensive documentation**, refer to [docs/uml-diagrams.md](https://docs.google.com/document/d/1gT79mg7mwyrDwVnMwywcxqGdVZqUWkAq/edit?usp=sharing&ouid=105786420846292963880&rtpof=true&sd=true).
 
 ---
 
