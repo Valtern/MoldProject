@@ -6,7 +6,6 @@ import {
   Zap,
   BarChart3,
   Settings,
-  Shield,
   LogOut,
   ChevronDown,
   User,
@@ -18,6 +17,13 @@ import type { PageId } from '@/App';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 interface NavItem {
   id: PageId;
   label: string;
@@ -50,6 +56,7 @@ interface SidebarProps {
 export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<SidebarProps>) {
   const { t } = useTranslation();
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
   const userEmail = auth.currentUser?.email || 'admin@moldprev.io';
 
   const navItems = getNavItems(t);
@@ -57,10 +64,12 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
 
   const displayName = useMemo(() => {
     const prefix = userEmail.split('@')[0] || 'Admin';
-    return prefix
+    const name = prefix
       .split(/[._-]+/g)
       .map((word) => word ? word.charAt(0).toUpperCase() + word.slice(1) : word)
       .join(' ');
+    // Limit to 6 characters
+    return name.substring(0, 6);
   }, [userEmail]);
 
   const handlePageChange = (page: PageId) => {
@@ -172,60 +181,67 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
         </div>
       </aside>
 
-      <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-slate-200/60 bg-white/95 backdrop-blur-xl dark:border-white/5 dark:bg-zinc-950/95 md:hidden">
-        <div className="mx-auto flex h-full max-w-[1920px] items-center justify-between px-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/20">
-              <Shield className="h-5 w-5" strokeWidth={2} />
+      <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-slate-200/60 bg-white/95 backdrop-blur-xl dark:border-white/5 dark:bg-zinc-950/95 md:hidden">
+        <div className="mx-auto flex h-full max-w-[1920px] items-center justify-between px-3.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-white shadow-lg shadow-blue-500/20 dark:bg-zinc-900">
+              <img src="/logo.png" alt="MoldGuard Logo" className="h-7 w-7 object-contain" />
             </div>
             <div className="flex min-w-0 flex-col leading-tight">
-              <span className="truncate text-sm font-bold text-slate-900 dark:text-zinc-100">
+              <span className="truncate text-[13px] font-bold text-slate-900 dark:text-zinc-100">
                 {t('nav.mobileTitle')}
               </span>
-              <span className="text-xs text-slate-500 dark:text-zinc-400">{t('app.tagline')}</span>
+              <span className="text-[11px] text-slate-500 dark:text-zinc-400">{t('app.tagline')}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <LanguageSwitcher />
+            <LanguageSwitcher compact={true} />
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-3xl border border-slate-200/80 bg-slate-100/70 px-2.5 py-1.5 shadow-sm transition-colors hover:bg-slate-100 dark:border-white/5 dark:bg-zinc-900/70 dark:hover:bg-zinc-800/70">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-sm">
-                  <User className="h-4 w-4" />
+              <button className="flex items-center gap-1.5 rounded-3xl border border-slate-200/80 bg-slate-100/70 px-2 py-1.5 shadow-sm transition-colors hover:bg-slate-100 dark:border-white/5 dark:bg-zinc-900/70 dark:hover:bg-zinc-800/70">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-sm">
+                  <User className="h-3.5 w-3.5" />
                 </div>
                 <div className="flex min-w-0 flex-col items-start text-left">
-                  <span className="truncate text-lg font-medium text-slate-800 dark:text-zinc-100">
-                    {t('nav.hi')} {displayName}
+                  <span className="truncate text-[13px] font-medium text-slate-800 dark:text-zinc-100">
+                    {displayName}
                   </span>
                 </div>
-                <ChevronDown className="h-5 w-5 text-slate-500 dark:text-zinc-400" />
+                <ChevronDown className="h-4.5 w-4.5 text-slate-500 dark:text-zinc-400" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 rounded-[28px] border border-slate-200/80 bg-white p-0 shadow-2xl dark:border-white/10 dark:bg-zinc-950">
-              <div className="border-b border-slate-200/70 px-6 py-5 dark:border-white/10">
-                <p className="text-xl font-bold text-slate-900 dark:text-zinc-100">{displayName}</p>
-                <p className="mt-1 text-base text-slate-500 dark:text-zinc-400">{userEmail}</p>
+            <DropdownMenuContent align="end" className="w-[18rem] rounded-[24px] border border-slate-200/80 bg-white p-0 shadow-2xl dark:border-white/10 dark:bg-zinc-950">
+              <div className="border-b border-slate-200/70 px-5 py-4 dark:border-white/10">
+                <p className="text-lg font-bold text-slate-900 dark:text-zinc-100">{displayName}</p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">{userEmail}</p>
               </div>
               <div className="p-3">
+                <DropdownMenuItem
+                  onSelect={() => onPageChange('about')}
+                  className="flex h-12 items-center gap-3 rounded-2xl px-4 text-base text-slate-700 dark:text-zinc-200"
+                >
+                  <Info className="h-4.5 w-4.5 text-slate-600 dark:text-zinc-300" />
+                  <span>{t('nav.about')}</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() => {
                     handleSettings();
                   }}
-                  className="flex h-14 items-center gap-4 rounded-2xl px-4 text-lg text-slate-700 dark:text-zinc-200"
+                  className="flex h-12 items-center gap-3 rounded-2xl px-4 text-base text-slate-700 dark:text-zinc-200"
                 >
-                  <Settings className="h-5 w-5 text-slate-600 dark:text-zinc-300" />
+                  <Settings className="h-4.5 w-4.5 text-slate-600 dark:text-zinc-300" />
                   <span>{t('nav.settings')}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={(event) => {
                     event.preventDefault();
-                    handleLogout();
+                    setShowLogoutAlert(true);
                   }}
-                  className="flex h-14 items-center gap-4 rounded-2xl px-4 text-lg !text-red-500 focus:!text-red-500 dark:!text-red-400 [&_svg]:!text-red-500 dark:[&_svg]:!text-red-400"
+                  className="flex h-12 items-center gap-3 rounded-2xl px-4 text-base !text-red-500 focus:!text-red-500 dark:!text-red-400 [&_svg]:!text-red-500 dark:[&_svg]:!text-red-400"
                   variant="destructive"
                 >
-                  <LogOut className="h-5 w-5" />
+                  <LogOut className="h-4.5 w-4.5" />
                   <span>{t('nav.logout')}</span>
                 </DropdownMenuItem>
               </div>
@@ -256,6 +272,29 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
           );
         })}
       </nav>
+
+      {/* Logout Alert Dialog */}
+      <AlertDialog open={showLogoutAlert} onOpenChange={setShowLogoutAlert}>
+        <AlertDialogContent className="gap-3 border border-slate-200/80 bg-white text-slate-900 dark:border-white/10 dark:bg-black dark:text-white w-[calc(100%-3rem)] max-w-[17rem] p-4 sm:w-[calc(100%-2.5rem)] sm:max-w-[18rem] md:w-full md:max-w-sm md:p-5 shadow-2xl">
+          <div className="text-center">
+            <AlertDialogTitle className="text-lg font-semibold text-slate-900 dark:text-white md:text-xl">
+              {t('nav.logoutConfirm')}
+            </AlertDialogTitle>
+          </div>
+          <div className="flex gap-2.5 justify-center">
+            <AlertDialogCancel className="border border-slate-600 bg-zinc-700 text-white hover:bg-zinc-600 dark:border-zinc-500 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-sm px-3.5 py-2 md:px-4">
+              {t('nav.no')}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              className="border-none bg-emerald-500 text-white hover:bg-emerald-600 text-sm px-3.5 py-2 md:px-4"
+              onClick={handleLogout}
+            >
+              {t('nav.yes')}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
+

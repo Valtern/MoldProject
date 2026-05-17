@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, doc, getDoc, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
 import { Sidebar } from '@/components/Sidebar';
@@ -97,21 +97,11 @@ function App() {
   const [authPage, setAuthPage] = useState<AuthPageId>('login');
   const { setTheme } = useTheme();
 
-  // ── Auth state listener ── apply user theme on login, reset on logout
+  // ── Auth state listener ── keep current theme on login, reset on logout
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setIsAuthenticated(!!user);
-      if (user) {
-        // Fetch user's theme preference from their Settings document
-        try {
-          const settingsSnap = await getDoc(doc(db, 'Settings', user.uid));
-          if (settingsSnap.exists() && settingsSnap.data().themePreference) {
-            setTheme(settingsSnap.data().themePreference);
-          }
-        } catch (err) {
-          console.error('[App] Failed to load user theme:', err);
-        }
-      } else {
+      if (!user) {
         // Reset theme to system default on logout
         setTheme('system');
       }
