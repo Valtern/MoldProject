@@ -10,7 +10,6 @@ import {
   LogOut,
   ChevronDown,
   User,
-  HardDrive,
 } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { auth } from '@/lib/firebase';
@@ -36,7 +35,6 @@ function getNavItems(t: (key: string) => string): NavItem[] {
 function getDesktopNavItems(t: (key: string) => string): NavItem[] {
   return [
     ...getNavItems(t),
-    { id: 'storage', label: t('nav.storage'), icon: HardDrive },
     { id: 'settings', label: t('nav.settings'), icon: Settings },
   ];
 }
@@ -101,11 +99,10 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
                 <li key={item.id}>
                   <button
                     onClick={() => handlePageChange(item.id)}
-                    className={`w-full flex items-center gap-3 rounded-md px-3 py-2 transition-colors duration-150 ${
-                      isActive
+                    className={`w-full flex items-center gap-3 rounded-md px-3 py-2 transition-colors duration-150 ${isActive
                         ? 'bg-slate-200/80 text-slate-900 shadow-sm dark:bg-zinc-800/60 dark:text-zinc-100'
                         : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-800/30 dark:hover:text-zinc-100'
-                    }`}
+                      }`}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
                     <span className="text-sm">{item.label}</span>
@@ -189,48 +186,48 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-3xl border border-slate-200/80 bg-slate-100/70 px-2.5 py-1.5 shadow-sm transition-colors hover:bg-slate-100 dark:border-white/5 dark:bg-zinc-900/70 dark:hover:bg-zinc-800/70">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-sm">
-                  <User className="h-4 w-4" />
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 rounded-3xl border border-slate-200/80 bg-slate-100/70 px-2.5 py-1.5 shadow-sm transition-colors hover:bg-slate-100 dark:border-white/5 dark:bg-zinc-900/70 dark:hover:bg-zinc-800/70">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-sm">
+                    <User className="h-4 w-4" />
+                  </div>
+                  <div className="flex min-w-0 flex-col items-start text-left">
+                    <span className="truncate text-lg font-medium text-slate-800 dark:text-zinc-100">
+                      {t('nav.hi')} {displayName}
+                    </span>
+                  </div>
+                  <ChevronDown className="h-5 w-5 text-slate-500 dark:text-zinc-400" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 rounded-[28px] border border-slate-200/80 bg-white p-0 shadow-2xl dark:border-white/10 dark:bg-zinc-950">
+                <div className="border-b border-slate-200/70 px-6 py-5 dark:border-white/10">
+                  <p className="text-xl font-bold text-slate-900 dark:text-zinc-100">{displayName}</p>
+                  <p className="mt-1 text-base text-slate-500 dark:text-zinc-400">{userEmail}</p>
                 </div>
-                <div className="flex min-w-0 flex-col items-start text-left">
-                  <span className="truncate text-lg font-medium text-slate-800 dark:text-zinc-100">
-                    {t('nav.hi')} {displayName}
-                  </span>
+                <div className="p-3">
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      handleSettings();
+                    }}
+                    className="flex h-14 items-center gap-4 rounded-2xl px-4 text-lg text-slate-700 dark:text-zinc-200"
+                  >
+                    <Settings className="h-5 w-5 text-slate-600 dark:text-zinc-300" />
+                    <span>{t('nav.settings')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      handleLogout();
+                    }}
+                    className="flex h-14 items-center gap-4 rounded-2xl px-4 text-lg !text-red-500 focus:!text-red-500 dark:!text-red-400 [&_svg]:!text-red-500 dark:[&_svg]:!text-red-400"
+                    variant="destructive"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span>{t('nav.logout')}</span>
+                  </DropdownMenuItem>
                 </div>
-                <ChevronDown className="h-5 w-5 text-slate-500 dark:text-zinc-400" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 rounded-[28px] border border-slate-200/80 bg-white p-0 shadow-2xl dark:border-white/10 dark:bg-zinc-950">
-              <div className="border-b border-slate-200/70 px-6 py-5 dark:border-white/10">
-                <p className="text-xl font-bold text-slate-900 dark:text-zinc-100">{displayName}</p>
-                <p className="mt-1 text-base text-slate-500 dark:text-zinc-400">{userEmail}</p>
-              </div>
-              <div className="p-3">
-                <DropdownMenuItem
-                  onSelect={() => {
-                    handleSettings();
-                  }}
-                  className="flex h-14 items-center gap-4 rounded-2xl px-4 text-lg text-slate-700 dark:text-zinc-200"
-                >
-                  <Settings className="h-5 w-5 text-slate-600 dark:text-zinc-300" />
-                  <span>{t('nav.settings')}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={(event) => {
-                    event.preventDefault();
-                    handleLogout();
-                  }}
-                  className="flex h-14 items-center gap-4 rounded-2xl px-4 text-lg !text-red-500 focus:!text-red-500 dark:!text-red-400 [&_svg]:!text-red-500 dark:[&_svg]:!text-red-400"
-                  variant="destructive"
-                >
-                  <LogOut className="h-5 w-5" />
-                  <span>{t('nav.logout')}</span>
-                </DropdownMenuItem>
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
@@ -244,11 +241,10 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
             <button
               key={item.id}
               onClick={() => handlePageChange(item.id)}
-              className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-all duration-150 ${
-                isActive
+              className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-all duration-150 ${isActive
                   ? 'bg-blue-500/15 text-blue-500'
                   : 'text-slate-500 hover:bg-slate-100/60 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-800/30 dark:hover:text-zinc-100'
-              }`}
+                }`}
             >
               <Icon className="h-5 w-5 flex-shrink-0" strokeWidth={2} />
               <span className="w-full truncate text-[10px] font-semibold leading-tight text-center">{item.label}</span>

@@ -45,36 +45,14 @@ service cloud.firestore {
     }
 
     // 4. FILE METADATA COLLECTION
-    match /Users/{userId}/FileMetadata/{fileId} {
-      allow read: if isAuthenticated() && isOwner(userId);
-      allow create: if isAuthenticated() && isOwner(userId) &&
-        request.resource.data.userId == userId;
-      allow update: if isAuthenticated() && isOwner(userId) &&
-        request.resource.data.userId == resource.data.userId &&
-        request.resource.data.storagePath == resource.data.storagePath &&
-        request.resource.data.uploadedAt == resource.data.uploadedAt;
-      allow delete: if isAuthenticated() && isOwner(userId);
+    match /Metadata/backup_state {
+      allow read: if isAuthenticated(); // Allow users to see backup status if needed
+      allow write: if false; // Only Cloud Functions (Admin SDK) can update this
     }
-
-    // Legacy top-level metadata collection
-    match /FileMetadata/{fileId} {
-      // Owners can read their own file metadata.
-      allow read: if isAuthenticated() && isOwner(resource.data.userId);
-      
-      // Authenticated users can create metadata for their own uploaded files.
-      allow create: if isAuthenticated() && isValidFileOwner();
-      
-      // Owner can update their own files
-      allow update: if isAuthenticated() && isOwner(resource.data.userId) &&
-        (
-          request.resource.data.userId == resource.data.userId &&
-          request.resource.data.storagePath == resource.data.storagePath &&
-          request.resource.data.uploadedAt == resource.data.uploadedAt
-        );
-      
-      // Owner can delete their own files
-      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
-    }
+    
+    // Block all other manual metadata access
+    match /FileMetadata/{fileId} { allow read, write: if false; }
+    match /Users/{userId}/FileMetadata/{fileId} { allow read, write: if false; }
 
   }
 }
