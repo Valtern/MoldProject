@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, doc, getDoc, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
 import { Sidebar } from '@/components/Sidebar';
@@ -96,21 +96,11 @@ function App() {
   const [authPage, setAuthPage] = useState<AuthPageId>('login');
   const { setTheme } = useTheme();
 
-  // ── Auth state listener ── apply user theme on login, reset on logout
+  // ── Auth state listener ── keep current theme on login, reset on logout
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setIsAuthenticated(!!user);
-      if (user) {
-        // Fetch user's theme preference from their Settings document
-        try {
-          const settingsSnap = await getDoc(doc(db, 'Settings', user.uid));
-          if (settingsSnap.exists() && settingsSnap.data().themePreference) {
-            setTheme(settingsSnap.data().themePreference);
-          }
-        } catch (err) {
-          console.error('[App] Failed to load user theme:', err);
-        }
-      } else {
+      if (!user) {
         // Reset theme to system default on logout
         setTheme('system');
       }
@@ -166,7 +156,7 @@ function App() {
         ...doc.data()
       }));
       setAvailableRooms(rooms);
-      
+
       // If we don't have a roomData selected yet, default to the first room
       if (rooms.length > 0) {
         setRoomData((prev) => {
@@ -256,10 +246,10 @@ function App() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
         const data = snapshot.docs[0].data();
-        
+
         setRoomData((prev) => {
           if (!prev) return prev;
-          
+
           const newTemp = data.temperature ?? prev.temperature.value;
           const newHumidity = data.humidity ?? prev.humidity.value;
           const newLight = data.lightLevel ?? prev.lightLevel.value;
@@ -276,8 +266,8 @@ function App() {
 
           let formattedTime = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
           if (data.timestamp) {
-             const d = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
-             formattedTime = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+            const d = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
+            formattedTime = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
           }
 
           let newAppliances = prev.appliances;
@@ -336,7 +326,7 @@ function App() {
       switch (authPage) {
         case 'login':
           return (
-            <LoginPage 
+            <LoginPage
               onLoginSuccess={() => setIsAuthenticated(true)}
               onForgotPassword={() => setAuthPage('forgot-password')}
               onSignup={() => setAuthPage('signup')}
@@ -344,19 +334,19 @@ function App() {
           );
         case 'forgot-password':
           return (
-            <ForgotPasswordPage 
+            <ForgotPasswordPage
               onBackToLogin={() => setAuthPage('login')}
             />
           );
         case 'signup':
           return (
-            <SignupPage 
+            <SignupPage
               onBackToLogin={() => setAuthPage('login')}
             />
           );
         default:
           return (
-            <LoginPage 
+            <LoginPage
               onLoginSuccess={() => setIsAuthenticated(true)}
               onForgotPassword={() => setAuthPage('forgot-password')}
               onSignup={() => setAuthPage('signup')}
@@ -422,9 +412,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 relative overflow-hidden font-sans selection:bg-emerald-500/30">
-      
+
       {/* ══ Layer 1: Mesh Gradient (CSS radial — no blur artifacts) ══ */}
-      <div 
+      <div
         className="pointer-events-none fixed inset-0 z-0"
         style={{
           background: [
@@ -446,7 +436,7 @@ function App() {
       <div className="pointer-events-none fixed inset-0 z-0 bg-dot-grid text-slate-300/[0.12] dark:text-white/[0.03]" />
 
       {/* ══ Layer 3: Film grain texture ══ */}
-      <div 
+      <div
         className="pointer-events-none fixed inset-0 z-0 opacity-[0.025] dark:opacity-[0.03] mix-blend-overlay"
         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }}
       />
@@ -457,12 +447,12 @@ function App() {
         <div className="absolute w-2 h-2 rounded-full bg-emerald-500/20 dark:bg-emerald-400/15 top-[15%] left-[12%]" style={{ animation: 'spore-drift-1 18s ease-in-out infinite' }} />
         <div className="absolute w-3 h-3 rounded-full bg-teal-500/15 dark:bg-teal-400/10 top-[60%] left-[70%]" style={{ animation: 'spore-drift-2 22s ease-in-out infinite' }} />
         <div className="absolute w-2.5 h-2.5 rounded-full bg-emerald-600/15 dark:bg-emerald-500/10 top-[40%] left-[45%]" style={{ animation: 'spore-drift-3 25s ease-in-out infinite' }} />
-        
+
         {/* Medium spores */}
         <div className="absolute w-1.5 h-1.5 rounded-full bg-teal-400/20 dark:bg-teal-300/10 top-[80%] left-[25%]" style={{ animation: 'spore-drift-2 20s ease-in-out infinite 3s' }} />
         <div className="absolute w-1.5 h-1.5 rounded-full bg-emerald-400/15 dark:bg-emerald-300/10 top-[25%] left-[85%]" style={{ animation: 'spore-drift-1 24s ease-in-out infinite 5s' }} />
         <div className="absolute w-2 h-2 rounded-full bg-amber-400/10 dark:bg-amber-300/8 top-[70%] left-[50%]" style={{ animation: 'spore-drift-3 19s ease-in-out infinite 2s' }} />
-        
+
         {/* Small spores — micro dust */}
         <div className="absolute w-1 h-1 rounded-full bg-emerald-500/25 dark:bg-emerald-400/15 top-[35%] left-[22%]" style={{ animation: 'spore-drift-3 16s ease-in-out infinite 1s' }} />
         <div className="absolute w-1 h-1 rounded-full bg-slate-400/20 dark:bg-slate-300/10 top-[55%] left-[38%]" style={{ animation: 'spore-drift-1 21s ease-in-out infinite 4s' }} />
@@ -472,11 +462,11 @@ function App() {
 
       {/* ══ Layer 5: Scanner pulse ring (emanates from bottom-right) ══ */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div 
+        <div
           className="absolute left-[75%] top-[85%] w-[800px] h-[800px] rounded-full border border-emerald-500/10 dark:border-emerald-400/8"
           style={{ animation: 'scanner-pulse 8s ease-out infinite', opacity: 0 }}
         />
-        <div 
+        <div
           className="absolute left-[75%] top-[85%] w-[800px] h-[800px] rounded-full border border-teal-500/8 dark:border-teal-400/5"
           style={{ animation: 'scanner-pulse 8s ease-out infinite 4s', opacity: 0 }}
         />
