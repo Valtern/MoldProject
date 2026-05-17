@@ -104,11 +104,11 @@ function DeviceTableRow({ room }: { room: any }) {
   return (
     <tr className="border-b border-slate-200/60 dark:border-white/5 last:border-b-0 hover:bg-slate-50 dark:hover:bg-zinc-800/40 transition-colors">
       <td className="px-4 py-3.5">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start md:items-center gap-3 flex-col md:flex-row">
           <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
             <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">IoT</span>
           </div>
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">{room.deviceID || t('devices.table.unassigned')}</span>
+          <span className="font-medium text-zinc-900 dark:text-zinc-100 break-all leading-snug">{room.deviceID || t('devices.table.unassigned')}</span>
         </div>
       </td>
       <td className="px-4 py-3.5">
@@ -154,6 +154,127 @@ function DeviceTableRow({ room }: { room: any }) {
         </span>
       </td>
     </tr>
+  );
+}
+
+function DeviceMobileCard({ room }: { room: any }) {
+  const { t } = useTranslation();
+  const [latestLog, setLatestLog] = useState<any>(null);
+  const [status, setStatus] = useState<'online' | 'warning' | 'offline'>('offline');
+  const statusConfig = getStatusConfig(t);
+
+  useEffect(() => {
+    if (!room.deviceID) return;
+
+    const logsRef = collection(db, 'SensorLogs');
+    const q = query(
+      logsRef,
+      where('deviceID', '==', room.deviceID),
+      orderBy('timestamp', 'desc'),
+      limit(1)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        setLatestLog(snapshot.docs[0].data());
+      } else {
+        setLatestLog(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [room.deviceID]);
+
+  useEffect(() => {
+    const evaluateStatus = () => {
+      if (!latestLog || !latestLog.timestamp) {
+        setStatus('offline');
+        return;
+      }
+
+      const logTime = latestLog.timestamp?.toDate ? latestLog.timestamp.toDate().getTime() : new Date(latestLog.timestamp).getTime();
+      const diffMs = Date.now() - logTime;
+      const diffMinutes = diffMs / 1000 / 60;
+
+      if (diffMinutes < 5) {
+        setStatus('online');
+      } else if (diffMinutes < 15) {
+        setStatus('warning');
+      } else {
+        setStatus('offline');
+      }
+    };
+
+    evaluateStatus();
+    const interval = setInterval(evaluateStatus, 30000);
+    return () => clearInterval(interval);
+  }, [latestLog]);
+
+  let wifiStrengthKey: keyof typeof wifiConfig = 'Offline';
+  let wifiSignalText = '--';
+  if (status !== 'offline' && latestLog?.wifiSignal !== undefined) {
+    const sig = Number(latestLog.wifiSignal);
+    wifiSignalText = `${sig} dBm`;
+    if (sig >= -60) wifiStrengthKey = 'Excellent';
+    else if (sig >= -70) wifiStrengthKey = 'Good';
+    else if (sig >= -80) wifiStrengthKey = 'Fair';
+    else wifiStrengthKey = 'Poor';
+  } else if (status !== 'offline') {
+    wifiStrengthKey = 'Good';
+    wifiSignalText = t('devices.table.active');
+  }
+
+  const wifi = wifiConfig[wifiStrengthKey];
+  const WifiIcon = wifi.icon;
+  const stat = statusConfig[status];
+
+  return (
+    <div className="rounded-lg border border-slate-200/60 bg-white/60 p-4 shadow-lg backdrop-blur-xl dark:border-white/5 dark:bg-zinc-900/40">
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">IoT</span>
+        </div>
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{t('devices.table.deviceId')}</p>
+            <p className="break-all text-sm font-medium text-zinc-900 dark:text-zinc-100">{room.deviceID || t('devices.table.unassigned')}</p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{t('devices.table.assignedRoom')}</p>
+              <p className="break-words text-sm text-zinc-700 dark:text-zinc-300">{room.name}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{t('devices.table.wifiSignal')}</p>
+              {latestLog ? (
+                <div className={`mt-1 inline-flex items-center gap-2 rounded-md px-2.5 py-1 ${wifi.bg}`}>
+                  <WifiIcon className={`w-3.5 h-3.5 ${wifi.color}`} />
+                  <span className={`text-xs font-medium ${wifi.color}`}>{wifiSignalText}</span>
+                </div>
+              ) : (
+                <p className="text-sm text-zinc-600">{t('devices.table.waiting')}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{t('devices.table.sensors')}</p>
+              <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                {latestLog ? `${latestLog.temperature ?? '--'}°C · ${latestLog.humidity ?? '--'}%` : '--'}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{t('devices.table.status')}</p>
+              <span className={`mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${stat.className}`}>
+                {status === 'online' && <CheckCircle2 className="w-3 h-3" />}
+                {status === 'offline' && <AlertCircle className="w-3 h-3" />}
+                {status === 'warning' && <AlertCircle className="w-3 h-3" />}
+                {stat.label}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -345,8 +466,15 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
           <p className="text-sm text-zinc-500 dark:text-zinc-400">{t('devices.noDevices')}</p>
         </div>
       ) : (
-        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
+        <>
+          <div className="md:hidden space-y-3">
+            {availableRooms.map((room) => (
+              <DeviceMobileCard key={room.id} room={room} />
+            ))}
+          </div>
+
+          <div className="hidden md:block bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
           <table className="w-full min-w-[640px]">
             {/* Table Header */}
             <thead>
@@ -376,8 +504,9 @@ export function DevicesPage({ availableRooms = [] }: DevicesPageProps) {
               ))}
             </tbody>
           </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Summary Reference */}
