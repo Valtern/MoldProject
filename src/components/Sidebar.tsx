@@ -6,7 +6,6 @@ import {
   Zap,
   BarChart3,
   Settings,
-  Shield,
   LogOut,
   ChevronDown,
   User,
@@ -17,6 +16,13 @@ import type { PageId } from '@/App';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 interface NavItem {
   id: PageId;
   label: string;
@@ -48,6 +54,7 @@ interface SidebarProps {
 export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<SidebarProps>) {
   const { t } = useTranslation();
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
   const userEmail = auth.currentUser?.email || 'admin@moldprev.io';
 
   const navItems = getNavItems(t);
@@ -55,10 +62,12 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
 
   const displayName = useMemo(() => {
     const prefix = userEmail.split('@')[0] || 'Admin';
-    return prefix
+    const name = prefix
       .split(/[._-]+/g)
       .map((word) => word ? word.charAt(0).toUpperCase() + word.slice(1) : word)
       .join(' ');
+    // Limit to 6 characters
+    return name.substring(0, 6);
   }, [userEmail]);
 
   const handlePageChange = (page: PageId) => {
@@ -99,11 +108,10 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
                 <li key={item.id}>
                   <button
                     onClick={() => handlePageChange(item.id)}
-                    className={`w-full flex items-center gap-3 rounded-md px-3 py-2 transition-colors duration-150 ${
-                      isActive
+                    className={`w-full flex items-center gap-3 rounded-md px-3 py-2 transition-colors duration-150 ${isActive
                         ? 'bg-slate-200/80 text-slate-900 shadow-sm dark:bg-zinc-800/60 dark:text-zinc-100'
                         : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-800/30 dark:hover:text-zinc-100'
-                    }`}
+                      }`}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
                     <span className="text-sm">{item.label}</span>
@@ -173,19 +181,19 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
       <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-slate-200/60 bg-white/95 backdrop-blur-xl dark:border-white/5 dark:bg-zinc-950/95 md:hidden">
         <div className="mx-auto flex h-full max-w-[1920px] items-center justify-between px-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/20">
-              <Shield className="h-5 w-5" strokeWidth={2} />
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
+              <LayoutDashboard className="h-5 w-5" strokeWidth={2} />
             </div>
             <div className="flex min-w-0 flex-col leading-tight">
-              <span className="truncate text-sm font-bold text-slate-900 dark:text-zinc-100">
+              <span className="truncate text-[13px] font-bold text-slate-900 dark:text-zinc-100">
                 {t('nav.mobileTitle')}
               </span>
-              <span className="text-xs text-slate-500 dark:text-zinc-400">{t('app.tagline')}</span>
+              <span className="text-[11px] text-slate-500 dark:text-zinc-400">{t('app.tagline')}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <LanguageSwitcher />
+            <LanguageSwitcher compact={true} />
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 rounded-3xl border border-slate-200/80 bg-slate-100/70 px-2.5 py-1.5 shadow-sm transition-colors hover:bg-slate-100 dark:border-white/5 dark:bg-zinc-900/70 dark:hover:bg-zinc-800/70">
@@ -242,11 +250,10 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
             <button
               key={item.id}
               onClick={() => handlePageChange(item.id)}
-              className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-all duration-150 ${
-                isActive
-                  ? 'bg-blue-500/15 text-blue-500'
+              className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1.5 transition-all duration-150 ${isActive
+                  ? 'bg-emerald-500/15 text-emerald-500'
                   : 'text-slate-500 hover:bg-slate-100/60 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-800/30 dark:hover:text-zinc-100'
-              }`}
+                }`}
             >
               <Icon className="h-5 w-5 flex-shrink-0" strokeWidth={2} />
               <span className="w-full truncate text-[10px] font-semibold leading-tight text-center">{item.label}</span>
@@ -254,6 +261,28 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
           );
         })}
       </nav>
+
+      {/* Logout Alert Dialog */}
+      <AlertDialog open={showLogoutAlert} onOpenChange={setShowLogoutAlert}>
+        <AlertDialogContent className="gap-3 border border-slate-200/80 bg-white text-slate-900 dark:border-white/10 dark:bg-black dark:text-white w-[calc(100%-3rem)] max-w-[17rem] p-4 sm:w-[calc(100%-2.5rem)] sm:max-w-[18rem] md:w-full md:max-w-sm md:p-5 shadow-2xl">
+          <div className="text-center">
+            <AlertDialogTitle className="text-lg font-semibold text-slate-900 dark:text-white md:text-xl">
+              {t('nav.logoutConfirm')}
+            </AlertDialogTitle>
+          </div>
+          <div className="flex gap-2.5 justify-center">
+            <AlertDialogCancel className="border border-slate-600 bg-zinc-700 text-white hover:bg-zinc-600 dark:border-zinc-500 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-sm px-3.5 py-2 md:px-4">
+              {t('nav.no')}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              className="border-none bg-emerald-500 text-white hover:bg-emerald-600 text-sm px-3.5 py-2 md:px-4"
+              onClick={handleLogout}
+            >
+              {t('nav.yes')}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

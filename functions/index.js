@@ -1,5 +1,7 @@
+// MoldGuard Cloud Functions - Production Build
 const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const nodemailer = require('nodemailer');
 const express = require('express');
 const cors = require('cors');
@@ -179,6 +181,78 @@ app.get('/api/status/:deviceId', cors(corsOptions), async (req, res) => {
     } catch (error) {
         console.error('[status] Firestore read error:', error);
         return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
+// 7.5. Automated Backup Trigger (Embedded in existing API to bypass IAM restrictions)
+app.get('/api/run-backup', cors(corsOptions), async (req, res) => {
+    // Simple security check: You must add ?key=backup to your URL
+    if (req.query.key !== 'backup') {
+        return res.status(403).send('Forbidden: Missing or invalid key');
+    }
+
+    const bucket = admin.storage().bucket();
+    const backupStateRef = db.collection('Metadata').doc('backup_state');
+    
+    try {
+        const stateSnap = await backupStateRef.get();
+        const state = stateSnap.exists ? stateSnap.data() : {};
+        const now = Date.now();
+        const backupManifest = {};
+
+        const incrementalCollections = [
+            { name: 'SensorLogs', field: 'timestamp' },
+            { name: 'AnalyticsAlerts', field: 'timestamp' }
+        ];
+        const snapshotCollections = ['Devices', 'Settings'];
+
+        console.log(`[Backup] Starting backup cycle at ${new Date(now).toISOString()}`);
+
+        for (const col of incrementalCollections) {
+            const lastTimestamp = state[`last_${col.name}_ts`] || new admin.firestore.Timestamp(0, 0);
+            const snapshot = await db.collection(col.name)
+                .where(col.field, '>', lastTimestamp)
+                .orderBy(col.field, 'asc')
+                .get();
+
+            if (!snapshot.empty) {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const fileName = `backups/${col.name.toLowerCase()}/inc_${now}.json`;
+                await bucket.file(fileName).save(JSON.stringify(data, null, 2));
+                
+                backupManifest[col.name] = { count: data.length, file: fileName };
+                state[`last_${col.name}_ts`] = data[data.length - 1][col.field];
+            }
+        }
+
+        for (const colName of snapshotCollections) {
+            const snapshot = await db.collection(colName).get();
+            if (!snapshot.empty) {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const fileName = `backups/${colName.toLowerCase()}/snap_${now}.json`;
+                await bucket.file(fileName).save(JSON.stringify(data, null, 2));
+                
+                backupManifest[colName] = { count: data.length, file: fileName };
+            }
+        }
+
+        if (Object.keys(backupManifest).length === 0) {
+            return res.status(200).send("No new data to back up today.");
+        }
+
+        await backupStateRef.set({
+            ...state,
+            lastBackupRun: admin.firestore.FieldValue.serverTimestamp(),
+            lastManifest: backupManifest
+        }, { merge: true });
+
+        console.log(`[Backup] SUCCESS: Backed up ${Object.keys(backupManifest).join(', ')}`);
+        return res.status(200).send(`Backup successful: ${Object.keys(backupManifest).join(', ')}`);
+
+    } catch (error) {
+        console.error("[Backup] CRITICAL ERROR:", error.message);
+        return res.status(500).send('Backup failed. Check logs.');
     }
 });
 

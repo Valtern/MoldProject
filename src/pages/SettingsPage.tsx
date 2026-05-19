@@ -81,6 +81,17 @@ export function SettingsPage() {
     return () => unsubscribe();
   }, []);
 
+  // ── Input Sanitizer (integers only, clamped 0-100) ─────────────────────────
+  const sanitizeIntegerInput = (raw: string): number | string => {
+    // Allow empty field while the user is typing
+    if (raw === '' || raw === '-') return '';
+    // Strip any decimal portion and parse as integer
+    const parsed = parseInt(raw, 10);
+    if (isNaN(parsed)) return '';
+    // Clamp to 0-100 range
+    return Math.max(0, Math.min(100, parsed));
+  };
+
   // ── Validation ──────────────────────────────────────────────────────────────
   const validate = (): string[] => {
     const errors: string[] = [];
@@ -89,11 +100,24 @@ export function SettingsPage() {
     const bs = Number(blackMoldSafeLimit);
     const bc = Number(blackMoldCriticalLimit);
 
+    // Must be valid numbers
     if (isNaN(gs) || isNaN(gc) || isNaN(bs) || isNaN(bc)) {
       errors.push(t('settings.validation.nan'));
       return errors;
     }
 
+    // Must be whole integers (no decimals)
+    if (!Number.isInteger(gs) || !Number.isInteger(gc) || !Number.isInteger(bs) || !Number.isInteger(bc)) {
+      errors.push(t('settings.validation.integersOnly'));
+      return errors;
+    }
+
+    // Must be within 0-100 range
+    if ([gs, gc, bs, bc].some(v => v < 0 || v > 100)) {
+      errors.push(t('settings.validation.outOfRange'));
+    }
+
+    // Cross-field: Critical must be strictly greater than Safe
     if (gs >= gc) {
       errors.push(t('settings.validation.generalOrder'));
     }
@@ -186,10 +210,11 @@ export function SettingsPage() {
               <input
                 type="number"
                 value={generalSafeLimit}
-                onChange={(e) => { setGeneralSafeLimit(e.target.value); setValidationErrors([]); }}
+                onChange={(e) => { setGeneralSafeLimit(sanitizeIntegerInput(e.target.value)); setValidationErrors([]); }}
                 className={`${inputClass} focus:border-emerald-500/50 focus:ring-emerald-500/20`}
                 min="0"
                 max="100"
+                step="1"
               />
               <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1.5">
                 {t('settings.thresholds.general.safeLimitDesc')}
@@ -203,10 +228,11 @@ export function SettingsPage() {
               <input
                 type="number"
                 value={generalCriticalLimit}
-                onChange={(e) => { setGeneralCriticalLimit(e.target.value); setValidationErrors([]); }}
+                onChange={(e) => { setGeneralCriticalLimit(sanitizeIntegerInput(e.target.value)); setValidationErrors([]); }}
                 className={`${inputClass} focus:border-red-500/50 focus:ring-red-500/20`}
                 min="0"
                 max="100"
+                step="1"
               />
               <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1.5">
                 {t('settings.thresholds.general.criticalLimitDesc')}
@@ -231,10 +257,11 @@ export function SettingsPage() {
               <input
                 type="number"
                 value={blackMoldSafeLimit}
-                onChange={(e) => { setBlackMoldSafeLimit(e.target.value); setValidationErrors([]); }}
+                onChange={(e) => { setBlackMoldSafeLimit(sanitizeIntegerInput(e.target.value)); setValidationErrors([]); }}
                 className={`${inputClass} focus:border-emerald-500/50 focus:ring-emerald-500/20`}
                 min="0"
                 max="100"
+                step="1"
               />
               <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1.5">
                 {t('settings.thresholds.blackMold.safeLimitDesc')}
@@ -248,10 +275,11 @@ export function SettingsPage() {
               <input
                 type="number"
                 value={blackMoldCriticalLimit}
-                onChange={(e) => { setBlackMoldCriticalLimit(e.target.value); setValidationErrors([]); }}
+                onChange={(e) => { setBlackMoldCriticalLimit(sanitizeIntegerInput(e.target.value)); setValidationErrors([]); }}
                 className={`${inputClass} focus:border-red-500/50 focus:ring-red-500/20`}
                 min="0"
                 max="90"
+                step="1"
               />
               <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1.5">
                 {t('settings.thresholds.blackMold.criticalLimitDesc')}

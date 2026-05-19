@@ -297,6 +297,8 @@
     },
     "validation": {
       "nan": "All threshold fields must be valid numbers.",
+      "integersOnly": "All threshold values must be whole integers (no decimals).",
+      "outOfRange": "All threshold values must be between 0 and 100.",
       "generalOrder": "General Mold: Safe Limit must be less than Critical Limit.",
       "blackMoldOrder": "Black Mold: Safe Limit must be less than Critical Limit.",
       "maxCeiling": "Black Mold Critical Limit cannot exceed 90% RH (biological ceiling for {{organism}}).",

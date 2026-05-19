@@ -2,6 +2,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isValidFileOwner() {
+      return request.resource.data.userId == request.auth.uid;
+    }
+
     // 1. SETTINGS COLLECTION
     match /Settings/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
@@ -19,7 +32,6 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
-
     // 3. SENSOR LOGS & ANALYTICS ALERTS
     match /SensorLogs/{logId} {
       allow read: if request.auth != null;
@@ -31,6 +43,16 @@ service cloud.firestore {
       allow create, update: if false; // Only Cloud Functions can generate alerts
       allow delete: if request.auth != null; // Allow authenticated users to dismiss
     }
+
+    // 4. FILE METADATA COLLECTION
+    match /Metadata/backup_state {
+      allow read: if isAuthenticated(); // Allow users to see backup status if needed
+      allow write: if false; // Only Cloud Functions (Admin SDK) can update this
+    }
+    
+    // Block all other manual metadata access
+    match /FileMetadata/{fileId} { allow read, write: if false; }
+    match /Users/{userId}/FileMetadata/{fileId} { allow read, write: if false; }
 
   }
 }
