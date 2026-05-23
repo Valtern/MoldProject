@@ -1,0 +1,11 @@
+﻿torch>=2.0.0
+torchvision
+matplotlib
+pandas
+numpy
+fastapi
+uvicorn
+python-multipart
+jupyterlab
+tqdm
+scikit-learn

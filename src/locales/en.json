@@ -19,6 +19,7 @@
     "rooms": "Sensors",
     "devices": "Device",
     "reports": "Analytics",
+    "storage": "Storage",
     "settings": "Settings",
     "about": "About Us",
     "logout": "Log out",
