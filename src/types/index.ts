@@ -30,6 +30,7 @@ export interface RoomData {
   name: string;
   status: RoomStatus;
   lastUpdated: string;
+  lastUpdatedTimestamp?: Date;
   temperature: GaugeData;
   humidity: GaugeData;
   lightLevel: GaugeData;

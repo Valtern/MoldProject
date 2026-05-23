@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, Activity, Clock, ShieldCheck, Thermometer, Droplets, Sun, Zap, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { AlertTriangle, Activity, Clock, ShieldCheck, Thermometer, Droplets, Sun, Zap, ChevronLeft, ChevronRight, X, Download } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, limit, onSnapshot, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
@@ -281,6 +281,28 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
     }
   };
 
+  // ── CSV Export ───────────────────────────────────────────────────────────────
+  const handleExportCsv = () => {
+    if (chartData.length === 0) return;
+    const headers = ['Time', 'Humidity (%)', 'Temperature (°C)'];
+    const rows = chartData.map(d => [
+      `"${d.timeLabel}"`,
+      d.humidity,
+      d.temperature,
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `moldguard-${timeframe}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(t('reports.csvExported'));
+  };
+
   // ── Pagination Derived Values ───────────────────────────────────────────────
   const totalAlertPages = Math.max(1, Math.ceil(alerts.length / ALERTS_PER_PAGE));
   const paginatedAlerts = alerts.slice(alertPage * ALERTS_PER_PAGE, (alertPage + 1) * ALERTS_PER_PAGE);
@@ -483,7 +505,7 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
               <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
                 <Activity className="w-4 h-4" /> {t('reports.trendAggregation')} ({timeframe})
               </h2>
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-3 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span className="text-zinc-500 dark:text-zinc-400">{t('reports.humidity')}</span>
@@ -492,6 +514,15 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
                   <span className="text-zinc-500 dark:text-zinc-400">{t('reports.temperature')}</span>
                 </div>
+                <button
+                  onClick={handleExportCsv}
+                  disabled={chartData.length === 0}
+                  title={t('reports.exportCsv')}
+                  className="ml-1 inline-flex items-center gap-1.5 rounded-md border border-slate-200/60 dark:border-white/10 px-2.5 py-1 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-emerald-500 dark:hover:text-emerald-400 hover:border-emerald-500/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {t('reports.exportCsv')}
+                </button>
               </div>
             </div>
 

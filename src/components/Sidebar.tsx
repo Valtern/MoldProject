@@ -10,6 +10,7 @@ import {
   ChevronDown,
   User,
   Info,
+  Bell,
 } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { auth } from '@/lib/firebase';
@@ -51,12 +52,23 @@ interface SidebarProps {
   currentPage: PageId;
   onPageChange: (page: PageId) => void;
   onLogout?: () => void;
+  recentAlerts?: any[];
 }
 
-export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<SidebarProps>) {
+function alertTimeAgo(ts: any): string {
+  if (!ts) return '';
+  const d: Date = typeof ts.toDate === 'function' ? ts.toDate() : new Date(ts);
+  const secs = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (secs < 60) return `${secs}s ago`;
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+  return `${Math.floor(secs / 3600)}h ago`;
+}
+
+export function Sidebar({ currentPage, onPageChange, onLogout, recentAlerts = [] }: Readonly<SidebarProps>) {
   const { t } = useTranslation();
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
   const userEmail = auth.currentUser?.email || 'admin@moldprev.io';
 
   const navItems = getNavItems(t);
@@ -195,6 +207,89 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
           </div>
 
           <div className="flex items-center gap-2">
+            {/* ── Notification Bell ── */}
+            <Popover open={bellOpen} onOpenChange={setBellOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-800/60 transition-colors"
+                  aria-label={t('nav.notifications')}
+                >
+                  <Bell className="h-5 w-5" />
+                  {recentAlerts.length > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white leading-none">
+                      {recentAlerts.length > 9 ? '9+' : recentAlerts.length}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                sideOffset={8}
+                className="w-80 p-0 rounded-2xl border border-slate-200/80 bg-white shadow-2xl dark:border-white/10 dark:bg-zinc-950 overflow-hidden"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/60 dark:border-white/10">
+                  <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
+                    {t('nav.notifications')}
+                  </span>
+                  {recentAlerts.length > 0 && (
+                    <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-500">
+                      {recentAlerts.length}
+                    </span>
+                  )}
+                </div>
+
+                {/* Alert list */}
+                {recentAlerts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+                    <Bell className="h-8 w-8 text-slate-300 dark:text-zinc-600" />
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">{t('nav.noAlerts')}</p>
+                  </div>
+                ) : (
+                  <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
+                    {recentAlerts.slice(0, 5).map((alert) => {
+                      const maxProb = Math.max(alert.generalMoldProbability ?? 0, alert.blackMoldProbability ?? 0);
+                      const dotColor = maxProb >= 80 ? 'bg-red-500' : maxProb >= 40 ? 'bg-amber-500' : 'bg-emerald-500';
+                      return (
+                        <div key={alert.id} className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-zinc-800/40 transition-colors">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`mt-0.5 h-2 w-2 flex-shrink-0 rounded-full ${dotColor}`} />
+                              <span className="text-sm font-medium text-slate-900 dark:text-zinc-100 truncate">
+                                {alert.deviceID}
+                              </span>
+                            </div>
+                            <span className="text-xs text-zinc-400 whitespace-nowrap flex-shrink-0">
+                              {alertTimeAgo(alert.timestamp)}
+                            </span>
+                          </div>
+                          {alert.message && (
+                            <p className="mt-1 ml-4 text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2">
+                              {alert.message}
+                            </p>
+                          )}
+                          <div className="mt-1.5 ml-4 flex gap-3 text-xs text-zinc-400">
+                            <span>General: <strong className="text-zinc-600 dark:text-zinc-300">{(alert.generalMoldProbability ?? 0).toFixed(1)}%</strong></span>
+                            <span>Black: <strong className="text-zinc-600 dark:text-zinc-300">{(alert.blackMoldProbability ?? 0).toFixed(1)}%</strong></span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Footer */}
+                <div className="border-t border-slate-200/60 px-4 py-2.5 dark:border-white/10">
+                  <button
+                    onClick={() => { onPageChange('reports'); setBellOpen(false); }}
+                    className="text-xs font-medium text-emerald-500 hover:text-emerald-600 transition-colors"
+                  >
+                    {t('nav.viewAllAlerts')} →
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
+
             <LanguageSwitcher compact={true} />
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
