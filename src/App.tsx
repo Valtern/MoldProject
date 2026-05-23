@@ -5,12 +5,15 @@ import { db, auth } from '@/lib/firebase';
 import { Sidebar } from '@/components/Sidebar';
 import { StatusBanner } from '@/components/StatusBanner';
 import { StatCard } from '@/components/StatCard';
+import { MoldRiskGauge } from '@/components/MoldRiskGauge';
 import { HumidityChart } from '@/components/HumidityChart';
 import { ApplianceControlPanel } from '@/components/ApplianceControlPanel';
+import { Skeleton } from '@/components/ui/skeleton';
 import { RoomsPage } from '@/pages/RoomsPage';
 import { DevicesPage } from '@/pages/DevicesPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { AboutPage } from '@/pages/AboutPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { SignupPage } from '@/pages/SignupPage';
@@ -18,21 +21,34 @@ import { useTheme } from 'next-themes';
 import { useTranslation } from 'react-i18next';
 import type { RoomData } from '@/types';
 
+function chunkArr<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+function toMs(ts: any): number {
+  if (!ts) return 0;
+  if (typeof ts.toMillis === 'function') return ts.toMillis();
+  if (typeof ts.toDate === 'function') return ts.toDate().getTime();
+  return new Date(ts).getTime();
+}
+
 // Navigation context to share between Sidebar and App
-export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings';
+export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings' | 'about';
 export type AuthPageId = 'login' | 'forgot-password' | 'signup';
 
 function DashboardPage({
   roomData,
   onApplianceStateChange,
+  isLoadingData = false,
 }: {
   roomData: RoomData;
   onApplianceStateChange: (id: string, turnOn: boolean) => void;
+  isLoadingData?: boolean;
 }) {
   return (
     <div className="w-full max-w-[1920px] mx-auto transition-all">
-      {/* Mobile: Compact padding */}
-      {/* Desktop: Generous padding */}
       <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
         {/* Status Banner */}
         <section className="mb-4 md:mb-6">
@@ -40,29 +56,50 @@ function DashboardPage({
             roomName={roomData.name}
             status={roomData.status}
             lastUpdated={roomData.lastUpdated}
+            lastUpdatedTimestamp={roomData.lastUpdatedTimestamp}
           />
         </section>
 
-        {/* Stats Row - Stacked on mobile, grid on larger screens */}
+        {/* Stats Row - 2-col on mobile/md, 4-col on lg+ */}
         <section className="mb-4 md:mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 2xl:gap-8">
-            <StatCard
-              data={roomData.temperature}
-              index={0}
-              status={roomData.status}
-              safeLimit={roomData.safeLimit}
-            />
-            <StatCard
-              data={roomData.humidity}
-              index={1}
-              status={roomData.status}
-              safeLimit={roomData.safeLimit}
-            />
-            <StatCard
-              data={roomData.lightLevel}
-              index={2}
-              status="safe"
-            />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 2xl:gap-8">
+            {isLoadingData ? (
+              [0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg rounded-lg p-3 md:p-5 h-28 md:h-32 flex flex-col justify-between"
+                >
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              ))
+            ) : (
+              <>
+                <StatCard
+                  data={roomData.temperature}
+                  index={0}
+                  status={roomData.status}
+                  safeLimit={roomData.safeLimit}
+                />
+                <StatCard
+                  data={roomData.humidity}
+                  index={1}
+                  status={roomData.status}
+                  safeLimit={roomData.safeLimit}
+                />
+                <StatCard
+                  data={roomData.lightLevel}
+                  index={2}
+                  status="safe"
+                />
+                <MoldRiskGauge
+                  humidity={roomData.humidity.value}
+                  criticalLimit={roomData.criticalLimit}
+                  index={3}
+                />
+              </>
+            )}
           </div>
         </section>
 
@@ -95,6 +132,8 @@ function App() {
   const [roomData, setRoomData] = useState<RoomData | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [authPage, setAuthPage] = useState<AuthPageId>('login');
+  const [recentAlerts, setRecentAlerts] = useState<any[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const { setTheme } = useTheme();
 
   // ── Auth state listener ── keep current theme on login, reset on logout
@@ -195,6 +234,40 @@ function App() {
     return () => unsubscribe();
   }, [isAuthenticated]);
 
+  // Reset skeleton loading state whenever the active device changes
+  useEffect(() => {
+    setIsDataLoading(true);
+  }, [roomData?.deviceID]);
+
+  // Lightweight alerts listener for the notification bell
+  useEffect(() => {
+    if (!isAuthenticated || availableRooms.length === 0) {
+      setRecentAlerts([]);
+      return;
+    }
+    const deviceIds = availableRooms.map((r) => r.deviceID).filter(Boolean);
+    if (deviceIds.length === 0) return;
+
+    const chunks = chunkArr(deviceIds, 10);
+    const byChunk: Record<number, any[]> = {};
+    const unsubs: (() => void)[] = [];
+
+    chunks.forEach((chunk, idx) => {
+      const q = query(collection(db, 'AnalyticsAlerts'), where('deviceID', 'in', chunk));
+      const unsub = onSnapshot(q, (snap) => {
+        byChunk[idx] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const merged = Object.values(byChunk).flat();
+        merged.sort((a, b) => toMs(b.timestamp) - toMs(a.timestamp));
+        setRecentAlerts(merged.slice(0, 10));
+      }, (err: any) => {
+        if (err?.code !== 'permission-denied') console.error('[App] Alerts bell error:', err);
+      });
+      unsubs.push(unsub);
+    });
+
+    return () => unsubs.forEach((u) => u());
+  }, [availableRooms.map((r) => r.id).join(','), isAuthenticated]);
+
   // Handle room selection from Rooms page
   const handleRoomSelect = useCallback((roomId: string) => {
     const selectedRoom = availableRooms.find(r => r.id === roomId);
@@ -265,11 +338,10 @@ function App() {
             newStatus = 'warning';
           }
 
-          let formattedTime = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-          if (data.timestamp) {
-            const d = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
-            formattedTime = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-          }
+          const tsDate: Date = data.timestamp
+            ? (data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp))
+            : new Date();
+          const formattedTime = tsDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
           let newAppliances = prev.appliances;
           if (data.fanStatus || data.dehumidifierStatus) {
@@ -288,6 +360,7 @@ function App() {
             ...prev,
             status: newStatus,
             lastUpdated: formattedTime,
+            lastUpdatedTimestamp: tsDate,
             appliances: newAppliances,
             temperature: {
               ...prev.temperature,
@@ -303,6 +376,7 @@ function App() {
             },
           };
         });
+        setIsDataLoading(false);
       }
     }, (error) => {
       console.error('[App] SensorLogs listener error:', error);
@@ -391,6 +465,7 @@ function App() {
             key={`dashboard-${i18n.language}`}
             roomData={roomData}
             onApplianceStateChange={handleApplianceStateChange}
+            isLoadingData={isDataLoading}
           />
         );
       case 'rooms':
@@ -401,6 +476,8 @@ function App() {
         return <ReportsPage availableRooms={availableRooms} />;
       case 'settings':
         return <SettingsPage />;
+      case 'about':
+        return <AboutPage />;
       default:
         return roomData ? (
           <DashboardPage
@@ -475,7 +552,7 @@ function App() {
 
       {/* Top bar + bottom nav - only show when authenticated */}
       {isAuthenticated && (
-        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} />
+        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} recentAlerts={recentAlerts} />
       )}
 
       {/* Main Content */}

@@ -20,12 +20,16 @@
     "devices": "Device",
     "reports": "Analytics",
     "settings": "Settings",
+    "about": "About Us",
     "logout": "Log out",
     "logoutConfirm": "Log out?",
     "yes": "Yes",
     "no": "No",
     "hi": "Hi,",
-    "mobileTitle": "Mold Prevention"
+    "mobileTitle": "Mold Prevention",
+    "notifications": "Notifications",
+    "noAlerts": "No active alerts",
+    "viewAllAlerts": "View all alerts"
   },
   "auth": {
     "login": {
@@ -101,7 +105,10 @@
       "warning": "Warning",
       "critical": "Critical Risk",
       "waiting": "Waiting for data...",
-      "updatedAt": "Updated at {{time}}"
+      "updatedAt": "Updated at {{time}}",
+      "justNow": "Just now",
+      "secondsAgo": "{{count}}s ago",
+      "minutesAgo": "{{count}}m ago"
     },
     "stats": {
       "temperature": {
@@ -131,6 +138,12 @@
           "pending": "Pending"
         }
       }
+    },
+    "moldRisk": {
+      "label": "Mold Risk",
+      "low": "Low Risk",
+      "medium": "Medium Risk",
+      "high": "High Risk"
     },
     "chart": {
       "title": "Humidity History",
@@ -248,7 +261,9 @@
     "globalStream": "Global Stream",
     "waitingData": "Waiting for IoT hardware data limit(10)...",
     "alertDismissed": "Alert dismissed.",
-    "alertDismissFailed": "Failed to dismiss alert. Please try again."
+    "alertDismissFailed": "Failed to dismiss alert. Please try again.",
+    "exportCsv": "Export CSV",
+    "csvExported": "Data exported successfully"
   },
   "settings": {
     "title": "Data Management",

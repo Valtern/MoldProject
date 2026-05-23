@@ -21,12 +21,16 @@
     "reports": "Analitik",
     "storage": "Penyimpanan",
     "settings": "Pengaturan",
+    "about": "Tentang Kami",
     "logout": "Keluar",
     "logoutConfirm": "Keluar?",
     "yes": "Ya",
     "no": "Tidak",
     "hi": "Hai,",
-    "mobileTitle": "Pencegahan Jamur"
+    "mobileTitle": "Pencegahan Jamur",
+    "notifications": "Notifikasi",
+    "noAlerts": "Tidak ada peringatan aktif",
+    "viewAllAlerts": "Lihat semua peringatan"
   },
   "auth": {
     "login": {
@@ -102,7 +106,10 @@
       "warning": "Peringatan",
       "critical": "Risiko Kritis",
       "waiting": "Menunggu data...",
-      "updatedAt": "Diperbarui pada {{time}}"
+      "updatedAt": "Diperbarui pada {{time}}",
+      "justNow": "Baru saja",
+      "secondsAgo": "{{count}} dtk lalu",
+      "minutesAgo": "{{count}} mnt lalu"
     },
     "stats": {
       "temperature": {
@@ -132,6 +139,12 @@
           "pending": "Menunggu"
         }
       }
+    },
+    "moldRisk": {
+      "label": "Risiko Jamur",
+      "low": "Risiko Rendah",
+      "medium": "Risiko Sedang",
+      "high": "Risiko Tinggi"
     },
     "chart": {
       "title": "Riwayat Kelembapan",
@@ -249,7 +262,9 @@
     "globalStream": "Aliran Global",
     "waitingData": "Menunggu data perangkat keras IoT limit(10)...",
     "alertDismissed": "Peringatan diabaikan.",
-    "alertDismissFailed": "Gagal mengabaikan peringatan. Silakan coba lagi."
+    "alertDismissFailed": "Gagal mengabaikan peringatan. Silakan coba lagi.",
+    "exportCsv": "Ekspor CSV",
+    "csvExported": "Data berhasil diekspor"
   },
   "settings": {
     "title": "Manajemen Data",
