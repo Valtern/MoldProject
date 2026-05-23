@@ -152,7 +152,12 @@
       "autoDesc": "Devices are controlled automatically by the ESP32 logic.",
       "manualDesc": "Manual override is active — you control the devices.",
       "autoFooter": "The ESP32 manages appliances automatically based on sensor readings.",
-      "manualFooter": "Overrides are sent to the ESP32 on its next data push cycle."
+      "manualFooter": "Overrides are sent to the ESP32 on its next data push cycle.",
+      "thresholds": "Trigger Thresholds",
+      "thresholdsDesc": "Set the humidity level at which each appliance activates automatically.",
+      "fanThreshold": "Fan Trigger",
+      "dehumidifierThreshold": "Dehumidifier Trigger",
+      "thresholdSaved": "Threshold updated"
     }
   },
   "rooms": {

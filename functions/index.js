@@ -97,7 +97,9 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
         let deviceControls = {
             mode: 'auto',
             fanOverride: 'OFF',
-            dehumidifierOverride: 'OFF'
+            dehumidifierOverride: 'OFF',
+            fanThreshold: 70.0,
+            dehumidifierThreshold: 85.0
         };
 
         if (devicesQuery.empty) {
@@ -109,6 +111,8 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
                 mode: 'auto',
                 fanOverride: 'OFF',
                 dehumidifierOverride: 'OFF',
+                fanThreshold: 70.0,
+                dehumidifierThreshold: 85.0,
                 firstSeen: admin.firestore.FieldValue.serverTimestamp(),
                 lastSeen: admin.firestore.FieldValue.serverTimestamp()
             });
@@ -125,7 +129,9 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
             deviceControls = {
                 mode: deviceData.mode || 'auto',
                 fanOverride: deviceData.fanOverride || 'OFF',
-                dehumidifierOverride: deviceData.dehumidifierOverride || 'OFF'
+                dehumidifierOverride: deviceData.dehumidifierOverride || 'OFF',
+                fanThreshold: deviceData.fanThreshold ?? 70.0,
+                dehumidifierThreshold: deviceData.dehumidifierThreshold ?? 85.0
             };
         }
 
@@ -135,7 +141,9 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
             docId: docRef.id,
             mode: deviceControls.mode,
             fanOverride: deviceControls.fanOverride,
-            dehumidifierOverride: deviceControls.dehumidifierOverride
+            dehumidifierOverride: deviceControls.dehumidifierOverride,
+            fanThreshold: deviceControls.fanThreshold,
+            dehumidifierThreshold: deviceControls.dehumidifierThreshold
         });
 
     } catch (error) {
@@ -176,7 +184,9 @@ app.get('/api/status/:deviceId', cors(corsOptions), async (req, res) => {
         return res.status(200).json({
             mode: deviceData.mode || 'auto',
             fanOverride: deviceData.fanOverride || 'OFF',
-            dehumidifierOverride: deviceData.dehumidifierOverride || 'OFF'
+            dehumidifierOverride: deviceData.dehumidifierOverride || 'OFF',
+            fanThreshold: deviceData.fanThreshold ?? 70.0,
+            dehumidifierThreshold: deviceData.dehumidifierThreshold ?? 85.0
         });
     } catch (error) {
         console.error('[status] Firestore read error:', error);
