@@ -153,7 +153,12 @@
       "autoDesc": "Perangkat dikontrol secara otomatis oleh logika ESP32.",
       "manualDesc": "Override manual aktif — Anda mengontrol perangkat.",
       "autoFooter": "ESP32 mengelola peralatan secara otomatis berdasarkan pembacaan sensor.",
-      "manualFooter": "Override dikirim ke ESP32 pada siklus push data berikutnya."
+      "manualFooter": "Override dikirim ke ESP32 pada siklus push data berikutnya.",
+      "thresholds": "Ambang Batas Pemicu",
+      "thresholdsDesc": "Atur tingkat kelembapan saat setiap peralatan aktif secara otomatis.",
+      "fanThreshold": "Pemicu Kipas",
+      "dehumidifierThreshold": "Pemicu Dehumidifier",
+      "thresholdSaved": "Ambang batas diperbarui"
     }
   },
   "rooms": {

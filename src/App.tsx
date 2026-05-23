@@ -79,6 +79,7 @@ function DashboardPage({
               appliances={roomData.appliances || []}
               onStateChange={onApplianceStateChange}
               deviceID={roomData.deviceID}
+              currentHumidity={roomData.humidity?.value}
             />
           </div>
         </section>
