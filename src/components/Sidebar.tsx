@@ -11,7 +11,6 @@ import {
   User,
   Info,
   Bell,
-  HardDrive,
 } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { auth } from '@/lib/firebase';
@@ -38,7 +37,7 @@ function getNavItems(t: (key: string) => string): NavItem[] {
     { id: 'rooms', label: t('nav.rooms'), icon: Radio },
     { id: 'devices', label: t('nav.devices'), icon: Zap },
     { id: 'reports', label: t('nav.reports'), icon: BarChart3 },
-    { id: 'storage', label: t('nav.storage'), icon: HardDrive },
+
   ];
 }
 
