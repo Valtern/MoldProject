@@ -2,6 +2,53 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isValidSize(maxBytes) {
+      return request.resource.size <= maxBytes;
+    }
+
+    // Users folder - file management
+    match /users/{userId}/{allPaths=**} {
+      // Allow authenticated users to read their own files
+      allow read: if isAuthenticated() && isOwner(userId);
+
+      // Allow owners to delete files from their own folders
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Documents - 50MB limit
+    match /users/{userId}/documents/{document=**} {
+      allow create, update: if isAuthenticated() && isOwner(userId) &&
+        isValidSize(50 * 1024 * 1024);
+    }
+
+    // Images - 10MB limit
+    match /users/{userId}/images/{image=**} {
+      allow create, update: if isAuthenticated() && isOwner(userId) &&
+        isValidSize(10 * 1024 * 1024);
+    }
+
+    // Datasets - 100MB limit
+    match /users/{userId}/datasets/{dataset=**} {
+      allow create, update: if isAuthenticated() && isOwner(userId) &&
+        isValidSize(100 * 1024 * 1024);
+    }
+
+    // Temp - 10MB limit
+    match /users/{userId}/temp/{temp=**} {
+      allow create, update: if isAuthenticated() && isOwner(userId) &&
+        isValidSize(10 * 1024 * 1024);
+    }
+
+    // Deny all other access
     match /{allPaths=**} {
       allow read, write: if false;
     }

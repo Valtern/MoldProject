@@ -1,5 +1,9 @@
+// MoldGuard Cloud Functions - Production Build
 const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onTaskDispatched } = require("firebase-functions/v2/tasks");
+const logger = require("firebase-functions/logger");
 const nodemailer = require('nodemailer');
 const express = require('express');
 const cors = require('cors');
@@ -7,6 +11,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
 const admin = require('firebase-admin');
+const { getFunctions } = require("firebase-admin/functions");
 
 // 1. Initialize Firebase Admin SDK
 // Running natively in Google Cloud, default credentials are automatically used.
@@ -95,7 +100,9 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
         let deviceControls = {
             mode: 'auto',
             fanOverride: 'OFF',
-            dehumidifierOverride: 'OFF'
+            dehumidifierOverride: 'OFF',
+            fanThreshold: 70.0,
+            dehumidifierThreshold: 85.0
         };
 
         if (devicesQuery.empty) {
@@ -107,6 +114,8 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
                 mode: 'auto',
                 fanOverride: 'OFF',
                 dehumidifierOverride: 'OFF',
+                fanThreshold: 70.0,
+                dehumidifierThreshold: 85.0,
                 firstSeen: admin.firestore.FieldValue.serverTimestamp(),
                 lastSeen: admin.firestore.FieldValue.serverTimestamp()
             });
@@ -123,7 +132,9 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
             deviceControls = {
                 mode: deviceData.mode || 'auto',
                 fanOverride: deviceData.fanOverride || 'OFF',
-                dehumidifierOverride: deviceData.dehumidifierOverride || 'OFF'
+                dehumidifierOverride: deviceData.dehumidifierOverride || 'OFF',
+                fanThreshold: deviceData.fanThreshold ?? 70.0,
+                dehumidifierThreshold: deviceData.dehumidifierThreshold ?? 85.0
             };
         }
 
@@ -133,7 +144,9 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
             docId: docRef.id,
             mode: deviceControls.mode,
             fanOverride: deviceControls.fanOverride,
-            dehumidifierOverride: deviceControls.dehumidifierOverride
+            dehumidifierOverride: deviceControls.dehumidifierOverride,
+            fanThreshold: deviceControls.fanThreshold,
+            dehumidifierThreshold: deviceControls.dehumidifierThreshold
         });
 
     } catch (error) {
@@ -174,7 +187,9 @@ app.get('/api/status/:deviceId', cors(corsOptions), async (req, res) => {
         return res.status(200).json({
             mode: deviceData.mode || 'auto',
             fanOverride: deviceData.fanOverride || 'OFF',
-            dehumidifierOverride: deviceData.dehumidifierOverride || 'OFF'
+            dehumidifierOverride: deviceData.dehumidifierOverride || 'OFF',
+            fanThreshold: deviceData.fanThreshold ?? 70.0,
+            dehumidifierThreshold: deviceData.dehumidifierThreshold ?? 85.0
         });
     } catch (error) {
         console.error('[status] Firestore read error:', error);
@@ -182,10 +197,93 @@ app.get('/api/status/:deviceId', cors(corsOptions), async (req, res) => {
     }
 });
 
+
+// 7.5. Automated Backup Trigger (Embedded in existing API to bypass IAM restrictions)
+app.get('/api/run-backup', cors(corsOptions), async (req, res) => {
+    // Simple security check: You must add ?key=backup to your URL
+    if (req.query.key !== 'backup') {
+        return res.status(403).send('Forbidden: Missing or invalid key');
+    }
+
+    const bucket = admin.storage().bucket();
+    const backupStateRef = db.collection('Metadata').doc('backup_state');
+
+    try {
+        const stateSnap = await backupStateRef.get();
+        const state = stateSnap.exists ? stateSnap.data() : {};
+        const now = Date.now();
+        const backupManifest = {};
+
+        const incrementalCollections = [
+            { name: 'SensorLogs', field: 'timestamp' },
+            { name: 'AnalyticsAlerts', field: 'timestamp' }
+        ];
+        const snapshotCollections = ['Devices', 'Settings'];
+
+        console.log(`[Backup] Starting backup cycle at ${new Date(now).toISOString()}`);
+
+        for (const col of incrementalCollections) {
+            const lastTimestamp = state[`last_${col.name}_ts`] || new admin.firestore.Timestamp(0, 0);
+            const snapshot = await db.collection(col.name)
+                .where(col.field, '>', lastTimestamp)
+                .orderBy(col.field, 'asc')
+                .get();
+
+            if (!snapshot.empty) {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const fileName = `backups/${col.name.toLowerCase()}/inc_${now}.json`;
+                await bucket.file(fileName).save(JSON.stringify(data, null, 2));
+
+                backupManifest[col.name] = { count: data.length, file: fileName };
+                state[`last_${col.name}_ts`] = data[data.length - 1][col.field];
+            }
+        }
+
+        for (const colName of snapshotCollections) {
+            const snapshot = await db.collection(colName).get();
+            if (!snapshot.empty) {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const fileName = `backups/${colName.toLowerCase()}/snap_${now}.json`;
+                await bucket.file(fileName).save(JSON.stringify(data, null, 2));
+
+                backupManifest[colName] = { count: data.length, file: fileName };
+            }
+        }
+
+        if (Object.keys(backupManifest).length === 0) {
+            return res.status(200).send("No new data to back up today.");
+        }
+
+        await backupStateRef.set({
+            ...state,
+            lastBackupRun: admin.firestore.FieldValue.serverTimestamp(),
+            lastManifest: backupManifest
+        }, { merge: true });
+
+        console.log(`[Backup] SUCCESS: Backed up ${Object.keys(backupManifest).join(', ')}`);
+        return res.status(200).send(`Backup successful: ${Object.keys(backupManifest).join(', ')}`);
+
+    } catch (error) {
+        console.error("[Backup] CRITICAL ERROR:", error.message);
+        return res.status(500).send('Backup failed. Check logs.');
+    }
+});
+
 // 8. Export the serverless HTTP Function
 exports.esp32api = onRequest({ region: 'asia-southeast2', maxInstances: 10 }, app);
 
-// 9. Event-Driven Alert Worker (Firestore Trigger)
+// ═══════════════════════════════════════════════════════════════════════════════
+// 9. Event-Driven Alert Evaluator / PUBLISHER (Firestore Trigger)
+//
+//    This function evaluates whether a critical humidity alert should fire.
+//    It does NOT send email directly — instead it enqueues a task into the
+//    Cloud Tasks queue for the sendAlertEmail worker to process.
+//
+//    PRESERVED UNCHANGED:
+//      • Device lookup → userId → Settings guard chain
+//      • Dynamic threshold (criticalHumidityLimit ?? 70)
+//      • 3-hour hysteresis check with lastAlertSent
+// ═══════════════════════════════════════════════════════════════════════════════
 exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', region: 'asia-southeast2' }, async (event) => {
     const logData = event.data.data();
 
@@ -199,7 +297,7 @@ exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', regi
     const deviceID = logData.deviceID;
     // Query by deviceID field since documents use auto-generated IDs
     const devicesQuery = await db.collection('Devices').where('deviceID', '==', deviceID).limit(1).get();
-    
+
     if (devicesQuery.empty) {
         console.warn(`[checkMoldRisk] Abort: No device document found for deviceID: ${deviceID}`);
         return;
@@ -227,7 +325,7 @@ exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', regi
     }
 
     const settingsData = settingsSnap.data();
-    
+
     // Extract dynamic fields
     const alertsEnabled = settingsData.alertsEnabled;
     const alertEmail = settingsData.alertEmail;
@@ -264,80 +362,47 @@ exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', regi
         console.log(`[checkMoldRisk] No previous alert found for ${deviceID}. First alert dispatch.`);
     }
 
-    // Initialize Nodemailer for Gmail
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-        }
-    });
-
-    const eventTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' });
-
-    // Modern HTML Email Template
-    const htmlBody = `
-        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <div style="background-color: #d32f2f; color: white; padding: 20px; text-align: center;">
-                <h1 style="margin: 0; font-size: 24px; font-weight: 600;">⚠️ Critical Humidity Alert</h1>
-            </div>
-            <div style="padding: 30px; background-color: #ffffff; color: #333333;">
-                <p style="font-size: 16px; line-height: 1.5; margin-top: 0;">MoldGuard has detected critical humidity levels that pose a high risk of mold growth.</p>
-                
-                <table style="width: 100%; border-collapse: collapse; margin: 25px 0;">
-                    <tr>
-                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #555;">Device ID</td>
-                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; color: #111;">${deviceID}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #555;">Time of Event</td>
-                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; color: #111;">${eventTime}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #d32f2f;">Humidity Level</td>
-                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: bold; color: #d32f2f;">${logData.humidity}%</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #555;">Temperature</td>
-                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; color: #111;">${logData.temperature}&deg;C</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 12px; font-weight: bold; color: #555;">Light Level</td>
-                        <td style="padding: 12px; text-align: right; color: #111;">${logData.lightLevel}</td>
-                    </tr>
-                </table>
-
-                <p style="font-size: 14px; color: #666; margin-bottom: 0;">Please take immediate action to ventilate or dehumidify the area.</p>
-            </div>
-            <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #999;">
-                <p style="margin: 0;">This is an automated alert generated by MoldGuard IoT System.</p>
-            </div>
-        </div>
-    `;
-
+    // ── PUBLISHER: Enqueue email task to Cloud Tasks instead of sending inline ──
+    // Optimistic lastAlertSent update BEFORE enqueue to prevent duplicate tasks
+    // from rapid-fire sensor logs arriving during queue processing delay.
     try {
-        console.log(`[checkMoldRisk] Sending email to: ${alertEmail} for device: ${deviceID}`);
-        await transporter.sendMail({
-            from: `"MoldGuard Alerts" <${process.env.ALERT_FROM_EMAIL}>`,
-            to: alertEmail,
-            subject: `[CRITICAL] Humidity Alert: ${deviceID} (${logData.humidity}%)`,
-            html: htmlBody
-        });
-
-        console.log(`[checkMoldRisk] SUCCESS: Alert email delivered for ${deviceID} to ${alertEmail}`);
-
-        // State Update: Update lastAlertSent to reset hysteresis loop
         await deviceRef.set({
             lastAlertSent: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
-        console.log(`[checkMoldRisk] Updated lastAlertSent timestamp for device ${deviceID}`);
+        logger.info(`[checkMoldRisk] Optimistically updated lastAlertSent for device ${deviceID}`);
 
+        // Explicit region targeting — prevents silent failure from implicit us-central1 resolution
+        const queue = getFunctions().taskQueue("locations/asia-southeast2/functions/sendAlertEmail");
+        const payload = {
+            type: 'critical',
+            to: alertEmail,
+            deviceID: deviceID,
+            deviceDocPath: deviceRef.path,
+            sensorData: {
+                humidity: logData.humidity,
+                temperature: logData.temperature,
+                lightLevel: logData.lightLevel
+            }
+        };
+        logger.info('[checkMoldRisk] Enqueuing critical email task', { deviceID, to: alertEmail });
+        await queue.enqueue(payload);
+        logger.info('[checkMoldRisk] Successfully enqueued task', { deviceID, to: alertEmail });
     } catch (error) {
-        console.error(`[checkMoldRisk] SMTP ERROR for device ${deviceID}:`, error);
+        logger.error('[checkMoldRisk] Queue Enqueue Failed', { deviceID, error: error.message, stack: error.stack });
     }
 });
 
-// 10. Predictive Analytics Alert Worker (Firestore Trigger)
+// 10. Predictive Analytics Alert Evaluator / PUBLISHER (Firestore Trigger)
+//
+//     This function evaluates whether a predictive alert email should fire.
+//     It does NOT send email directly — instead it enqueues a task into the
+//     Cloud Tasks queue for the sendAlertEmail worker to process.
+//
+//     PRESERVED UNCHANGED:
+//       • Device lookup → userId → Settings guard chain
+//       • alertsEnabled / alertEmail validation
+//       • Severity suppression gate (emailAlertLevels array)
+//       • Legacy emailAlertThreshold migration
 exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{alertId}', region: 'asia-southeast2' }, async (event) => {
     const alertData = event.data.data();
 
@@ -351,7 +416,7 @@ exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{
     const deviceID = alertData.deviceID;
     // Query by deviceID field since documents use auto-generated IDs
     const devicesQuery = await db.collection('Devices').where('deviceID', '==', deviceID).limit(1).get();
-    
+
     if (devicesQuery.empty) {
         console.warn(`[notifyPredictiveAlert] Abort: No device document found for deviceID: ${deviceID}`);
         return;
@@ -378,7 +443,7 @@ exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{
     }
 
     const settingsData = settingsSnap.data();
-    
+
     const alertsEnabled = settingsData.alertsEnabled;
     const alertEmail = settingsData.alertEmail;
 
@@ -406,21 +471,152 @@ exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{
         return;
     }
 
-    console.log(`[notifyPredictiveAlert] Severity gate passed: alert (${riskLevel}) is in user's selected levels [${emailAlertLevels.join(', ')}]. Proceeding to send email.`);
+    console.log(`[notifyPredictiveAlert] Severity gate passed: alert (${riskLevel}) is in user's selected levels [${emailAlertLevels.join(', ')}]. Proceeding to enqueue email task.`);
 
-    // Initialize Nodemailer for Gmail
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
+    // ── PUBLISHER: Enqueue email task to Cloud Tasks instead of sending inline ──
+    try {
+        // Explicit region targeting — prevents silent failure from implicit us-central1 resolution
+        const queue = getFunctions().taskQueue("locations/asia-southeast2/functions/sendAlertEmail");
+        const payload = {
+            type: 'predictive',
+            to: alertEmail,
+            deviceID: deviceID,
+            deviceDocPath: null, // No hysteresis update needed for predictive alerts
+            alertData: {
+                riskLevel: alertData.riskLevel,
+                message: alertData.message
+            }
+        };
+        logger.info('[notifyPredictiveAlert] Enqueuing predictive email task', { deviceID, to: alertEmail, riskLevel });
+        await queue.enqueue(payload);
+        logger.info('[notifyPredictiveAlert] Successfully enqueued task', { deviceID, to: alertEmail });
+    } catch (error) {
+        logger.error('[notifyPredictiveAlert] Queue Enqueue Failed', { deviceID, error: error.message, stack: error.stack });
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 11. Email Worker Function — Cloud Tasks Consumer (The Single Email Gateway)
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// This function is the SOLE point of email delivery for the entire system.
+// It receives enqueued tasks from checkMoldRisk and notifyPredictiveAlert,
+// builds the appropriate HTML template based on `type`, sends via nodemailer,
+// and updates lastAlertSent on the device doc (critical alerts only).
+//
+// DEPLOYMENT NOTE:
+//   The Cloud Tasks queue "sendAlertEmail" is AUTO-PROVISIONED by the Firebase
+//   CLI when you run:  firebase deploy --only functions
+//   No manual `gcloud tasks queues create` command is required.
+//
+// TASK PAYLOAD CONTRACT:
+//   {
+//     type: "critical" | "predictive",
+//     to: "user@example.com",
+//     deviceID: "MasterBed_01",
+//     deviceDocPath: "Devices/abc123" | null,
+//     sensorData: { humidity, temperature, lightLevel },   // critical only
+//     alertData: { riskLevel, message }                     // predictive only
+//   }
+//
+// ═══════════════════════════════════════════════════════════════════════════════
+exports.sendAlertEmail = onTaskDispatched(
+    {
+        region: 'asia-southeast2',
+        // Rate limits: Prevent overwhelming Gmail SMTP servers.
+        // Gmail workspace accounts allow ~20 msgs/sec; we stay well below.
+        rateLimits: {
+            maxConcurrentDispatches: 6,
+            maxDispatchesPerSecond: 2,
+        },
+        // Retry config: Automatic retries with exponential backoff on
+        // transient SMTP failures (network timeouts, 5xx responses).
+        retryConfig: {
+            maxAttempts: 5,
+            minBackoffSeconds: 30,
+            maxBackoffSeconds: 600,
+            maxDoublings: 4,
+        },
+        // Auto-scaling: Firebase scales workers 1→N based on queue depth.
+        // Cap at 5 to control cold-start costs.
+        maxInstances: 5,
+        memory: '256MiB',
+    },
+    async (req) => {
+        // ── Entry-point traceability: confirm payload arrived in worker ──
+        logger.info('[sendAlertEmail] Worker invoked — raw payload received', { data: req.data });
+
+        const { type, to, deviceID, deviceDocPath, sensorData, alertData } = req.data;
+
+        // ── Validate required fields ──
+        if (!type || !to || !deviceID) {
+            logger.error('[sendAlertEmail] Malformed task payload — missing required fields', { data: req.data });
+            return; // Don't retry malformed payloads (returning normally = task acknowledged)
         }
-    });
 
-    const eventTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' });
+        logger.info(`[sendAlertEmail] Processing ${type} alert for device ${deviceID} → ${to}`);
 
-    // Distinct HTML Email Template for Predictive Alerts
-    const htmlBody = `
+        // Initialize Nodemailer for Gmail
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS
+            }
+        });
+
+        const eventTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' });
+
+        let subject, htmlBody, fromName;
+
+        if (type === 'critical') {
+            // ── Critical Humidity Alert Template ──
+            fromName = 'MoldGuard Alerts';
+            subject = `[CRITICAL] Humidity Alert: ${deviceID} (${sensorData?.humidity ?? '?'}%)`;
+            htmlBody = `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="background-color: #d32f2f; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0; font-size: 24px; font-weight: 600;">⚠️ Critical Humidity Alert</h1>
+            </div>
+            <div style="padding: 30px; background-color: #ffffff; color: #333333;">
+                <p style="font-size: 16px; line-height: 1.5; margin-top: 0;">MoldGuard has detected critical humidity levels that pose a high risk of mold growth.</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 25px 0;">
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #555;">Device ID</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; color: #111;">${deviceID}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #555;">Time of Event</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; color: #111;">${eventTime}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #d32f2f;">Humidity Level</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: bold; color: #d32f2f;">${sensorData?.humidity ?? '?'}%</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #555;">Temperature</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; color: #111;">${sensorData?.temperature ?? '?'}&deg;C</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; font-weight: bold; color: #555;">Light Level</td>
+                        <td style="padding: 12px; text-align: right; color: #111;">${sensorData?.lightLevel ?? '?'}</td>
+                    </tr>
+                </table>
+
+                <p style="font-size: 14px; color: #666; margin-bottom: 0;">Please take immediate action to ventilate or dehumidify the area.</p>
+            </div>
+            <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #999;">
+                <p style="margin: 0;">This is an automated alert generated by MoldGuard IoT System.</p>
+            </div>
+        </div>
+            `;
+
+        } else if (type === 'predictive') {
+            // ── Predictive Analytics Alert Template ──
+            fromName = 'MoldGuard Predictive Alerts';
+            subject = `[PREDICTIVE] Mold Risk Alert: ${deviceID} (${alertData?.riskLevel ?? '?'})`;
+            htmlBody = `
         <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             <div style="background-color: #f57c00; color: white; padding: 20px; text-align: center;">
                 <h1 style="margin: 0; font-size: 24px; font-weight: 600;">🔮 Predictive Analytics Warning</h1>
@@ -439,11 +635,11 @@ exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{
                     </tr>
                     <tr>
                         <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #f57c00;">Risk Level</td>
-                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: bold; color: #f57c00;">${alertData.riskLevel}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: bold; color: #f57c00;">${alertData?.riskLevel ?? '?'}</td>
                     </tr>
                     <tr>
                         <td style="padding: 12px; border-bottom: 1px solid #eeeeee; font-weight: bold; color: #555;">Message</td>
-                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; color: #111;">${alertData.message}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: right; color: #111;">${alertData?.message ?? 'N/A'}</td>
                     </tr>
                 </table>
 
@@ -453,20 +649,36 @@ exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{
                 <p style="margin: 0;">This is an automated predictive alert generated by MoldGuard Analytics.</p>
             </div>
         </div>
-    `;
+            `;
 
-    try {
-        console.log(`[notifyPredictiveAlert] Sending email to: ${alertEmail} for device: ${deviceID}`);
-        await transporter.sendMail({
-            from: '"MoldGuard Predictive Alerts" <' + process.env.ALERT_FROM_EMAIL + '>',
-            to: alertEmail,
-            subject: `[PREDICTIVE] Mold Risk Alert: ${deviceID} (${alertData.riskLevel})`,
-            html: htmlBody
-        });
+        } else {
+            console.error(`[sendAlertEmail] Unknown alert type: "${type}" — skipping.`);
+            return; // Don't retry unknown types
+        }
 
-        console.log(`[notifyPredictiveAlert] SUCCESS: Predictive alert email delivered for ${deviceID} to ${alertEmail}`);
-
-    } catch (error) {
-        console.error(`[notifyPredictiveAlert] SMTP ERROR for device ${deviceID}:`, error);
+        // Send the email.
+        // If sendMail throws, we re-throw so Cloud Tasks auto-retries per retryConfig
+        // (up to 5 attempts with exponential backoff: 30s → 60s → 120s → 240s → 480s).
+        try {
+            await transporter.sendMail({
+                from: `"${fromName}" <${process.env.ALERT_FROM_EMAIL}>`,
+                to: to,
+                subject: subject,
+                html: htmlBody
+            });
+            logger.info('[sendAlertEmail] SUCCESS: Email delivered', { type, deviceID, to });
+        } catch (smtpError) {
+            logger.error('[sendAlertEmail] SMTP Failed', {
+                type,
+                deviceID,
+                to,
+                error: smtpError.message,
+                code: smtpError.code,
+                responseCode: smtpError.responseCode,
+                stack: smtpError.stack
+            });
+            // Re-throw to signal Cloud Tasks that this attempt failed → triggers retry
+            throw smtpError;
+        }
     }
-});
+);

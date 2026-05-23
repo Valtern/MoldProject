@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { gsap } from 'gsap';
-import { Fan, Droplets } from 'lucide-react';
-import { doc, updateDoc, onSnapshot, collection, query, where, limit } from 'firebase/firestore';
+import { Fan, Droplets, SlidersHorizontal } from 'lucide-react';
+import { doc, updateDoc, setDoc, onSnapshot, collection, query, where, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Slider } from '@/components/ui/slider';
 
 interface ApplianceControlPanelProps {
   /** Appliance list from telemetry (fanStatus / dehumidifierStatus from SensorLogs) */
@@ -12,6 +13,8 @@ interface ApplianceControlPanelProps {
   onStateChange: (id: string, newState: boolean) => void;
   /** The Firestore deviceID for the currently selected room */
   deviceID?: string;
+  /** Live humidity reading from SensorLogs — used to derive optimistic appliance status in auto mode */
+  currentHumidity?: number;
 }
 
 // ── iOS-style toggle ──
@@ -83,7 +86,66 @@ function ModePillToggle({
   );
 }
 
-export function ApplianceControlPanel({ appliances, deviceID }: ApplianceControlPanelProps) {
+// ── Threshold Slider with debounced save ──
+function ThresholdSlider({
+  label,
+  value,
+  onChange,
+  color = 'emerald',
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  onChange: (newValue: number) => void;
+  color?: 'emerald' | 'sky';
+  icon: typeof Fan;
+}) {
+  const colorMap = {
+    emerald: {
+      badge: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
+      icon: 'text-emerald-600 dark:text-emerald-400',
+      track: '[&_[data-slot=slider-range]]:bg-emerald-500 [&_[data-slot=slider-thumb]]:border-emerald-500',
+    },
+    sky: {
+      badge: 'bg-sky-100 dark:bg-sky-500/15 text-sky-700 dark:text-sky-400',
+      icon: 'text-sky-600 dark:text-sky-400',
+      track: '[&_[data-slot=slider-range]]:bg-sky-500 [&_[data-slot=slider-thumb]]:border-sky-500',
+    },
+  };
+
+  const colors = colorMap[color];
+
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Icon className={`w-3.5 h-3.5 ${colors.icon}`} strokeWidth={2} />
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            {label}
+          </span>
+        </div>
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colors.badge}`}>
+          {value}%
+        </span>
+      </div>
+      <Slider
+        value={[value]}
+        min={0}
+        max={100}
+        step={1}
+        onValueChange={(vals: number[]) => onChange(vals[0])}
+        className={`w-full ${colors.track}`}
+      />
+      <div className="flex justify-between text-[10px] text-zinc-400 dark:text-zinc-500 px-0.5">
+        <span>0%</span>
+        <span>50%</span>
+        <span>100%</span>
+      </div>
+    </div>
+  );
+}
+
+export function ApplianceControlPanel({ appliances, deviceID, currentHumidity }: ApplianceControlPanelProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -92,6 +154,15 @@ export function ApplianceControlPanel({ appliances, deviceID }: ApplianceControl
   const [fanOverride, setFanOverride] = useState<'ON' | 'OFF'>('OFF');
   const [dehumidifierOverride, setDehumidifierOverride] = useState<'ON' | 'OFF'>('OFF');
   const [deviceDocId, setDeviceDocId] = useState<string | null>(null);
+
+  // ── Threshold state ──
+  const [fanThreshold, setFanThreshold] = useState<number>(70);
+  const [dehumidifierThreshold, setDehumidifierThreshold] = useState<number>(85);
+  const [thresholdsExpanded, setThresholdsExpanded] = useState<boolean>(false);
+
+  // Debounce timers for threshold saves
+  const fanThresholdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dehumThresholdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Subscribe to the device document for real-time updates (source of truth) ──
   useEffect(() => {
@@ -108,6 +179,10 @@ export function ApplianceControlPanel({ appliances, deviceID }: ApplianceControl
         setMode((data.mode as 'auto' | 'manual') || 'auto');
         setFanOverride((data.fanOverride as 'ON' | 'OFF') || 'OFF');
         setDehumidifierOverride((data.dehumidifierOverride as 'ON' | 'OFF') || 'OFF');
+
+        // Sync threshold values from Firestore (fallback to safe defaults)
+        setFanThreshold(data.fanThreshold ?? 70);
+        setDehumidifierThreshold(data.dehumidifierThreshold ?? 85);
       }
     }, (error: any) => {
       // Infrastructure/config issues shouldn't spam the error counter
@@ -222,6 +297,45 @@ export function ApplianceControlPanel({ appliances, deviceID }: ApplianceControl
     }
   };
 
+  // ── Debounced Firestore write: threshold changes ──
+  const saveFanThreshold = useCallback((value: number) => {
+    setFanThreshold(value);
+    if (fanThresholdTimer.current) clearTimeout(fanThresholdTimer.current);
+    fanThresholdTimer.current = setTimeout(async () => {
+      if (!deviceDocId) return;
+      try {
+        const deviceRef = doc(db, 'Devices', deviceDocId);
+        await setDoc(deviceRef, { fanThreshold: value }, { merge: true });
+        console.log(`[ApplianceControlPanel] Fan threshold saved: ${value}%`);
+      } catch (error) {
+        console.error('[ApplianceControlPanel] Failed to save fanThreshold:', error);
+      }
+    }, 500);
+  }, [deviceDocId]);
+
+  const saveDehumidifierThreshold = useCallback((value: number) => {
+    setDehumidifierThreshold(value);
+    if (dehumThresholdTimer.current) clearTimeout(dehumThresholdTimer.current);
+    dehumThresholdTimer.current = setTimeout(async () => {
+      if (!deviceDocId) return;
+      try {
+        const deviceRef = doc(db, 'Devices', deviceDocId);
+        await setDoc(deviceRef, { dehumidifierThreshold: value }, { merge: true });
+        console.log(`[ApplianceControlPanel] Dehumidifier threshold saved: ${value}%`);
+      } catch (error) {
+        console.error('[ApplianceControlPanel] Failed to save dehumidifierThreshold:', error);
+      }
+    }, 500);
+  }, [deviceDocId]);
+
+  // Cleanup debounce timers on unmount
+  useEffect(() => {
+    return () => {
+      if (fanThresholdTimer.current) clearTimeout(fanThresholdTimer.current);
+      if (dehumThresholdTimer.current) clearTimeout(dehumThresholdTimer.current);
+    };
+  }, []);
+
   return (
     <div
       ref={containerRef}
@@ -253,14 +367,27 @@ export function ApplianceControlPanel({ appliances, deviceID }: ApplianceControl
           const Icon = appliance.icon === 'fan' ? Fan : Droplets;
           const isFan = appliance.icon === 'fan';
 
-          // In auto mode: show the live telemetry status from the ESP32
-          // In manual mode: show the Firestore override value
-          const isOn = mode === 'auto'
-            ? appliance.state === 'manual-on'
-            : (isFan ? fanOverride === 'ON' : dehumidifierOverride === 'ON');
+          // ── Derived Optimistic UI State ──
+          // In auto mode: derive expected state from currentHumidity vs threshold.
+          // This eliminates the 5-minute UI lag caused by waiting for the next
+          // ESP32 telemetry push. If currentHumidity is unavailable (undefined/null),
+          // fall back to the last-known telemetry state from the appliances prop.
+          // In manual mode: show the Firestore override value directly.
+          let isOn: boolean;
+          if (mode === 'auto') {
+            if (currentHumidity != null) {
+              const threshold = isFan ? fanThreshold : dehumidifierThreshold;
+              isOn = currentHumidity > threshold;
+            } else {
+              // Fallback: no humidity reading yet — use stale telemetry
+              isOn = appliance.state === 'manual-on';
+            }
+          } else {
+            isOn = isFan ? fanOverride === 'ON' : dehumidifierOverride === 'ON';
+          }
 
           const statusLabel = mode === 'auto'
-            ? (appliance.state === 'manual-on'
+            ? (isOn
               ? `${t('dashboard.appliances.on')} (${t('dashboard.appliances.auto')})`
               : `${t('dashboard.appliances.off')} (${t('dashboard.appliances.auto')})`)
             : (isOn
@@ -319,7 +446,56 @@ export function ApplianceControlPanel({ appliances, deviceID }: ApplianceControl
         })}
       </div>
 
+      {/* ── Threshold Sliders Section ── */}
       <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/5">
+        <button
+          id="threshold-toggle"
+          onClick={() => setThresholdsExpanded((prev) => !prev)}
+          className="w-full flex items-center justify-between py-1.5 group cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors" />
+            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200 transition-colors">
+              {t('dashboard.appliances.thresholds') || 'Trigger Thresholds'}
+            </span>
+          </div>
+          <svg
+            className={`w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 transition-transform duration-200 ${thresholdsExpanded ? 'rotate-180' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {thresholdsExpanded && (
+          <div className="mt-3 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-relaxed">
+              {t('dashboard.appliances.thresholdsDesc') || 'Set the humidity level at which each appliance activates automatically.'}
+            </p>
+
+            <ThresholdSlider
+              label={t('dashboard.appliances.fanThreshold') || 'Fan Trigger'}
+              value={fanThreshold}
+              onChange={saveFanThreshold}
+              color="emerald"
+              icon={Fan}
+            />
+
+            <ThresholdSlider
+              label={t('dashboard.appliances.dehumidifierThreshold') || 'Dehumidifier Trigger'}
+              value={dehumidifierThreshold}
+              onChange={saveDehumidifierThreshold}
+              color="sky"
+              icon={Droplets}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className={`${thresholdsExpanded ? 'mt-4' : 'mt-3'} pt-3 border-t border-slate-200/60 dark:border-white/5`}>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           {mode === 'auto'
             ? t('dashboard.appliances.autoFooter') || 'The ESP32 manages appliances automatically based on sensor readings.'
