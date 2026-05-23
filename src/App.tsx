@@ -14,6 +14,7 @@ import { DevicesPage } from '@/pages/DevicesPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { AboutPage } from '@/pages/AboutPage';
+import { StoragePage } from '@/pages/StoragePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { SignupPage } from '@/pages/SignupPage';
@@ -35,7 +36,7 @@ function toMs(ts: any): number {
 }
 
 // Navigation context to share between Sidebar and App
-export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings' | 'about';
+export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings' | 'about' | 'storage';
 export type AuthPageId = 'login' | 'forgot-password' | 'signup';
 
 function DashboardPage({
@@ -478,6 +479,8 @@ function App() {
         return <SettingsPage />;
       case 'about':
         return <AboutPage />;
+      case 'storage':
+        return <StoragePage />;
       default:
         return roomData ? (
           <DashboardPage
