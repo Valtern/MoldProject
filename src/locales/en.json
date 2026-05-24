@@ -22,6 +22,8 @@
     "settings": "Settings",
     "logout": "Log out",
     "logoutConfirm": "Log out?",
+    "logoutConfirmWeb": "Log out?",
+    "logoutConfirmMobile": "Log out?",
     "yes": "Yes",
     "no": "No",
     "hi": "Hi,",

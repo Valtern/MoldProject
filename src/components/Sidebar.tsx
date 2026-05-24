@@ -153,7 +153,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
 
               <PopoverContent className="w-auto p-3 bg-slate-900 border-none shadow-xl dark:bg-zinc-800" side="top" align="center" sideOffset={8}>
                 <div className="flex flex-col gap-2">
-                  <p className="text-sm font-medium text-white text-center">{t('nav.logoutConfirm')}</p>
+                  <p className="text-sm font-medium text-white text-center">{t('nav.logoutConfirmMobile')}</p>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setIsConfirmingLogout(false)}
@@ -269,7 +269,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<Sideba
         <AlertDialogContent className="gap-3 border border-slate-200/80 bg-white text-slate-900 dark:border-white/10 dark:bg-black dark:text-white w-[calc(100%-3rem)] max-w-[17rem] p-4 sm:w-[calc(100%-2.5rem)] sm:max-w-[18rem] md:w-full md:max-w-sm md:p-5 shadow-2xl">
           <div className="text-center">
             <AlertDialogTitle className="text-lg font-semibold text-slate-900 dark:text-white md:text-xl">
-              {t('nav.logoutConfirm')}
+              {t('nav.logoutConfirmWeb')}
             </AlertDialogTitle>
           </div>
           <div className="flex gap-2.5 justify-center">
