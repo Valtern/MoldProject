@@ -70,7 +70,7 @@ jobs:
         run: |
           firebase deploy \
             --project moldymoldbase \
-            --only hosting,functions \
+            --only hosting,functions:esp32api,functions:checkMoldRisk,functions:notifyPredictiveAlert \
             --token "$FIREBASE_TOKEN" \
             --non-interactive \
             --force

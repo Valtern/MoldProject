@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Shield, AlertTriangle, AlertCircle } from 'lucide-react';
 import type { RoomStatus } from '@/types';
@@ -6,6 +7,7 @@ interface StatusBannerProps {
   roomName: string;
   status: RoomStatus;
   lastUpdated: string;
+  lastUpdatedTimestamp?: Date;
 }
 
 function getStatusConfig(t: (key: string) => string) {
@@ -31,11 +33,34 @@ function getStatusConfig(t: (key: string) => string) {
   };
 }
 
-export function StatusBanner({ roomName, status, lastUpdated }: StatusBannerProps) {
+export function StatusBanner({ roomName, status, lastUpdated, lastUpdatedTimestamp }: StatusBannerProps) {
   const { t } = useTranslation();
   const statusConfig = getStatusConfig(t);
   const config = statusConfig[status];
   const Icon = config.icon;
+
+  const [secondsAgo, setSecondsAgo] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!lastUpdatedTimestamp) {
+      setSecondsAgo(null);
+      return;
+    }
+    const tick = () =>
+      setSecondsAgo(Math.floor((Date.now() - lastUpdatedTimestamp.getTime()) / 1000));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [lastUpdatedTimestamp]);
+
+  const timeLabel =
+    secondsAgo === null
+      ? t('dashboard.status.updatedAt', { time: lastUpdated })
+      : secondsAgo < 5
+      ? t('dashboard.status.justNow')
+      : secondsAgo < 60
+      ? t('dashboard.status.secondsAgo', { count: secondsAgo })
+      : t('dashboard.status.minutesAgo', { count: Math.floor(secondsAgo / 60) });
 
   return (
     <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg px-4 py-4 md:px-5">
@@ -53,9 +78,11 @@ export function StatusBanner({ roomName, status, lastUpdated }: StatusBannerProp
           </div>
         </div>
         <div className="flex items-center gap-2 md:justify-end md:whitespace-nowrap md:self-auto self-start">
-          <span className={`${config.dotClass}`} />
+          <span
+            className={`${config.dotClass}${status === 'critical' ? ' animate-pulse' : ''}`}
+          />
           <span className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-tight">
-            {t('dashboard.status.updatedAt', { time: lastUpdated })}
+            {timeLabel}
           </span>
         </div>
       </div>

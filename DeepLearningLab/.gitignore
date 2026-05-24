@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+.ipynb_checkpoints/
+datasets/
+outputs/checkpoints/*.pt
+outputs/graphs/*.png
+outputs/predictions/*.png
+.vscode/
+*.log
+.DS_Store

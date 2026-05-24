@@ -5,12 +5,16 @@ import { db, auth } from '@/lib/firebase';
 import { Sidebar } from '@/components/Sidebar';
 import { StatusBanner } from '@/components/StatusBanner';
 import { StatCard } from '@/components/StatCard';
+import { MoldRiskGauge } from '@/components/MoldRiskGauge';
 import { HumidityChart } from '@/components/HumidityChart';
 import { ApplianceControlPanel } from '@/components/ApplianceControlPanel';
+import { Skeleton } from '@/components/ui/skeleton';
 import { RoomsPage } from '@/pages/RoomsPage';
 import { DevicesPage } from '@/pages/DevicesPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { AboutPage } from '@/pages/AboutPage';
+
 import { LoginPage } from '@/pages/LoginPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { SignupPage } from '@/pages/SignupPage';
@@ -18,21 +22,34 @@ import { useTheme } from 'next-themes';
 import { useTranslation } from 'react-i18next';
 import type { RoomData } from '@/types';
 
+function chunkArr<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+function toMs(ts: any): number {
+  if (!ts) return 0;
+  if (typeof ts.toMillis === 'function') return ts.toMillis();
+  if (typeof ts.toDate === 'function') return ts.toDate().getTime();
+  return new Date(ts).getTime();
+}
+
 // Navigation context to share between Sidebar and App
-export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings';
+export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings' | 'about';
 export type AuthPageId = 'login' | 'forgot-password' | 'signup';
 
 function DashboardPage({
   roomData,
   onApplianceStateChange,
+  isLoadingData = false,
 }: {
   roomData: RoomData;
   onApplianceStateChange: (id: string, turnOn: boolean) => void;
+  isLoadingData?: boolean;
 }) {
   return (
     <div className="w-full max-w-[1920px] mx-auto transition-all">
-      {/* Mobile: Compact padding */}
-      {/* Desktop: Generous padding */}
       <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
         {/* Status Banner */}
         <section className="mb-4 md:mb-6">
@@ -40,29 +57,50 @@ function DashboardPage({
             roomName={roomData.name}
             status={roomData.status}
             lastUpdated={roomData.lastUpdated}
+            lastUpdatedTimestamp={roomData.lastUpdatedTimestamp}
           />
         </section>
 
-        {/* Stats Row - Stacked on mobile, grid on larger screens */}
+        {/* Stats Row - 2-col on mobile/md, 4-col on lg+ */}
         <section className="mb-4 md:mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 2xl:gap-8">
-            <StatCard
-              data={roomData.temperature}
-              index={0}
-              status={roomData.status}
-              safeLimit={roomData.safeLimit}
-            />
-            <StatCard
-              data={roomData.humidity}
-              index={1}
-              status={roomData.status}
-              safeLimit={roomData.safeLimit}
-            />
-            <StatCard
-              data={roomData.lightLevel}
-              index={2}
-              status="safe"
-            />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 2xl:gap-8">
+            {isLoadingData ? (
+              [0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg rounded-lg p-3 md:p-5 h-28 md:h-32 flex flex-col justify-between"
+                >
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              ))
+            ) : (
+              <>
+                <StatCard
+                  data={roomData.temperature}
+                  index={0}
+                  status={roomData.status}
+                  safeLimit={roomData.safeLimit}
+                />
+                <StatCard
+                  data={roomData.humidity}
+                  index={1}
+                  status={roomData.status}
+                  safeLimit={roomData.safeLimit}
+                />
+                <StatCard
+                  data={roomData.lightLevel}
+                  index={2}
+                  status="safe"
+                />
+                <MoldRiskGauge
+                  humidity={roomData.humidity.value}
+                  criticalLimit={roomData.criticalLimit}
+                  index={3}
+                />
+              </>
+            )}
           </div>
         </section>
 
@@ -79,6 +117,7 @@ function DashboardPage({
               appliances={roomData.appliances || []}
               onStateChange={onApplianceStateChange}
               deviceID={roomData.deviceID}
+              currentHumidity={roomData.humidity?.value}
             />
           </div>
         </section>
@@ -94,6 +133,8 @@ function App() {
   const [roomData, setRoomData] = useState<RoomData | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [authPage, setAuthPage] = useState<AuthPageId>('login');
+  const [recentAlerts, setRecentAlerts] = useState<any[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const { setTheme } = useTheme();
 
   // ── Auth state listener ── keep current theme on login, reset on logout
@@ -156,7 +197,7 @@ function App() {
         ...doc.data()
       }));
       setAvailableRooms(rooms);
-      
+
       // If we don't have a roomData selected yet, default to the first room
       if (rooms.length > 0) {
         setRoomData((prev) => {
@@ -193,6 +234,40 @@ function App() {
 
     return () => unsubscribe();
   }, [isAuthenticated]);
+
+  // Reset skeleton loading state whenever the active device changes
+  useEffect(() => {
+    setIsDataLoading(true);
+  }, [roomData?.deviceID]);
+
+  // Lightweight alerts listener for the notification bell
+  useEffect(() => {
+    if (!isAuthenticated || availableRooms.length === 0) {
+      setRecentAlerts([]);
+      return;
+    }
+    const deviceIds = availableRooms.map((r) => r.deviceID).filter(Boolean);
+    if (deviceIds.length === 0) return;
+
+    const chunks = chunkArr(deviceIds, 10);
+    const byChunk: Record<number, any[]> = {};
+    const unsubs: (() => void)[] = [];
+
+    chunks.forEach((chunk, idx) => {
+      const q = query(collection(db, 'AnalyticsAlerts'), where('deviceID', 'in', chunk));
+      const unsub = onSnapshot(q, (snap) => {
+        byChunk[idx] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const merged = Object.values(byChunk).flat();
+        merged.sort((a, b) => toMs(b.timestamp) - toMs(a.timestamp));
+        setRecentAlerts(merged.slice(0, 10));
+      }, (err: any) => {
+        if (err?.code !== 'permission-denied') console.error('[App] Alerts bell error:', err);
+      });
+      unsubs.push(unsub);
+    });
+
+    return () => unsubs.forEach((u) => u());
+  }, [availableRooms.map((r) => r.id).join(','), isAuthenticated]);
 
   // Handle room selection from Rooms page
   const handleRoomSelect = useCallback((roomId: string) => {
@@ -246,10 +321,10 @@ function App() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
         const data = snapshot.docs[0].data();
-        
+
         setRoomData((prev) => {
           if (!prev) return prev;
-          
+
           const newTemp = data.temperature ?? prev.temperature.value;
           const newHumidity = data.humidity ?? prev.humidity.value;
           const newLight = data.lightLevel ?? prev.lightLevel.value;
@@ -264,11 +339,10 @@ function App() {
             newStatus = 'warning';
           }
 
-          let formattedTime = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-          if (data.timestamp) {
-             const d = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
-             formattedTime = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-          }
+          const tsDate: Date = data.timestamp
+            ? (data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp))
+            : new Date();
+          const formattedTime = tsDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
           let newAppliances = prev.appliances;
           if (data.fanStatus || data.dehumidifierStatus) {
@@ -287,6 +361,7 @@ function App() {
             ...prev,
             status: newStatus,
             lastUpdated: formattedTime,
+            lastUpdatedTimestamp: tsDate,
             appliances: newAppliances,
             temperature: {
               ...prev.temperature,
@@ -302,6 +377,7 @@ function App() {
             },
           };
         });
+        setIsDataLoading(false);
       }
     }, (error) => {
       console.error('[App] SensorLogs listener error:', error);
@@ -326,7 +402,7 @@ function App() {
       switch (authPage) {
         case 'login':
           return (
-            <LoginPage 
+            <LoginPage
               onLoginSuccess={() => setIsAuthenticated(true)}
               onForgotPassword={() => setAuthPage('forgot-password')}
               onSignup={() => setAuthPage('signup')}
@@ -334,19 +410,19 @@ function App() {
           );
         case 'forgot-password':
           return (
-            <ForgotPasswordPage 
+            <ForgotPasswordPage
               onBackToLogin={() => setAuthPage('login')}
             />
           );
         case 'signup':
           return (
-            <SignupPage 
+            <SignupPage
               onBackToLogin={() => setAuthPage('login')}
             />
           );
         default:
           return (
-            <LoginPage 
+            <LoginPage
               onLoginSuccess={() => setIsAuthenticated(true)}
               onForgotPassword={() => setAuthPage('forgot-password')}
               onSignup={() => setAuthPage('signup')}
@@ -390,6 +466,7 @@ function App() {
             key={`dashboard-${i18n.language}`}
             roomData={roomData}
             onApplianceStateChange={handleApplianceStateChange}
+            isLoadingData={isDataLoading}
           />
         );
       case 'rooms':
@@ -400,6 +477,9 @@ function App() {
         return <ReportsPage availableRooms={availableRooms} />;
       case 'settings':
         return <SettingsPage />;
+      case 'about':
+        return <AboutPage />;
+
       default:
         return roomData ? (
           <DashboardPage
@@ -412,9 +492,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 relative overflow-hidden font-sans selection:bg-emerald-500/30">
-      
+
       {/* ══ Layer 1: Mesh Gradient (CSS radial — no blur artifacts) ══ */}
-      <div 
+      <div
         className="pointer-events-none fixed inset-0 z-0"
         style={{
           background: [
@@ -436,7 +516,7 @@ function App() {
       <div className="pointer-events-none fixed inset-0 z-0 bg-dot-grid text-slate-300/[0.12] dark:text-white/[0.03]" />
 
       {/* ══ Layer 3: Film grain texture ══ */}
-      <div 
+      <div
         className="pointer-events-none fixed inset-0 z-0 opacity-[0.025] dark:opacity-[0.03] mix-blend-overlay"
         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }}
       />
@@ -447,12 +527,12 @@ function App() {
         <div className="absolute w-2 h-2 rounded-full bg-emerald-500/20 dark:bg-emerald-400/15 top-[15%] left-[12%]" style={{ animation: 'spore-drift-1 18s ease-in-out infinite' }} />
         <div className="absolute w-3 h-3 rounded-full bg-teal-500/15 dark:bg-teal-400/10 top-[60%] left-[70%]" style={{ animation: 'spore-drift-2 22s ease-in-out infinite' }} />
         <div className="absolute w-2.5 h-2.5 rounded-full bg-emerald-600/15 dark:bg-emerald-500/10 top-[40%] left-[45%]" style={{ animation: 'spore-drift-3 25s ease-in-out infinite' }} />
-        
+
         {/* Medium spores */}
         <div className="absolute w-1.5 h-1.5 rounded-full bg-teal-400/20 dark:bg-teal-300/10 top-[80%] left-[25%]" style={{ animation: 'spore-drift-2 20s ease-in-out infinite 3s' }} />
         <div className="absolute w-1.5 h-1.5 rounded-full bg-emerald-400/15 dark:bg-emerald-300/10 top-[25%] left-[85%]" style={{ animation: 'spore-drift-1 24s ease-in-out infinite 5s' }} />
         <div className="absolute w-2 h-2 rounded-full bg-amber-400/10 dark:bg-amber-300/8 top-[70%] left-[50%]" style={{ animation: 'spore-drift-3 19s ease-in-out infinite 2s' }} />
-        
+
         {/* Small spores — micro dust */}
         <div className="absolute w-1 h-1 rounded-full bg-emerald-500/25 dark:bg-emerald-400/15 top-[35%] left-[22%]" style={{ animation: 'spore-drift-3 16s ease-in-out infinite 1s' }} />
         <div className="absolute w-1 h-1 rounded-full bg-slate-400/20 dark:bg-slate-300/10 top-[55%] left-[38%]" style={{ animation: 'spore-drift-1 21s ease-in-out infinite 4s' }} />
@@ -462,11 +542,11 @@ function App() {
 
       {/* ══ Layer 5: Scanner pulse ring (emanates from bottom-right) ══ */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div 
+        <div
           className="absolute left-[75%] top-[85%] w-[800px] h-[800px] rounded-full border border-emerald-500/10 dark:border-emerald-400/8"
           style={{ animation: 'scanner-pulse 8s ease-out infinite', opacity: 0 }}
         />
-        <div 
+        <div
           className="absolute left-[75%] top-[85%] w-[800px] h-[800px] rounded-full border border-teal-500/8 dark:border-teal-400/5"
           style={{ animation: 'scanner-pulse 8s ease-out infinite 4s', opacity: 0 }}
         />
@@ -474,7 +554,7 @@ function App() {
 
       {/* Top bar + bottom nav - only show when authenticated */}
       {isAuthenticated && (
-        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} />
+        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} recentAlerts={recentAlerts} />
       )}
 
       {/* Main Content */}

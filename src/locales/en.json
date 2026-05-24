@@ -19,7 +19,9 @@
     "rooms": "Sensors",
     "devices": "Device",
     "reports": "Analytics",
+    "storage": "Storage",
     "settings": "Settings",
+    "about": "About Us",
     "logout": "Log out",
     "logoutConfirm": "Log out?",
     "logoutConfirmWeb": "Log out?",
@@ -27,7 +29,10 @@
     "yes": "Yes",
     "no": "No",
     "hi": "Hi,",
-    "mobileTitle": "Mold Prevention"
+    "mobileTitle": "Mold Prevention",
+    "notifications": "Notifications",
+    "noAlerts": "No active alerts",
+    "viewAllAlerts": "View all alerts"
   },
   "auth": {
     "login": {
@@ -103,7 +108,10 @@
       "warning": "Warning",
       "critical": "Critical Risk",
       "waiting": "Waiting for data...",
-      "updatedAt": "Updated at {{time}}"
+      "updatedAt": "Updated at {{time}}",
+      "justNow": "Just now",
+      "secondsAgo": "{{count}}s ago",
+      "minutesAgo": "{{count}}m ago"
     },
     "stats": {
       "temperature": {
@@ -134,6 +142,12 @@
         }
       }
     },
+    "moldRisk": {
+      "label": "Mold Risk",
+      "low": "Low Risk",
+      "medium": "Medium Risk",
+      "high": "High Risk"
+    },
     "chart": {
       "title": "Humidity History",
       "subtitle": "Last 24 hours",
@@ -154,7 +168,12 @@
       "autoDesc": "Devices are controlled automatically by the ESP32 logic.",
       "manualDesc": "Manual override is active — you control the devices.",
       "autoFooter": "The ESP32 manages appliances automatically based on sensor readings.",
-      "manualFooter": "Overrides are sent to the ESP32 on its next data push cycle."
+      "manualFooter": "Overrides are sent to the ESP32 on its next data push cycle.",
+      "thresholds": "Trigger Thresholds",
+      "thresholdsDesc": "Set the humidity level at which each appliance activates automatically.",
+      "fanThreshold": "Fan Trigger",
+      "dehumidifierThreshold": "Dehumidifier Trigger",
+      "thresholdSaved": "Threshold updated"
     }
   },
   "rooms": {
@@ -245,7 +264,9 @@
     "globalStream": "Global Stream",
     "waitingData": "Waiting for IoT hardware data limit(10)...",
     "alertDismissed": "Alert dismissed.",
-    "alertDismissFailed": "Failed to dismiss alert. Please try again."
+    "alertDismissFailed": "Failed to dismiss alert. Please try again.",
+    "exportCsv": "Export CSV",
+    "csvExported": "Data exported successfully"
   },
   "settings": {
     "title": "Data Management",
@@ -299,6 +320,8 @@
     },
     "validation": {
       "nan": "All threshold fields must be valid numbers.",
+      "integersOnly": "All threshold values must be whole integers (no decimals).",
+      "outOfRange": "All threshold values must be between 0 and 100.",
       "generalOrder": "General Mold: Safe Limit must be less than Critical Limit.",
       "blackMoldOrder": "Black Mold: Safe Limit must be less than Critical Limit.",
       "maxCeiling": "Black Mold Critical Limit cannot exceed 90% RH (biological ceiling for {{organism}}).",

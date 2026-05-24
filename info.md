@@ -4,6 +4,8 @@ Tailwind CSS has been set up with the shadcn theme
 
 Setup complete: /mnt/okcomputer/output/app
 
+<!-- Test commit timestamp: May 13, 2026 -->
+
 Components (40+):
   accordion, alert-dialog, alert, aspect-ratio, avatar, badge, breadcrumb,
   button-group, button, calendar, card, carousel, chart, checkbox, collapsible,

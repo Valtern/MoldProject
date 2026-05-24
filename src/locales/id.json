@@ -19,7 +19,9 @@
     "rooms": "Sensor",
     "devices": "Perangkat",
     "reports": "Analitik",
+    "storage": "Penyimpanan",
     "settings": "Pengaturan",
+    "about": "Tentang Kami",
     "logout": "Keluar",
     "logoutConfirm": "Keluar?",
     "logoutConfirmWeb": "Logout?",
@@ -27,7 +29,10 @@
     "yes": "Ya",
     "no": "Tidak",
     "hi": "Hai,",
-    "mobileTitle": "Pencegahan Jamur"
+    "mobileTitle": "Pencegahan Jamur",
+    "notifications": "Notifikasi",
+    "noAlerts": "Tidak ada peringatan aktif",
+    "viewAllAlerts": "Lihat semua peringatan"
   },
   "auth": {
     "login": {
@@ -103,7 +108,10 @@
       "warning": "Peringatan",
       "critical": "Risiko Kritis",
       "waiting": "Menunggu data...",
-      "updatedAt": "Diperbarui pada {{time}}"
+      "updatedAt": "Diperbarui pada {{time}}",
+      "justNow": "Baru saja",
+      "secondsAgo": "{{count}} dtk lalu",
+      "minutesAgo": "{{count}} mnt lalu"
     },
     "stats": {
       "temperature": {
@@ -134,6 +142,12 @@
         }
       }
     },
+    "moldRisk": {
+      "label": "Risiko Jamur",
+      "low": "Risiko Rendah",
+      "medium": "Risiko Sedang",
+      "high": "Risiko Tinggi"
+    },
     "chart": {
       "title": "Riwayat Kelembapan",
       "subtitle": "24 jam terakhir",
@@ -154,7 +168,12 @@
       "autoDesc": "Perangkat dikontrol secara otomatis oleh logika ESP32.",
       "manualDesc": "Override manual aktif — Anda mengontrol perangkat.",
       "autoFooter": "ESP32 mengelola peralatan secara otomatis berdasarkan pembacaan sensor.",
-      "manualFooter": "Override dikirim ke ESP32 pada siklus push data berikutnya."
+      "manualFooter": "Override dikirim ke ESP32 pada siklus push data berikutnya.",
+      "thresholds": "Ambang Batas Pemicu",
+      "thresholdsDesc": "Atur tingkat kelembapan saat setiap peralatan aktif secara otomatis.",
+      "fanThreshold": "Pemicu Kipas",
+      "dehumidifierThreshold": "Pemicu Dehumidifier",
+      "thresholdSaved": "Ambang batas diperbarui"
     }
   },
   "rooms": {
@@ -245,7 +264,9 @@
     "globalStream": "Aliran Global",
     "waitingData": "Menunggu data perangkat keras IoT limit(10)...",
     "alertDismissed": "Peringatan diabaikan.",
-    "alertDismissFailed": "Gagal mengabaikan peringatan. Silakan coba lagi."
+    "alertDismissFailed": "Gagal mengabaikan peringatan. Silakan coba lagi.",
+    "exportCsv": "Ekspor CSV",
+    "csvExported": "Data berhasil diekspor"
   },
   "settings": {
     "title": "Manajemen Data",
@@ -299,6 +320,8 @@
     },
     "validation": {
       "nan": "Semua bidang ambang batas harus berupa angka yang valid.",
+      "integersOnly": "Semua nilai ambang batas harus berupa bilangan bulat (tanpa desimal).",
+      "outOfRange": "Semua nilai ambang batas harus antara 0 dan 100.",
       "generalOrder": "Jamur Umum: Batas Aman harus lebih kecil dari Batas Kritis.",
       "blackMoldOrder": "Jamur Hitam: Batas Aman harus lebih kecil dari Batas Kritis.",
       "maxCeiling": "Batas Kritis Jamur Hitam tidak boleh melebihi 90% RH (batas biologis untuk {{organism}}).",
