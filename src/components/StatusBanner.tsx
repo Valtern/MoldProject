@@ -39,28 +39,18 @@ export function StatusBanner({ roomName, status, lastUpdated, lastUpdatedTimesta
   const config = statusConfig[status];
   const Icon = config.icon;
 
-  const [secondsAgo, setSecondsAgo] = useState<number | null>(null);
+  const formattedTime = (() => {
+    if (!lastUpdatedTimestamp) return lastUpdated;
+    const d = lastUpdatedTimestamp;
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(d.getFullYear());
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+  })();
 
-  useEffect(() => {
-    if (!lastUpdatedTimestamp) {
-      setSecondsAgo(null);
-      return;
-    }
-    const tick = () =>
-      setSecondsAgo(Math.floor((Date.now() - lastUpdatedTimestamp.getTime()) / 1000));
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [lastUpdatedTimestamp]);
-
-  const timeLabel =
-    secondsAgo === null
-      ? t('dashboard.status.updatedAt', { time: lastUpdated })
-      : secondsAgo < 5
-      ? t('dashboard.status.justNow')
-      : secondsAgo < 60
-      ? t('dashboard.status.secondsAgo', { count: secondsAgo })
-      : t('dashboard.status.minutesAgo', { count: Math.floor(secondsAgo / 60) });
+  const timeLabel = t('dashboard.status.updatedAt', { time: formattedTime });
 
   return (
     <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg px-4 py-4 md:px-5">
