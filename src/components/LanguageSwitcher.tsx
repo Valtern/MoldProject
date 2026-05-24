@@ -30,9 +30,7 @@ export function LanguageSwitcher({ className = '', compact = false }: LanguageSw
         title={currentLang === 'en' ? 'ID' : 'EN'}
         aria-label={currentLang === 'en' ? 'Switch to Indonesian' : 'Switch to English'}
       >
-        <span>{currentLang.toUpperCase()}</span>
-        <span>/</span>
-        <span className="opacity-50">{currentLang === 'en' ? 'ID' : 'EN'}</span>
+          <span>{currentLang.toUpperCase()}</span>
       </button>
     );
   }
