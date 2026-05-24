@@ -1,0 +1,1432 @@
+===== PAGE 1 =====
+P001 L001: Review of mould prediction models and their in ﬂuence on mould risk evaluation
+P001 L002: Evy Vereecken *, Staf Roels
+P001 L003: Building Physics Section, K.U. Leuven, Kasteelpark Arenberg 40 e bus 2447, B-3001 Leuven, Belgium
+P001 L004: article info
+P001 L005: Article history:
+P001 L006: Received 31 August 201 1
+P001 L007: Received in revised form
+P001 L008: 3 November 201 1
+P001 L009: Accepted 5 November 201 1
+P001 L010: Keywords:
+P001 L011: Mould growth
+P001 L012: Mould prediction models
+P001 L013: Relative humidity
+P001 L014: Temperature
+P001 L015: abstract
+P001 L016: A reliable prediction of mould risk in buildings is important to ensure a healthy environment and to
+P001 L017: avoid social and economical damage. Whereas previously the temperature ratio was often used to
+P001 L018: minimize the mould risk, nowadays e more advanced e mould prediction models can be found (e.g.
+P001 L019: isopleth systems, biohygrothermal model, ESP-r mould prediction model, empirical VTT model). These
+P001 L020: models include the main in ﬂuencing factors for mould growth: the surface temperature and relative
+P001 L021: humidity. However, they are based on either experiments or assumptions and some of them neglect
+P001 L022: a third important in ﬂuencing factor: the exposure time.
+P001 L023: The current paper gives an overview of the different existing models and analyses the impact of the
+P001 L024: mould prediction model on the mould risk evaluation. To do so, the existing mould prediction models are
+P001 L025: used to predict the mould risk for different temperature and relative humidity courses. The mould risk,
+P001 L026: the time until mould growth starts and the mould intensity according to the existing prediction models
+P001 L027: are compared. Based on the obtained results, the in ﬂuence of simpli ﬁcations or shortcomings in the
+P001 L028: mould prediction models is discussed.
+P001 L029: /C211201 1 Elsevier Ltd. All rights reserved.
+P001 L030: 1. Introduction
+P001 L031: Mould spores are widely disseminated in the environment. Since
+P001 L032: mould fungi enable the decomposition and recycling of dead organic
+P001 L033: material, fungi are necessary in live. In buildings however, they can
+P001 L034: deteriorate the interior ﬁnishing, which results in economical and
+P001 L035: social damage. Furthermore, mould spores can include a risk for the
+P001 L036: occupant’s health due to the settling and spreading of pathogens
+P001 L037: [1e7], especially in cases of atopic individuals [8] or dangerous
+P001 L038: mould species as Aspergillus Fumigatus or Stachybotris [9,10].
+P001 L039: Consequently, attention should be paid to correct application of all
+P001 L040: means that allow minimization of mould risk in buildings.
+P001 L041: Before the 1970s, non-insulated buildings and severe thermal
+P001 L042: bridges resulted in high energy losses and in many mould cases.
+P001 L043: During the ﬁrst energy crisis, a growing awareness of the need to
+P001 L044: improve buildings energy performance was developed. This resul-
+P001 L045: ted in a general‘sealing action’, in which air leaks were minimized as
+P001 L046: much as possible. Few attention was however paid to the adaptation
+P001 L047: of the ventilation strategy, so an increased humidity level and
+P001 L048: increased mould growth risk was obtained. Furthermore, with the
+P001 L049: years more and more single glazed windows have been replaced by
+P001 L050: new, very tight double glazed windows. Latter renovation technique
+P001 L051: results not only in an increased air tightness but may also shift the
+P001 L052: lowest surface temperature from the windows to the outside walls.
+P001 L053: Consequently, a free detection system based on visible condensation
+P001 L054: on the windows will be lost. Another renovation technique which
+P001 L055: introduces an increased mould risk is the addition of interior insu-
+P001 L056: lation, since thermal bridges are difﬁcult to avoid. Though, also new
+P001 L057: buildings can deal with mould problems due to for example built-in
+P001 L058: moisture, bad construction details inducing moisture damage or
+P001 L059: a high moisture load in combination with an unsuitable ventilation
+P001 L060: strategy [1 1,12].
+P001 L061: First step in the avoidance of mould attack is the knowledge of
+P001 L062: the boundary conditions under which moulds grow. Cardinal
+P001 L063: inﬂuencing factors in the mould growth process are temperature,
+P001 L064: moisture, substrate and exposure time[8,13,14,15]. The critical value
+P001 L065: for these parameters can however differ for each mould species.
+P001 L066: Minor in ﬂuencing factors are spore availability, oxygen, pH, light,
+P001 L067: roughness of the surface, salt content of the substrate, etc. [13,14].
+P001 L068: To evaluate the mould risk at building envelopes, different
+P001 L069: design rules and prediction models can be found in literature (e.g.
+P001 L070: temperature ratio, isopleth systems, biohygrothermal model, ESP-r
+P001 L071: mould prediction model, empirical VTT-model, etc.). Each of these
+P001 L072: models includes however different simpliﬁ cations or is based on
+P001 L073: different assumptions. Consequently, to obtain a reliable indication
+P001 L074: of the mould risk, the awareness of a potential in ﬂuence of the
+P001 L075: model is required.
+P001 L076: This paper compares the impact of the different existing mould
+P001 L077: prediction models on the obtained mould risk conclusions. In
+P001 L078: Section 2 the different existing mould prediction models are
+P001 L079: * Corresponding author. Tel.: þ32 16321347; fax: þ32 16321980.
+P001 L080: E-mail address: evy.vereecken@bwk.kuleuven.be (E. Vereecken).
+P001 L081: Contents lists available at SciVerse ScienceDirect
+P001 L082: Building and Environment
+P001 L083: journal homepage: www.elsevier.com/loc ate/buildenv
+P001 L084: 0360-1323/$ e see front matter /C211201 1 Elsevier Ltd. All rights reserved.
+P001 L085: doi:10.1016/j.buildenv.201 1.1 1.003
+P001 L086: Building and Environment 51 (2012) 296 e310
+
+===== PAGE 2 =====
+P002 L001: reiterated and some ﬁrst remarks are drawn. In Section 3, the
+P002 L002: different mould prediction models are compared for a series of
+P002 L003: ﬁctitious relative humidity and temperature cycles. To end, the
+P002 L004: differences between the results obtained with the different mould
+P002 L005: prediction models are discussed and the main conclusions are
+P002 L006: drawn.
+P002 L007: 2. Mould prediction models
+P002 L008: 2.1. IEA-Annex 14
+P002 L009: To evaluate mould risk, the IEA-Annex 14 [8,16] proposes
+P002 L010: a surface relative humidity threshold dependent on the elapsed
+P002 L011: time. This relative humidity threshold is de ﬁned based on the
+P002 L012: lowest isopleth for Aspergillus versicolor on agar, resulting in
+P002 L013: a relative humidity threshold equal to 80%, 89% or 100% for
+P002 L014: respectively an exposure time of 1 month, 1 week and 1 day. In
+P002 L015: a next step, this proposal is simpli ﬁed into a design value for the
+P002 L016: temperature ratio:
+P002 L017: s ¼ qs;min /C0 qe
+P002 L018: qi /C0 qe
+P002 L019: /C21 0:7 (1)
+P002 L020: with qs;min (/C14 C) the minimum indoor surface temperature and qi
+P002 L021: and qe respectively the inside and outside temperature ( /C14 C). A
+P002 L022: temperature ratio of 0.7 is proposed as criterion, related to an
+P002 L023: acceptable mould risk of 5%. A lower ratio introduces an unac-
+P002 L024: ceptable high mould risk.
+P002 L025: Remarks: Although the temperature ratio is often used as a design
+P002 L026: criterion, an in situ study on 35 mould infested dwellings [1 7]indi-
+P002 L027: cated that this criterion may not be used as a stand-alone perfor-
+P002 L028: mance. In the research, 12 of the 35 dwellings required a temperature
+P002 L029: ratio higher than 0.7 to exclude mould growth. Though, this growth
+P002 L030: could for the 12 cases be addressed to a too low ventilation rate, rain
+P002 L031: inﬁltration, less heating or a too high U-value behind cupboards. It
+P002 L032: can be concluded that the criterion based on the temperature ratio is
+P002 L033: a rudimentary criterion, taking the humiditye the main inﬂuencing
+P002 L034: parameter e only indirectly into account. Besides, the design value is
+P002 L035: deﬁned for Belgian climatic data. For other climates another design
+P002 L036: value could be preferable. Note furthermore that a relative humidity
+P002 L037: threshold of 100% in cases of 1 day exposure is questionable since
+P002 L038: liquid water hinders mould development. A threshold of 99% relative
+P002 L039: humidity is more plausible. The critical RH threshold of 80% is also
+P002 L040: recommended in [18].
+P002 L041: 2.2. Time-of-wetness
+P002 L042: Adan [13] performed a series of experiments to study the
+P002 L043: response of the fungal volume or water content in cases of transient
+P002 L044: relative humidity courses. He observed a distinct increase in the cell
+P002 L045: volume if the relative humidity increases, which indicates that
+P002 L046: short periods of high relative humidity may not be neglected in
+P002 L047: mould analyses. To indicate the water availability under transient
+P002 L048: conditions, he introduced the time-of-wetness (TOW), given by:
+P002 L049: TOW ¼ cyclic wet period ðRH /C21 0:8Þ
+P002 L050: cyclic period ðwet þ dryÞ (2)
+P002 L051: He investigated for step changes in relative humidity the effect of
+P002 L052: the low RH, the TOW and the daily frequency ( f) of the high RH
+P002 L053: periods for a given TOW and concluded that a TOW below 0.5 retards
+P002 L054: mould substantially. A TOW above 0.5 results in a non-linear relation
+P002 L055: between the TOW and the mould growth and an increased mould
+P002 L056: damage. Besides, Adan developed sigmoid curves, which enable
+P002 L057: a satisfactory ﬁt of the mould growth rate (in [13] deﬁned as the
+P002 L058: combination of lag phase and exponential phase) of Penicillium
+P002 L059: chrysogenum on gypsum board material. In this, the average rating is
+P002 L060: deﬁned as in the BS3900 standard (see Table 1).
+P002 L061: Remarks: Due to the limited investigated substrate types and
+P002 L062: mould species, at the moment no general conclusions can be drawn
+P002 L063: based on Adan ’s experiments. Also the sigmoid curves, developed
+P002 L064: based on measured data on gypsum board materials inoculated with
+P002 L065: P. chrysogenum, cannot be used to predict fungal growth in cases of
+P002 L066: other substrates, species or environmental conditions. Furthermore,
+P002 L067: the TOW does not include a gradation in favourable relative humidity
+P002 L068: and can consequently not be used as a stand-alone performance.
+P002 L069: Besides, no criterion is indicated to the TOW-value.
+P002 L070: 2.3. Johansson ’s mould growth indices [19]
+P002 L071: Johansson et al. [19] studied three mould growth indices, based
+P002 L072: on measurements on rendered façades with different thermal
+P002 L073: inertia, colour and orientation. To investigate indoor mould growth
+P002 L074: the index I
+P002 L075: 1, which expresses the fraction of time that the RH is
+P002 L076: equal to or above the threshold relative humidity RH t, is suggested:
+P002 L077: I1 ¼
+P002 L078: Zt1
+P002 L079: s ¼ t0
+P002 L080: f ðsÞds
+P002 L081: t1 /C0 t0
+P002 L082: ; f ¼
+P002 L083: /C26
+P002 L084: 1/RHðsÞ/C21 RHt
+P002 L085: 0/RHðsÞ < RHt
+P002 L086: (3)
+P002 L087: where RH t is often set at 80%. As I1 neglects the temperature
+P002 L088: inﬂuence, this index is not meaningful for the investigation of
+P002 L089: exterior constructions. The temperature in ﬂuence is implemented
+P002 L090: in index I2:
+P002 L091: I2 ¼
+P002 L092: Zt1
+P002 L093: s ¼ t0
+P002 L094: fTðsÞfRHðsÞds
+P002 L095: t1 /C0 t0
+P002 L096: (4)
+P002 L097: with fT and fRH the functions given in Fig. 1.
+P002 L098: To take into account a delay due to unfavourable conditions,
+P002 L099: a recovery function fr is added to index I2:
+P002 L100: I3 ¼
+P002 L101: Zt1
+P002 L102: s ¼ t0
+P002 L103: frðsÞfTðsÞfRHðsÞds
+P002 L104: t1 /C0 t0
+P002 L105: ;
+P002 L106: fr ¼
+P002 L107: /C26
+P002 L108: 0/fT /C2 fRH ¼ 0 has been true during the last tr
+P002 L109: 1/otherwise (5)
+P002 L110: Remarks: Note that the function fRHðsÞ as proposed by Johansson
+P002 L111: shows a retardation of the mould growth rate at very high relative
+P002 L112: humidity, which is on the average a correct approach.
+P002 L113: The idea of I
+P002 L114: 3 is that the recovery function fr will be 0 for
+P002 L115: a certain period after a period of unfavourable conditions. The
+P002 L116: length of the period during which the recovery function stays zero
+P002 L117: as well as the time during which fTðsÞ/C2 fRHðsÞ should be 0 is
+P002 L118: however not mentioned. Therefore, Johansson ’s mould growth
+P002 L119: Table 1
+P002 L120: Rating scale according to coverage area [13].
+P002 L121: Rating Coverage area
+P002 L122: 0 No mould growth
+P002 L123: 1 Coverage /C20 1%
+P002 L124: 21 % < Coverage /C20 10%
+P002 L125: 3 10% < Coverage /C20 30%
+P002 L126: 4 30% < Coverage /C20 70%
+P002 L127: 5 70% < Coverage
+P002 L128: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310 297
+
+===== PAGE 3 =====
+P003 L001: indices will not be analysed in the model comparison in this paper.
+P003 L002: Note furthermore the resemblance between index 1 and the de ﬁ-
+P003 L003: nition of the time-of-wetness by Adan [13].
+P003 L004: 2.4. Fungal index
+P003 L005: The fungal index, de ﬁned by Abe [20], indicates the environ-
+P003 L006: mental capacity for mould growth. To measure the fungal index
+P003 L007: a fungal detector in which dried fungal spores and nutrients are
+P003 L008: encapsulated, are placed in the investigated environment for
+P003 L009: a certain period. In ﬁrst measurements Eurotium herbariorum was
+P003 L010: used as a sensor fungus. Later researches indicated that also
+P003 L011: Aspergillus penicilliodes or Alternaria alternate can be suitable as
+P003 L012: a sensor fungus for sites with respectively a lower or extremely high
+P003 L013: relative humidity [21].I na ﬁrst step of the measurement method
+P003 L014: the fungal response unit (ru) during the exposure period e which
+P003 L015: indicates the fungal growth response - is determined based on the
+P003 L016: length of the hyphae. To do so, the standard curve given in Fig. 2 is
+P003 L017: used. Latter curve is developed by substituting the fungal response
+P003 L018: unit (ru) for the incubation time (h) on the growth curve at a ratio
+P003 L019: 1:1. In a next step, the fungal index is determined by dividing the
+P003 L020: fungal response unit (ru) by the exposure period (weeks).
+P003 L021: To make the computation of the fungal index possible, Abe
+P003 L022: [22,23] developed based on the performed measurements a data-
+P003 L023: base containing the fungal index values for speci ﬁed temperature
+P003 L024: and relative humidity conditions. Hence, the fungal index can be
+P003 L025: used as a prediction parameter.
+P003 L026: Remarks: Although sensor fungi different in sensitivity to relative
+P003 L027: humidity are used in the recent measurements, the standard curve
+P003 L028: seems to be only de ﬁned for the standard fungus E. herbariorum .
+P003 L029: Furthermore, this standard curve is obtained by incubating the
+P003 L030: fungus E. herbariorum under 25
+P003 L031: /C14 C and a relative humidity of 93.6%
+P003 L032: [24]. The reliability of this standard curve for other conditions or
+P003 L033: species is questionable.
+P003 L034: Note also that the fungal spores in combination with nutrients
+P003 L035: are encapsulated on a plastic plate. To compare the obtained results
+P003 L036: with the mould growth sensibility on real ﬁnishing materials,
+P003 L037: further research is required.
+P003 L038: Furthermore, environmental conditions instead of surface
+P003 L039: conditions are used in the analysis whereas surface conditions
+P003 L040: could have a larger in ﬂuence on the mould growth process.
+P003 L041: For the development of the database giving the relationship
+P003 L042: between the temperature and relative humidity conditions and the
+P003 L043: fungal index steady state conditions are used. Although a good
+P003 L044: agreement is found between measured and computed fungal
+P003 L045: indices, the reliability of this steady state approach is questionable
+P003 L046: when looking at ﬂuctuating surface conditions. Latter conditions
+P003 L047: Fig. 1. fT and fRH for Cladosporium spp. Together with the isopleths calculated from these curves [19].
+P003 L048: Fig. 2. Standard curves. The hyphal is de ﬁned as the distance from the spores to the
+P003 L049: hyphal tips in a, and from the edges of the spore-containing spot to the tips of the
+P003 L050: hyphae in b [22e24].
+P003 L051: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310298
+
+===== PAGE 4 =====
+P004 L001: will often occur at thermal bridges, which are critical locations for
+P004 L002: mould growth.
+P004 L003: To end, only few indications of critical fungal indices are given
+P004 L004: [20,21]. Since the database giving the relationship between the
+P004 L005: temperature and relative humidity conditions and the fungal index
+P004 L006: is not public available, the fungal index will not be analysed in the
+P004 L007: model comparison in this paper.
+P004 L008: 2.5. VTT model
+P004 L009: The VTT model is an empirical mould prediction model devel-
+P004 L010: oped by Hukka and Viitanen [25], in which the growth develop-
+P004 L011: ment is expressed by the mould index ( M). Latter index ranges
+P004 L012: between 0 and 6 ( Table 2) and can be used as a design criterion, e.g.
+P004 L013: often a mould index equal to 1 is deﬁned as the maximum tolerable
+P004 L014: value since from that moment the germination process is assumed
+P004 L015: to start. Note that with exception of the maximum index of 6, the
+P004 L016: deﬁnition of the mould indices agrees very well with the de ﬁnition
+P004 L017: for the rating used by Adan ( Table 1). The VTT model is based on
+P004 L018: regression analysis of a set of measured data [26,27]. In the
+P004 L019: measurements different mixed mould species were used. The
+P004 L020: moisture content of the samples was assumed to reach equilibrium
+P004 L021: without delay. Furthermore, mould on the material was assumed
+P004 L022: not having an in ﬂuence on the moisture behaviour (e.g. sorption
+P004 L023: properties) of the material [25]. Based on the different measure-
+P004 L024: ments, the in ﬂuence of temperature, relative humidity, surface,
+P004 L025: exposure time and dry periods is included in the VTT model.
+P004 L026: A ﬁrst VTT model was based on lab experiments on pine and
+P004 L027: spruce sapwood. In this model a critical relative humidity RH
+P004 L028: crit (%)
+P004 L029: can be found, de ﬁned as the lowest humidity for mould growth if
+P004 L030: the material is exposed to it for a long enough period. For wood
+P004 L031: RH
+P004 L032: crit is given by
+P004 L033: RHcrit ¼
+P004 L034: /C26
+P004 L035: /C0 0:00267q3 þ0:160q2 /C0 3:13qþ100:0; when q < 20 /C14 C
+P004 L036: RHmin; when q /C21 20 /C14 C
+P004 L037: (6)
+P004 L038: here RHmin is 80%. The incremental mould index in- or decrease can
+P004 L039: be calculated by use of a differential equation in which varying
+P004 L040: temperature and humidity conditions can be taken into account.
+P004 L041: For pine and spruce the incremental change in mould index is given
+P004 L042: by:
+P004 L043: dM
+P004 L044: dt ¼ k1k2
+P004 L045: 7 /C2 tM¼1
+P004 L046: (7)
+P004 L047: The factor k1 deﬁnes the growth rate under favourable condi-
+P004 L048: tions and is given by:
+P004 L049: k1 ¼
+P004 L050: 8
+P004 L051: <
+P004 L052: :
+P004 L053: 1; when M < 1
+P004 L054: 2
+P004 L055: ðtM¼3=tM¼1Þ/C0 1; when M>1 (8)
+P004 L056: with tM¼1 (weeks) and tM¼3 (weeks) respectively the time required
+P004 L057: to reach M ¼ 1 (start growth) and M ¼ 3( ﬁrst visual appearance of
+P004 L058: mould growth after the initial stage). For wood, these response
+P004 L059: times are in cases of constant temperature and humidity conditions
+P004 L060: expressed by following regression equations [25]:
+P004 L061: tM¼1 ¼ expð/C0 0:68 /C2 lnðqÞ/C0 13:9 /C2 lnðRHÞ
+P004 L062: þ0:14 /C2 W /C0 0:33 /C2 SQ þ 66:02Þð9Þ
+P004 L063: tM¼3 ¼ expð/C0 0:74 /C2 lnðqÞ/C0 12:72 /C2 lnðRHÞ
+P004 L064: þ0:06 /C2 W þ 61:50Þð10Þ
+P004 L065: with W the wood specie (0 for pine, 1 for spruce), and SQ the
+P004 L066: surface quality (0 for resawn and 1 for original kiln-dried timber).
+P004 L067: To implement a moderation of the growth intensity when M
+P004 L068: approaches the maximum peak value in the range of 4 < M < 6, the
+P004 L069: factor k
+P004 L070: 2 is included:
+P004 L071: k2 ¼ max½1 /C0 expð2:3 /C2ð M /C0 MmaxÞÞ; 0/C138 (11)
+P004 L072: with Mmax the maximum mould index ( e), described by:
+P004 L073: Mmax ¼ max
+P004 L074: /C18
+P004 L075: 1 þ 7, RHcrit /C0 RH
+P004 L076: RHcrit /C0 100 /C0 2
+P004 L077: /C18RHcrit /C0 RH
+P004 L078: RHcrit /C0 100
+P004 L079: /C19 2
+P004 L080: ;0
+P004 L081: /C19
+P004 L082: (12)
+P004 L083: Latter equation indicates that the critical RH is besides its depen-
+P004 L084: dence of the temperature also connected to the mould growth level.
+P004 L085: A delay in mould growth caused by unfavourable conditions
+P004 L086: results in a decline of the mould index given by:
+P004 L087: dM
+P004 L088: dt ¼
+P004 L089: 8
+P004 L090: <
+P004 L091: :
+P004 L092: /C0 0:00133; when t /C0 t1 /C20 6h
+P004 L093: 0; when 6 h < t /C0 t1 /C20 24h
+P004 L094: /C0 0:000667; when t /C0 t1>24h
+P004 L095: (13)
+P004 L096: with t /C0 t1 (h) the time exposed to unfavourable conditions.
+P004 L097: Remarks: Although a delay is included in the VTT model, it
+P004 L098: should be kept in mind that Eq. (13) is developed based on a limited
+P004 L099: number of experiments and that no temperatures under 0 /C14 Co r
+P004 L100: long periods ( >14 days) are investigated. One should also notice
+P004 L101: that a decrease in mould index during the unfavourable conditions
+P004 L102: Table 2
+P004 L103: Original mould index classi ﬁcation together with update based on the new experiments (bold) [27,28].
+P004 L104: Index Growth rate Description
+P004 L105: 0 No mould growth Spores not activated
+P004 L106: 1 Small amounts of mould on surface Initial stages of growth
+P004 L107: Microscopic level
+P004 L108: 2 <10% coverage of mould on surface 
+P004 L109: 3 10-30% coverage of mould on surface,
+P004 L110: or < 50% coverage of mould 
+P004 L111: (microscope)
+P004 L112: New spores produced
+P004 L113: Visually detectable
+P004 L114: 4 30-70% coverage of mould on surface,
+P004 L115: or > 50% coverage of mould 
+P004 L116: (microscope)
+P004 L117: Moderate growth
+P004 L118: 5 >70% coverage of mould on surface Plenty of growth
+P004 L119: 6 Very heavy, dense mould growth covers 
+P004 L120: nearly 100% of the surface
+P004 L121: Coverage around 100%
+P004 L122: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310 299
+
+===== PAGE 5 =====
+P005 L001: does not necessarily change the visual surface appearance. Though,
+P005 L002: a delay in growth after a dry period can be clearly observed in the
+P005 L003: numerical prediction. Moreover, since the mould growth develop-
+P005 L004: ment during transient conditions is only controlled based on a daily
+P005 L005: or longer than daily basis, no experimental evidence of the hourly
+P005 L006: phenomena found in the model is available. The absence of mould
+P005 L007: decline in cases of unfavourable conditions during a period
+P005 L008: between 6 and 24 h and the restart in decline for longer periods
+P005 L009: seems physically unrealistic.
+P005 L010: Another important remark concerns the potential in ﬂuence of
+P005 L011: the time interval used in the calculation. According to Vinha [29]
+P005 L012: a shorter interval results in a larger mould index in ﬂuctuating
+P005 L013: conditions. Vinha attributes this to the fast increase of the mould
+P005 L014: index compared to a slower decrease. Note however, that this
+P005 L015: statement is no general truth. For example, a temperature of 20 /C14 C
+P005 L016: and cycles of 2 h 89% RH followed by 2 h 79% RH result due to the
+P005 L017: decline during the unfavourable period in a mould index of 0 when
+P005 L018: a time interval of 1 h or 2 h is used. However, when using an
+P005 L019: interval of, e.g. 4 h, 8 h, 12 h, . the averaged RH of 84% results in
+P005 L020: a mould index of 1 after /C6 78 days. Note also that when using for
+P005 L021: example a 6 h time interval, no decline is incalculated when
+P005 L022: unfavourable conditions occur during a period between 6 h and
+P005 L023: 24 h. Consequently, also in this case a shorter time interval (e.g. 1 h)
+P005 L024: could result in a lower mould index. When using the measurement
+P005 L025: data from a logger, the neglect of favourable or unfavourable peaks
+P005 L026: in cases of an increased preset interval for the logging time can
+P005 L027: result in respectively a smaller or larger mould index.
+P005 L028: Main disadvantage of the VTT model is however its limitation to
+P005 L029: unpolluted spruce and pine softwood. This type of wood is widely
+P005 L030: used in Scandinavia, but hardly used for building construction
+P005 L031: elsewhere in Europe.
+P005 L032: To end, it should be noticed that the mould growth coverage
+P005 L033: percentage which is determined on the microscopic level depends
+P005 L034: on the spore concentration used in the experiments and the
+P005 L035: magniﬁcation. The magniﬁcation used for the determination of the
+P005 L036: mould index in the VTT model is equal to 80 (Viitanen, personal
+P005 L037: communication).
+P005 L038: 2.6. Updated VTT model
+P005 L039: Recently, the VTT model is expanded for other building mate-
+P005 L040: rials [28,30]. The main difference with the original model is found
+P005 L041: on the microscopic level. Since for some materials already on this
+P005 L042: level a rather high mould growth coverage could be observed, the
+P005 L043: mould index classiﬁcation was updated (bold in Table 2). To expand
+P005 L044: the model, the original model is updated by determining new
+P005 L045: values for the factors in the equation of d M/dt and this for the
+P005 L046: different materials. Furthermore, the RH
+P005 L047: min in Eq. (6) can be
+P005 L048: changed to 85% RH for more resistant materials and SQ is set to 0 for
+P005 L049: other materials than wood.
+P005 L050: To obtain these adaptations, large sets of laboratory experiments
+P005 L051: and monitoring of mould growth in cases of a real climate exposure
+P005 L052: [31,32] were executed on following materials: spruce board (with
+P005 L053: glued edges), concrete (maximum grain size 8 mm), aerated
+P005 L054: concrete, cellular concrete, polyurethane thermal insulation (PUR,
+P005 L055: with paper surface and with polished surface), glass wool, polyester
+P005 L056: wool, and expanded polystyrene (EPS). Since an investigation of all
+P005 L057: the building materials is not possible, four mould sensitivity classes
+P005 L058: are presented: very sensitive, sensitive, medium resistant and
+P005 L059: resistant. Table 3 gives the sensitivity classes together with the
+P005 L060: subdivision of the tested materials and an overview of the materials
+P005 L061: which belong to the different classes.
+P005 L062: In the new model, the factor k
+P005 L063: 1 is determined based on the time
+P005 L064: required for a change of the mould index from M ¼ 1t o M ¼ 3. Pine
+P005 L065: sapwood is used as a reference.
+P005 L066: k1 ¼
+P005 L067: 8
+P005 L068: >>
+P005 L069: <
+P005 L070: >>:
+P005 L071: tM¼1;pine
+P005 L072: tM¼1
+P005 L073: ; when M < 1
+P005 L074: 2
+P005 L075: /C0
+P005 L076: tM¼3;pine /C0 tM¼1;pine
+P005 L077: /C1
+P005 L078: ðtM¼3 /C0 tM¼1Þ ; when M>1
+P005 L079: (14)
+P005 L080: The maximum mould index Mmax, which inﬂuence in his turn k2
+P005 L081: according to Eq. (1 1)is given by
+P005 L082: Mmax ¼ A þ B /C2 RHcrit /C0 RH
+P005 L083: RHcrit /C0 100 /C0 C
+P005 L084: /C18RHcrit /C0 RH
+P005 L085: RHcrit /C0 100
+P005 L086: /C19 2
+P005 L087: (15)
+P005 L088: k1, k2, A, B, C and RH min for the different sensitivity classes can be
+P005 L089: found in Table 4.
+P005 L090: The material will in ﬂuence also a potential decline in mould
+P005 L091: growth [30]. Therefore, a constant relative coef ﬁcient Cmat is
+P005 L092: deﬁned for the different materials. By use of this coef ﬁcient, the
+P005 L093: original decline model (Eq. (13)) can be applied in:
+P005 L094: /C18dM
+P005 L095: dt
+P005 L096: /C19
+P005 L097: mat
+P005 L098: ¼ Cmat
+P005 L099: /C18dM
+P005 L100: dt
+P005 L101: /C19
+P005 L102: pine
+P005 L103: (16)
+P005 L104: where (d M/dt)mat and (d M/dt)pine the mould decline intensity
+P005 L105: respectively for the investigated material and for pine in the orig-
+P005 L106: inal model. The coef ﬁcients Cmat for different materials are deter-
+P005 L107: mined in laboratory experiments [28,30]. To model the decline of
+P005 L108: mould growth on other materials, decline classes with a factor Ceff
+P005 L109: are introduced, as given in Table 5.
+P005 L110: Remarks: Although different materials are investigated for the
+P005 L111: development of the VTT model, no typical ﬁnishes or fouling are
+P005 L112: included in the research. Instead of starting from pine as a refer-
+P005 L113: ence, typical ﬁnishing materials could be used. Moreover, question
+P005 L114: rises if the use of a reference material is advantageous. For example,
+P005 L115: Table 3
+P005 L116: Mould sensitivity classes [28,30].
+P005 L117: Sensitivity class Materials in experiment Material groups
+P005 L118: Very sensitive (vs) Pine sapwood Untreated wood; includes lots of nutrients for biological growth
+P005 L119: Sensitive (s) Glued wooden boards, PUR with paper surface,
+P005 L120: spruce
+P005 L121: Planed wood; paper-coated products, wood-based boards
+P005 L122: Medium resistant (mr) Concrete, aerated and cellular concrete,
+P005 L123: glass wool, polyester wool
+P005 L124: Cement or plastic based materials, mineral ﬁbers
+P005 L125: Resistant (r) PUR with polished surface Glass and metal products, materials with ef ﬁcient protective
+P005 L126: compound treatments
+P005 L127: Table 4
+P005 L128: Parameters k
+P005 L129: 1, k2, Mmax (A, B and C) and RH min for the different mould sensitivity
+P005 L130: classes [28,30].
+P005 L131: Sensitivity class k1
+P005 L132: (if M < 1)
+P005 L133: k1
+P005 L134: (if M /C21 1)
+P005 L135: Mmax (inﬂuence on k2)R H min
+P005 L136: (%)AB C
+P005 L137: Very sensitive (vs) 1 2 1 7 2 80
+P005 L138: Sensitive (s) 0.578 0.386 0.3 6 1 80
+P005 L139: Medium
+P005 L140: resistant (mr)
+P005 L141: 0.072 0.097 0 5 1.5 85
+P005 L142: Resistant (r) 0.033 0.014 0 3 1 85
+P005 L143: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310300
+
+===== PAGE 6 =====
+P006 L001: four independent models e one for each sensitivity class e could
+P006 L002: perhaps result in a more reliable approach.
+P006 L003: Furthermore, a study of external wood frame walls [29] showed
+P006 L004: some shortcomings of the model. These shortcomings are due to
+P006 L005: a lack of veri ﬁcation under real ﬂuctuating conditions and
+P006 L006: temperatures below 0 /C14 C. Real climatic conditions which consist
+P006 L007: out of long-period ﬂuctuations, can result in a different mould
+P006 L008: decline compared to short ﬂuctuations.
+P006 L009: The Ceff-values are determined based on a limited set of exper-
+P006 L010: iments with relatively large scattering and should therefore be
+P006 L011: interpreted as a ﬁrst approximation.
+P006 L012: Furthermore, it is shown that the mould index when calculated
+P006 L013: under ﬂuctuating conditions depends on the time interval.
+P006 L014: Note that when comparing the factor k1 ¼ 2 for M /C21 1 in cases of
+P006 L015: the very sensitivity class ( Table 4) with Eqs. (8)e(10), it seems that
+P006 L016: for 20 /C14 C the parameters for the updated model are developed for
+P006 L017: /C6 97% relative humidity. For other relative humidities a small
+P006 L018: difference between the very sensitive model and the original model
+P006 L019: is obtained, as shown in Fig. 3. When using a ﬁrst mould index of 1
+P006 L020: to indicate mould risk, the start of the mould growth is however not
+P006 L021: inﬂuenced since k
+P006 L022: 1 is the same in the original and the updated very
+P006 L023: sensitive model. Note also that when comparing the k1-values for
+P006 L024: a mould index lower and a mould index larger than 1 ( Table 4), for
+P006 L025: the very sensitive and medium resistant class a larger growth rate is
+P006 L026: found when the mould index exceeds 1. On the other hand, for the
+P006 L027: sensitive and resistant class a smaller growth rate is found when
+P006 L028: the mould index exceeds 1. To end, no adaptation of the critical
+P006 L029: relative humidity for a temperature below 20
+P006 L030: /C14 C (Eq. (6)) is made,
+P006 L031: which results in a too low critical relative humidity for medium
+P006 L032: resistant and resistant materials if the temperature is below 20
+P006 L033: /C14 C.
+P006 L034: 2.7. Isopleth models
+P006 L035: Since the relative humidity (or water activity), the temperature
+P006 L036: and the exposure time are the main mould inducing factors, the
+P006 L037: relation between these factors and the mould risk is often
+P006 L038: expressed by isopleth curves. These curves separate favourable
+P006 L039: from unfavourable T- and RH-conditions for mould growth. The
+P006 L040: simplest models just provide the limit state curve, more advanced
+P006 L041: isopleth models subdivide in time till germination and growth rate.
+P006 L042: Isopleth curves are the basis in the development of mould models.
+P006 L043: Whereas the mould models described in the previous sections
+P006 L044: propose an isopleth deduced approach, other models suggest
+P006 L045: a direct use of the isopleth curves. In what follows an overview of
+P006 L046: those isopleth models can be found.
+P006 L047: 2.7.1. Ayerst [33] and Smith and Hill [34]
+P006 L048: Ayerst [33] and Smith and Hill [34] developed isopleths for the
+P006 L049: germination times and growth rates of Aspergillus restrictus and
+P006 L050: A. versicolor. Measurements are performed on malt agar, resulting in
+P006 L051: isopleths for optimal nutrient substrates.
+P006 L052: 2.7.2. Clarke and Rowan (ESP-r model)
+P006 L053: In the ESP-r model [35,36] the mould fungi found in buildings
+P006 L054: are subdivided into six categories with respect to relative humidity
+P006 L055: Fig. 3. Difference between the original ( W ¼ 0, SQ ¼ 0) and updated very sensitive
+P006 L056: model (20 /C14 C): (a) constant RH-conditions, (b) transient RH-course.
+P006 L057:  Fig. 4. Critical isopleths for the different fungi categories [35,36].
+P006 L058: Table 5
+P006 L059: Decline classes and companion Ceff-values [28,30].
+P006 L060: Ceff Description
+P006 L061: 1 Pine in original model, short periods
+P006 L062: 0.5 Signiﬁcant relevant decline
+P006 L063: 0.25 Relatively low decline
+P006 L064: 0.1 Almost no decline
+P006 L065: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310 301
+
+===== PAGE 7 =====
+P007 L001: and temperature ( Fig. 4 ). Each category is accompanied with
+P007 L002: a representative fungi:
+P007 L003: - Highly xerophilic: Aspergillus repens
+P007 L004: - Xerophilic: A. versicolor
+P007 L005: - Moderately xerophilic: P. chrysogenum
+P007 L006: - Moderately hydrophilic: Cladosporium sphaerospermum
+P007 L007: - Hydrophilic: Ulocladium consortiale
+P007 L008: - High hydrophilic: Stachybotrys atra
+P007 L009: For each of these categories a growth limit curve de ﬁned by
+P007 L010: a third-order polynomial function [36] was determined based on an
+P007 L011: analysis of published data. When the relative humidity and
+P007 L012: temperature combination exceeds such a curve, mould growth of
+P007 L013: the matching fungi will occur.
+P007 L014: Remark: Disadvantage of this model is that the exposure time is
+P007 L015: not taken into account. Consequently, since a single exceed of the
+P007 L016: isopleths is set equal to mould formation, this model assumes the
+P007 L017: worst case scenario. However, in the mould growth library of the
+P007 L018: ESP-r model the different curves are supplemented with a ‘no’,
+P007 L019: ‘poor’, ‘moderate’, ‘good’ and ‘very good ’ growth indication.
+P007 L020: Furthermore, the isopleths are developed for an agar medium and
+P007 L021: hence overestimate the mould risk on ﬁnishing materials. Note also
+P007 L022: that the curves are developed based on experiments under
+P007 L023: constant temperature and relative humidity and that the curves are
+P007 L024: only deﬁned above 5
+P007 L025: /C14 C.
+P007 L026: 2.7.3. Hens
+P007 L027: Hens [15,17]described the isopleth of A. versicolor by
+P007 L028: RHthreshold ¼ 0:033q2 /C0 1:5q þ 96 (17)
+P007 L029: with q the temperature ( /C14 C) and RH threshold the critical relative
+P007 L030: humidity (%).The equation is developed based on experiments on
+P007 L031: agar media, and de ﬁnes consequently the threshold in cases of an
+P007 L032: optimal substrate. Furthermore, based on this equation the
+P007 L033: monthly mean 80% threshold is developed. For shorter periods,
+P007 L034: a logarithmic function is suggested:
+P007 L035: RHthreshold ¼ minf1; 0:8½1:25 /C0 0:075lnðtÞ/C138g (18)
+P007 L036: where t the time (days).
+P007 L037: Remark: According to Hens [15,17] the choice of A. versicolor
+P007 L038: results from the fact that this mould specie has, compared to other
+P007 L039: moulds found on internal surfaces, the lowest isopleths and hence,
+P007 L040: highest risk. Though, when comparing the isopleths for A. versicolor
+P007 L041: with the isopleths for A. restrictus e both developed by Smith and
+P007 L042: Hill [34] e a faster growth rate is found for A. restrictus .
+P007 L043: The function developed for shorter periods does not take into
+P007 L044: account the inﬂuence of the temperature. Note that a difference can
+P007 L045: be observed between the function described by Hens and the
+P007 L046: isopleths developed by Smith and Hill. For example, 82.7% relative
+P007 L047: humidity and a temperature of 20
+P007 L048: /C14 C during a period of 8 days
+P007 L049: results according to Smith and Hill in the start of mould growth for
+P007 L050: A. versicolor , whereas according to Hens during these 8 days
+P007 L051: a relative humidity of 87.5% is required to obtain mould growth.
+P007 L052: 2.7.4. Sedlbauer
+P007 L053: Since the isopleths determined by Ayerst [33] and Smith and Hill
+P007 L054: [34] are determined for only a few fungi and moreover only for
+P007 L055: complete culture media, an expansion of these isopleths is
+P007 L056: required. Though, due to the abundance of mould species and
+P007 L057: materials, an individual isopleth system for each specie and
+P007 L058: substrate is not possible. Therefore, Sedlbauer [14] subdivided the
+P007 L059: mould species and materials found in buildings in a set of classes. In
+P007 L060: a ﬁrst research, Sedlbauer [14] deﬁned based on the health risk of
+P007 L061: the different mould species three hazardous classes:
+P007 L062: - Class A : mould species which are highly pathogen and conse-
+P007 L063: quently not allowed to occur in buildings.
+P007 L064: - Class B: mould species which are pathogen when exposed over
+P007 L065: a longer period or which cause allergic reactions.
+P007 L066: - Class C : mould species which are not dangerous to health.
+P007 L067: Though, they may cause economical damage.
+P007 L068: Based on measured minimum, optimum and maximum growth
+P007 L069: conditions for a collection of species, minimum growth conditions
+P007 L070: for the three hazardous classes were obtained. For class C only
+P007 L071: slightly different results compared to those for class B were ob-
+P007 L072: tained. Therefore class B and C are combined in one class B/C. The
+P007 L073: conditions below which no spore germination or growth will occur
+P007 L074: is indicated by the LIM (Lowest Isopleth for Mould)-curve. This
+P007 L075: curve is developed based on the lowest envelope of all the lowest
+P007 L076: curves of the group. After the determination of the LIM-curves,
+P007 L077: representative mould fungi for the different hazardous classes are
+P007 L078: searched. These representative mould fungi have a LIM-curve
+P007 L079: which approximates the LIM-curve described above. For class A
+P007 L080: this representative fungus is A. versicolor , for class B/C the mould
+P007 L081: fungi Aspergillus amstelodami, Aspergillus candidus, Aspergillus ruber
+P007 L082: and Wallemia sebi are indicated as representative fungi. Based on
+P007 L083: the growth of these representative fungi on an optimal culture
+P007 L084: medium, the isopleth systems for the hazardous classes are
+P007 L085: developed. In later researches [37] the hazardous classes are
+P007 L086: replaced by the single hazardous class K. The isopleth system for
+P007 L087: latter class includes the mould fungi, which impose according to
+P007 L088: the literature a health risk ( Aspergillus fumigatus , Aspergillus ﬂavus
+P007 L089: and Stachybotrys chartarum) and is de ﬁned for an optimal culture
+P007 L090: medium.
+P007 L091: A second subdivision is made to take into account the in ﬂuence
+P007 L092: of the building substrate, including possible contaminations. For
+P007 L093: the development of these curves all the mould fungi are taken into
+P007 L094: account. An overview of the different substrate categories de ﬁned
+P007 L095: by Sedlbauer is given in Table 6. As an example Fig. 5 presents the
+P007 L096: isopleth system for substrate category I. No isopleth system for
+P007 L097: substrate category III is developed, since for these substrates no
+P007 L098: mould growth will be expected. In cases of a contaminated material
+P007 L099: (soiling) of substrate category III, the isopleth system for substrate
+P007 L100: category I should be used. Furthermore, persistent materials with
+P007 L101: high open porosity belong to substrate category II. Substrate based
+P007 L102: isopleths are made in such a way that always the worst case
+P007 L103: scenario is examined, and are consequently always on the safe side
+P007 L104: in respect to preventing the formation of mould fungi.
+P007 L105: Conseq
+P007 L106: uently, for the mould study on building materials
+P007 L107: following isopleth systems are obtained: LIM K (or LIM B/C and LIM
+P007 L108: A), LIM
+P007 L109: Mat I and LIM Mat II, each of them consisting of a germination
+P007 L110: graph and a growth rate graph.
+P007 L111: Remark: Note that the isopleths are de ﬁned based on available
+P007 L112: measurement data of stationary laboratory experiments. This
+P007 L113: Table 6
+P007 L114: Sedlbauer’s substrate categories [14].
+P007 L115: Substrate category 0 Optimal culture medium
+P007 L116: Substrate category I Biologically recyclable building materials
+P007 L117: like wall paper, plaster cardboard, building
+P007 L118: materials made of biologically degradable
+P007 L119: raw materials, material for permanent elastic joints
+P007 L120: Substrate category II Biologically adverse recyclable building materials
+P007 L121: such as renderings, mineral building material, certain
+P007 L122: wood as well as insulation material not covered by I
+P007 L123: Substrate category III Building materials that are neither degradable
+P007 L124: nor contains nutrients
+P007 L125: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310302
+
+===== PAGE 8 =====
+P008 L001: limitation to stationary conditions forms the main shortcoming of
+P008 L002: the model, since an interim drying out of the spores cannot be
+P008 L003: taken into account. It seems that at very high relative humidities an
+P008 L004: extrapolation of the experimental results is made since in the
+P008 L005: isopleths no retardation in growth rate is found for these humid-
+P008 L006: ities. Furthermore, the growth rates (mm/day) enable only an
+P008 L007: evaluation in the ﬁgurative sense.
+P008 L008: Besides, a straight forward use of the different curves can result
+P008 L009: in an underestimation of the mould growth. To obtain a more
+P008 L010: accurate result, an interpolation between the growth curves is
+P008 L011: required. The interpolation between the germination curves will
+P008 L012: only have a minor in ﬂuence in the early stage of the mould growth
+P008 L013: since for high relative humidities only a small difference in required
+P008 L014: exposure time is needed for the germination and for lower relative
+P008 L015: humidities a negligible growth rate is obtained.
+P008 L016: Note also that, in contrast to the ﬁndings by Hens for an optimal
+P008 L017: substrate, according to Sedlbauer ’s isopleth system mould growth
+P008 L018: can already start below 80% relative humidity when dealing with
+P008 L019: a substrate of category 0 or I.
+P008 L020: 2.7.5. Mould germination graph method
+P008 L021: To take into account the temperature and relative humidity at
+P008 L022: previous time steps, Moon [39] established the mould germination
+P008 L023: graph method. In this method, each curve in the isopleth system is
+P008 L024: indicated by a certain required exposure time for initiation of
+P008 L025: mould germination. For each curve the associated accumulated
+P008 L026: exposure time can be recorded. When the accumulated exposure
+P008 L027: time for a group is equal or larger than its required exposure time,
+P008 L028: mould growth can start. Consequently, using this method also
+P008 L029: ﬂuctuating conditions can be studied, since a delay during unfav-
+P008 L030: ourable conditions is implemented. The mould growth risk can be
+P008 L031: expressed as the number of mouldy risky days over a standard
+P008 L032: simulation period.
+P008 L033: Remark: Although Moon uses the daily averaged conditions, also
+P008 L034: here a smaller time interval (e.g. an hourly calculation) is preferred.
+P008 L035: For example, when a relative humidity course equal to RH ¼ 70 þ
+P008 L036: 20sinðð2
+P008 L037: p=24ÞtÞ with t the time (h) and a temperature of 20 /C14 C
+P008 L038: occur, after /C6 274 days a mould growth of 200 mm is obtained when
+P008 L039: using hourly data. However, when performing the analysis for the
+P008 L040: daily average relative humidity (70%) no mould growth is obtained.
+P008 L041: And although a delay during unfavourable conditions is
+P008 L042: included, a possible drying out of the spores is not considered in
+P008 L043: this model. Furthermore, when a favourable mould growth condi-
+P008 L044: tion changes into an unfavourable condition the mould growth
+P008 L045: process is immediately switched off whereas the spore metabolism
+P008 L046: could extend the favourable growth conditions. Consequently, an
+P008 L047: underestimation of the mould growth could be obtained. On the
+P008 L048: other hand, when an unfavourable condition changes into
+P008 L049: a favourable condition, an immediately start of the mould growth
+P008 L050: process is assumed whereas possible a time lag could occur before
+P008 L051: the spore is activated. In this case an overestimation is made with
+P008 L052: the isopleth system.
+P008 L053: 2.7.6. General remark about the isopleth systems
+P008 L054: The differences between the different isopleth systems can be
+P008 L055: subdivided into two groups: (1) the difference in the curves and
+P008 L056: subdivisions for the curves (e.g. substrate, mould species, health
+P008 L057: class) and (2) the application method (e.g. only yes/no conclusion,
+P008 L058: with or without delay). An example of a difference in the curves is
+P008 L059: shown in Fig. 6 . As can be seen, the isopleths described by the
+P008 L060: model of Hens (Eq. (1 7)) equals the isopleth for the xerophilic
+P008 L061: species in the ESP-r model. However, although both curves are
+P008 L062: Fig. 5. Sedlbauer’s isopleth system for substrate class I [38]: (a) time till germination,
+P008 L063: (b) growth rate.
+P008 L064: Fig. 6. Comparison of the different germination isopleths developed for A. versicolor ,
+P008 L065: the LIM-curve for substrate category 0, substrate category II and hazardous class A.
+P008 L066: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310 303
+
+===== PAGE 9 =====
+P009 L001: developed for A. versicolor , the curves do not coincide with the
+P009 L002: isopleths developed by Smith and Hill. Note also that although
+P009 L003: Hens’ isopleth and the curve for the xerophilic species in ESP-r are
+P009 L004: developed for an optimal substrate, a good agreement with Sedl-
+P009 L005: bauer’s LIM germination curve for substrate group II (porous
+P009 L006: materials) in cases of temperatures lower than 30
+P009 L007: /C14 C is found.
+P009 L008: Sedlbauer’s LIM for the optimal substrate group 0 lays much lower.
+P009 L009: Furthermore, also a lower LIM-curve is obtained for health class A,
+P009 L010: although this class is represented by the A. versicolor mould specie.
+P009 L011: 2.8. Comparison between the isopleth systems and the VTT model
+P009 L012: To make a ﬁrst comparison between the VTT model and the
+P009 L013: isopleth models, based on Eq.(6) and Eq.(9) the germination
+P009 L014: isopleths can be drawn. Fig. 7 a compares the isopleths for the
+P009 L015: critical relative humidity (Eq. (6)) of the original VTT model (resawn
+P009 L016: pine sapwood) with Sedlbauer ’s germination isopleths and with
+P009 L017: the ESP-r curve for xerophilic species. Although a very sensitive
+P009 L018: material would be rather classiﬁed as a substrate of substrate group
+P009 L019: I, the critical relative humidity according to the VTT model agrees
+P009 L020: quite well with Sedlbauer ’s LIM-curve for substrate category II and
+P009 L021: with the ESP-r curve for xerophilic species. Fig. 7 b compares the
+P009 L022: isopleths corresponding to Eq. (9) for t
+P009 L023: M¼1 equal to 8 and 16 days
+P009 L024: with Sedlbauer’s germination isopleths for 8 and 16 days. As can be
+P009 L025: observed, for a typical indoor temperature the required relative
+P009 L026: humidity to start germination is signi ﬁcant larger in cases of the
+P009 L027: VTT model compared to Sedlbauer ’s isopleth for substrate category
+P009 L028: I. Note that this difference can be due to the germination criteria
+P009 L029: used in both models. The germination criterion used in the VTT
+P009 L030: model (M /C21 1) seems to be less severe compared to the deﬁnition of
+P009 L031: the germination time used by Sedlbauer.
+P009 L032: 2.9. Biohygrothermal model
+P009 L033: To make a more reliable prediction of the mould risk possible in
+P009 L034: cases of transient conditions, Sedlbauer extended his isopleth
+P009 L035: model with the biohygrothermal model [14,38,40,41]. In this model
+P009 L036: the moisture balance of a spore, which has a certain osmotic
+P009 L037: potential and which can consequently absorb water from the
+P009 L038: environment dependent of the transient boundary conditions, is
+P009 L039: calculated. This means also that even an interim drying out of the
+P009 L040: fungus spores can be considered. To calculate this process, the
+P009 L041: spore interior is characterised by a moisture retention curve and
+P009 L042: the spore wall by a humidity-dependent sd-value. The spore is
+P009 L043: supposed to have germinated when a certain moisture content e
+P009 L044: the critical moisture content e is reached. From this point on
+P009 L045: metabolic processes and mould growth can start. The critical
+P009 L046: moisture content can be determined based on the moisture
+P009 L047: retention curve of the spore and the critical relative humidity found
+P009 L048: in the germination LIM-curve. The type of substrate can be taken
+P009 L049: into account by using the substrate dependent isopleth system in
+P009 L050: the determination of the critical moisture content.
+P009 L051: By use of this model, the required time till germination and the
+P009 L052: mould growth (mm/day) can be determined. The material prop-
+P009 L053: erties of the model spore are developed based on properties of
+P009 L054: bacteria which are slightly adapted. This adaptation is performed
+P009 L055: by ﬁtting the material properties in this way that the calculated
+P009 L056: germination time equals the measured germination time in cases of
+P009 L057: constant conditions (which can be found in the isopleths).
+P009 L058: Remarks: Although the simpli ﬁcation of the mould growth into
+P009 L059: a model spore with moisture properties makes a HAM-approach
+P009 L060: possible, care should be taken with the simpli ﬁcation of the
+P009 L061: rather complex mould growth process. The development of the
+P009 L062: spore properties is furthermore questionable due to the large bio-
+P009 L063: logical difference between moulds and bacteria. Moreover, the
+P009 L064: mould species dependent isopleths developed by, e.g. Ayerst, Smith
+P009 L065: and Hill, Clarke and Rowan and Sedlbauer suggest a species
+P009 L066: dependent behaviour which is not included in the model spore.
+P009 L067: In the biohygrothermal model an initial relative humidity is
+P009 L068: given to the spore. In WUFI-Bio the default value for this relative
+P009 L069: humidity is set at 50%. Though, according to WUFI-Bio [42], this
+P009 L070: value may be chosen between 40% and 80% and will in ﬂuence only
+P009 L071: the beginning of the process. However, this means that the
+P009 L072: germination time depends on the initial spore relative humidity.
+P009 L073: Consequently, the ﬁt of the spore properties will be an approxi-
+P009 L074: mation. Note also that when starting from a spore relative humidity
+P009 L075: of 80%, the germination can start immediately since the critical
+P009 L076: moisture content is determined based on the LIM Isopleth, which
+P009 L077: lays lower than 80% for substrate category 0 and I. Table 7 compares
+P009 L078: for different surface relative humidities the time till germination
+P009 L079: according to the germination isopleths and to WUFI-Bio in case of
+P009 L080: Fig. 7. Comparison between the germination time according to Sedlbauer’ s germina-
+P009 L081: tion graph for substrate category I and the original VTT model: (a) critical relative
+P009 L082: humidity, (b) isopleths indicating germination after eight and sixteen days.
+P009 L083: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310304
+
+===== PAGE 10 =====
+P010 L001: substrate category I and an initial spore relative humidity of 50%. As
+P010 L002: can be seen, with the biohygrothermal model a shorter germination
+P010 L003: time is obtained for high surface relative humidities, which can be
+P010 L004: due to the use of the LIM-curve for the determination of the critical
+P010 L005: moisture content whereas in the isopleth model the germination
+P010 L006: curves are used. On the other hand, for low surface relative
+P010 L007: humidities a larger time till germination is found with the bio-
+P010 L008: hygrothermal model. Probably, this is caused by the time required
+P010 L009: to obtain the surface relative humidity in the spore. When starting
+P010 L010: from an initial spore relative humidity of 50% this ‘delay’ seems too
+P010 L011: long. Table 7 gives also for the different surface relative humidities
+P010 L012: the initial spore relative humidity which should be used to obtain
+P010 L013: the same germination time with the isopleth system and the bio-
+P010 L014: hygrothermal model. As shown, a lower or higher initial spore
+P010 L015: relative humidity could be used to compensate respectively the
+P010 L016: under- or overestimation obtained with the biohygrothermal
+P010 L017: model. This is of course no longer possible in case of transient
+P010 L018: conditions where the spore relative humidity will be obtained
+P010 L019: based on the conditions during the process.
+P010 L020: 2.10. Relationship between the biohygrothermal model and the VTT
+P010 L021: model
+P010 L022: The mould growth in millimeters per day is a reasonable unit to
+P010 L023: describe the length of the mycel at the beginning of the growth
+P010 L024: process. In a later growth stage, however, a meshwork of mycels
+P010 L025: differing in area and thickness is obtained. From this point, the
+P010 L026: calculated growth, which can reach very large values, can only be
+P010 L027: used as a comparative factor [43].T h e r e f o r e ,K r u se ta l .[43] devel-
+P010 L028: oped a conversion function to transform the calculated growth, in
+P010 L029: millimeters, into the mould index. Based on simulations of the
+P010 L030: mould growth risk with both the VTT and the biohygrothermal
+P010 L031: model, the relation between the mould index and mould growth in
+P010 L032: millimeters is investigated. By limiting the biohygrothermal calcu-
+P010 L033: lation till the moment that a mould index of 6 is obtained with the
+P010 L034: VTT model and by including reductions in growth according to the
+P010 L035: VTT model, the relation shown in Fig. 8 is obtained. A transfer
+P010 L036: function in the form of a BET function is ﬁtted.
+P010 L037: Remark: Since in the VTT model and the biohygrothermal model
+P010 L038: different substrate categories are de ﬁned, ﬁrst a comparison
+P010 L039: between both de ﬁnitions should be made. Table 8 gives, based on
+P010 L040: Table 3 and Table 6, the relation assumed between the sensitivity
+P010 L041: classes used in the VTT model and the substrate categories de ﬁned
+P010 L042: by Sedlbauer.
+P010 L043: Although the conversion function mentioned above is devel-
+P010 L044: oped based on several simulations, a large difference between the
+P010 L045: VTT mould index and the WUFI-Bio mould index can be obtained,
+P010 L046: as shown in Fig. 9 . As can be seen, compared to the VTT mould
+P010 L047: index no moderation of the growth towards the maximal mould
+P010 L048: index is found for the WUFI-Bio index and a maximum mould index
+P010 L049: of 6 is obtained. Note especially the large difference for the short
+P010 L050: exposure to high relative humidity (3 h 97%e21 h 75%; 1 d 97%e6d
+P010 L051: 75%). According to the WUFI-Bio mould index after 170 days
+P010 L052: a moderate growth is predicted (M > 4), whereas when using the
+P010 L053: VTT mould index no mould growth is predicted (M < 1). Further-
+P010 L054: more, the slow changes (1 d 97% e6 d 75%, 7 d 97% e23 d 75%) show
+P010 L055: clearly the absence of decline in mould index in the WUFI-Bio
+P010 L056: model. It can be concluded that the BET function in Fig. 8 does
+P010 L057: not give a good relationship between the VTT mould index and the
+P010 L058: mould growth for each relative humidity (and temperature) course.
+P010 L059: 2.1 1. General remark about the mould risk criteria
+P010 L060: In
+P010 L061: previous paragraphs the different models were given. Note
+P010 L062: however, that also different de ﬁnitions for the start of mould
+P010 L063: growth can be found for the different models. In the VTT model
+P010 L064: a mould index equal to 1 is de ﬁned as the start of the germination
+P010 L065: process and consequently as the value above which a mould risk
+P010 L066: exists. Note however that another critical mould index could be
+P010 L067: deﬁned by the user of the mould model. For example, if visible
+P010 L068: mould growth is deﬁned as criterion a critical mould index equal to
+P010 L069: 3 can be pressed forward. In the biohygrothermal model a spore
+P010 L070: moisture content higher than the critical moisture content indi-
+P010 L071: cates the start of germination. However, to evaluate the mould risk,
+P010 L072: in the latter model the mould growth per year is used to evaluate
+P010 L073: the mould risk [42]. To do so, a ‘signal light’ deﬁnes the risk:
+P010 L074: - Mould growth > 200 mm/year: ‘red light’, not acceptable.
+P010 L075: - 50 mm/year < Mould growth < 200 mm/year: ‘yellow light ’:
+P010 L076: additional evaluation is necessary.
+P010 L077: - Mould growth < 50 mm/year: ‘green light’: usually acceptable
+P010 L078: However, no information is found on the basis the mould
+P010 L079: growth limits have been de ﬁned on.
+P010 L080: Fig. 8. Relationship between the mould index and the mould growth [43].
+P010 L081: Table 8
+P010 L082: Relation assumed between the sensitivity classes used in the VTT-model and the
+P010 L083: substrate categories used by Sedlbauer.
+P010 L084: VTT sensitivity class Sedlbauer ’s substrate category
+P010 L085: 0
+P010 L086: Very sensitive (vs) I
+P010 L087: Sensitive (s) I
+P010 L088: Medium resistant (mr) II
+P010 L089: Resistant (r) III
+P010 L090: Table 7
+P010 L091: Comparison of the time till germination according to the germination isopleths and
+P010 L092: WUFI-Bio and acquired initial spore relative humidity to obtain the germination
+P010 L093: time given by the germination isopleths for substrate I.
+P010 L094: Surface relative
+P010 L095: humidity (%)
+P010 L096: Germination time (h) Initial spore RH to obtain
+P010 L097: the same germination
+P010 L098: time (%)Germination
+P010 L099: isopleths
+P010 L100: WUFI-Bio
+P010 L101: (initial spore
+P010 L102: RH ¼ 50%)
+P010 L103: 90.94 24 13 33
+P010 L104: 85.75 48 44 48
+P010 L105: 82.58 96 126 62.5
+P010 L106: 80.23 192 265 70.4
+P010 L107: 77.63 384 817 76.9
+P010 L108: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310 305
+
+===== PAGE 11 =====
+P011 L001: 3. Comparison of the mould prediction models
+P011 L002: To investigate the differences between the existing mould
+P011 L003: prediction models, ﬁve ﬁctitious stepwise relative humidity and
+P011 L004: temperature conditions ( Table 9 ) are assumed. The analysis is
+P011 L005: subdivided into three steps: the investigation of (1) the mould
+P011 L006: intensity in function of time, (2) the predicted mould risk in
+P011 L007: combination with the time after which a potential risk starts and
+P011 L008: (3) the total mould growth intensity after one year. Note however
+P011 L009: that the scope of the mould prediction models is to evaluate the
+P011 L010: mould risk and not to determine the exact mould growth intensity
+P011 L011: or the starting point. Therefore, the obtained start times and
+P011 L012: intensities may not be interpreted too precisely and are only used
+P011 L013: to analyse the working principle of the different models and its
+P011 L014: potential impact on the mould risk conclusions.
+P011 L015: To determine the mould growth with the biohygrothermal
+P011 L016: model and the WUFI-Bio mould index the WUFI-Bio software
+P011 L017: [42] is used. For the initial spore relative humidity the default
+P011 L018: value of 50% is assumed. When using the isopleth systems
+P011 L019: a linear interpolation between the growth curves is made. For
+P011 L020: both models, substrate category I is assumed. In the original VTT
+P011 L021: model pine wood is assumed as substrate ( W ¼ 0, SQ ¼ 0), while
+P011 L022: in the updated VTT model the sensitive class s is used (see
+P011 L023: Table 8 for the relation between the sensitivity classes and
+P011 L024: Sedlbauer’s substrate categories). To evaluate the mould risk
+P011 L025: based on Sedlbauer ’s isopleth system in cases of transient
+P011 L026: conditions Moon ’s germination graph method is used. An iden-
+P011 L027: tical approach is used with the short time isopleth developed by
+P011 L028: Hens. The calculations are performed based on a 1 h time
+P011 L029: interval.
+P011 L030: 3.1. Mould intensity in function of time
+P011 L031: To discuss the mould intensity in function of time, in this
+P011 L032: paragraph the course of the mould growth and of the mould indices
+P011 L033: obtained for condition 1 and condition 4 is shown.
+P011 L034: 3.1.1. Mould growth
+P011 L035: Since the spore properties in the biohygrothermal model are
+P011 L036: ﬁtted based on Sedlbauer’s isopleth system, for constant conditions
+P011 L037: identical results should be obtained when using both models.
+P011 L038: However, as shown in Fig. 10, for condition 1 the mould growth rate
+P011 L039: obtained with the isopleth system is slightly higher compared to the
+P011 L040: growth obtained with the biohygrothermal model. Reason for this
+P011 L041: can be found in the mould growth at the beginning. The mould
+P011 L042: growth starts at a later time when using the isopleth system than
+P011 L043: when using the biohygrothermal model since in the bio-
+P011 L044: hygrothermal model the LIM-curve is used for the start of the
+P011 L045: germination. Though, when using the biohygrothermal model
+P011 L046: a smaller mould growth rate is observed at the start of the mould
+P011 L047: growth process which nulli ﬁes the ‘proﬁt’ made in the beginning.
+P011 L048: Note however, that this start of the mould growth process is also
+P011 L049: inﬂuenced by the initial spore relative humidity as explained earlier.
+P011 L050: For condition 4 the average mould growth rate obtained with the
+P011 L051: biohygrothermal model is shown to be almost twice the mould
+P011 L052: growth rate obtained with Moon ’s germination graph method. The
+P011 L053: reason for this is twofold. At ﬁrst, the germination process starts
+P011 L054: earlier for the biohygrothermal model. Though, this has again only
+P011 L055: a minor impact due to the smaller growth rate in the beginning. The
+P011 L056: second and main reason for the higher mould growth is the
+P011 L057: prolongation of the favourable spore conditions e and
+P011 L058: conse-
+P011 L059: quently of the mould growth process e during periods of
+P011 L060: Table 9
+P011 L061: Analysed conditions.
+P011 L062: Time 1 Relative humidity 1 (%) Temperature 1 ( /C14 C) Time 2 Relative humidity 2 (%) Temperature 2 ( /C14 C)
+P011 L063: 1 Constant 97 20
+P011 L064: 2 6 h 972 0 6 h 582 0
+P011 L065: 3 10 h 58 20 2 h 97 20
+P011 L066: 4 10 d 58 20 2 d 97 20
+P011 L067: 5 6 h 972 0 6 h 971 0
+P011 L068: Fig. 9. Comparison of the VTT mould index (original model, W ¼ 0, SQ ¼ 0) and WUFI-
+P011 L069: Bio mould index (category I) for 20 /C14 C.
+P011 L070: Fig. 10. Mould growth in function of time. The conditions are given in Table 9.
+P011 L071: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310306
+
+===== PAGE 12 =====
+P012 L001: unfavourable conditions when using the biohygrothermal model.
+P012 L002: When using Moon ’s germination graph method an immediately
+P012 L003: pause of the mould process is assumed.
+P012 L004: 3.1.2. Mould indices
+P012 L005: Fig. 1 1compares the VTT mould index (both original and updated
+P012 L006: model) and the WUFI-Bio mould index in function of time for the
+P012 L007: different conditions. For condition 1, the increase of the WUFI-Bio
+P012 L008: mould index in the beginning is found to be smaller compared to
+P012 L009: the increase found for the VTT mould indices. After some time,
+P012 L010: a steeper increase is found for the WUFI-Bio mould index and the
+P012 L011: WUFI-Bio mould index reaches a value between the mould indices
+P012 L012: obtained with the original VTT model and the updated sensitive
+P012 L013: model. Whereas the VTT mould index stops at a maximal mould
+P012 L014: index, the WUFI-Bio mould index increases until a value of 6 is ob-
+P012 L015: tained. Forcondition 4, a large difference is found between the WUFI-
+P012 L016: Bio mould index and the VTT mould indices. Whereas the VTT mould
+P012 L017: indices are smaller than 1 (no mould risk) after 180 days, a WUFI-Bio
+P012 L018: mould index larger than 4 (moderate growth) is found.
+P012 L019: 3.2. Time till germination and mould risk
+P012 L020: An overview of the time until germination occurs according to
+P012 L021: the different models can be found in Fig. 12 . Since the existing
+P012 L022: models are mainly developed based on steady-state conditions, for
+P012 L023: constant conditions (as condition 1 of Table 9) a reliable and similar
+P012 L024: Fig. 1 1. VTT and WUFI-Bio mould index in function of time. The conditions are given in
+P012 L025: Table 9.
+P012 L026: Fig. 12. Time till germination. The conditions are given in Table 9. The results given for the ESP-r model are not valid for highly hydrophilic species for which no mould risk occurs.
+P012 L027: Fig. 13. Mould growth intensity after 1 year: (a) mould growth, (b) mould index. The
+P012 L028: conditions are given in Table 9.
+P012 L029: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310 307
+
+===== PAGE 13 =====
+P013 L001: prediction would be expected with the different models. However,
+P013 L002: for condition 1 a large difference in time till germination is found.
+P013 L003: Note furthermore that for the investigated conditions the shortest
+P013 L004: time till germination is obtained by the ESP-r model since in this
+P013 L005: model a single exceed of the critical conditions is suf ﬁcient to
+P013 L006: indicate a mould risk. However, when a highly hydrophilic mould
+P013 L007: specie would be chosen for the analysis no mould risk would be
+P013 L008: obtained. A small increase of the time till germination is found for
+P013 L009: the biohygrothermal model (when using the ‘w /C21 w
+P013 L010: crit’-criterion),
+P013 L011: Moon’s germination graph method (Sedlbauer ’s isopleth system)
+P013 L012: and Hens’ isopleth for short time exposures. Moreover, when those
+P013 L013: models are arranged based on the time till germination, the same
+P013 L014: sequence is found for the investigated conditions. Besides, the time
+P013 L015: till germination obtained with these models is equal for condition 1
+P013 L016: and condition 5. In cases of the biohygrothermal model this iden-
+P013 L017: tical time is obtained since the germination process starts already
+P013 L018: before the temperature changes in condition 5 . In Moon ’s germi-
+P013 L019: nation graph method the identical time is obtained since as well the
+P013 L020: periods of 97% RH and 20
+P013 L021: /C14 C as the periods of 97% RH and 10 /C14 C
+P013 L022: exceeds the 1-day germination curve. In cases of Hens ’ isopleth for
+P013 L023: short exposure times no temperature in ﬂuence is included.
+P013 L024: When using the VTT mould index or the WUFI-Bio mould index
+P013 L025: in combination with the ‘M /C21 1’-criterion a much larger time till
+P013 L026: germination is found. Note furthermore, that for latter models no
+P013 L027: general sequence is found.
+P013 L028: 3.3. Mould intensity
+P013 L029: An overview of the mould intensity after one year obtained with
+P013 L030: the different models can be found in Fig. 13. As can be observed in
+P013 L031: Fig. 13a, more mould growth is obtained with the biohygrothermal
+P013 L032: model compared to the results obtained with Moon ’s germination
+P013 L033: graph method (Sedlbauer ’s isopleth system), except for condition 1
+P013 L034: and condition 5 . The reason for the less mould growth in case of
+P013 L035: condition 1 is already mentioned in Section 3.1.1. For condition 5, the
+P013 L036: lower value is probably due to the assumption of an isothermal
+P013 L037: spore in the biohygrothermal model, which results in the absence
+P013 L038: of a prolongation of the favourable spore conditions. All the
+P013 L039: investigated conditions result according to the ‘signal light’-rule in
+P013 L040: an unacceptable mould growth. A comparison of the mould indices
+P013 L041: (Fig. 13b) shows that for all ﬁve investigated courses a maximum
+P013 L042: WUFI-Bio mould index of 6 is obtained. Reasons for this are the
+P013 L043: absence of a decline in this model and the unreliable BET-
+P013 L044: transformation. Note furthermore that the VTT mould indices ob-
+P013 L045: tained for condition 3 are lower than the critical value of 1. Conse-
+P013 L046: quently, for this case no mould risk is predicted whereas the other
+P013 L047: models will predict a mould risk. When using the mould indices an
+P013 L048: equal intensity is found for condition 1 and condition 5 , since for
+P013 L049: these cases the maximal mould indices are obtained.
+P013 L050: 4. Conclusion
+P013 L051: Since mould growth can have an impact on the indoor air quality
+P013 L052: and the occupant ’s health and since it can introduce economical
+P013 L053: and social damage, attention should be paid to mould growth
+P013 L054: prevention. To predict the mould growth risk one of the several
+P013 L055: mould prediction models found in literature can be used. These
+P013 L056: models can be subdivided in rather basic prediction parameters
+P013 L057: (time-of-wetness, Johansson ’s indices) and more in depth deter-
+P013 L058: ministic models (VTT model, isopleth systems, biohygrothermal
+P013 L059: model). However, basic models as well as more advanced mould
+P013 L060: models make a simpli ﬁcation of the very complex mould process.
+P013 L061: Consequently, care should be taken when analysing the results.
+P013 L062: In a ﬁrst part of this paper an overview of the different existing
+P013 L063: mould prediction models was given. It was shown that, although
+P013 L064: a lot of research has already been carried out to come to a more
+P013 L065: accurate and reliable prediction, still some shortcomings, physically
+P013 L066: unrealistic phenomena, contradictions, etc. can be found in the
+P013 L067: current available models.
+P013 L068: In a second part, it was shown that, due to simpli ﬁcations or
+P013 L069: assumptions made in the different models, a different conclusion
+P013 L070: may be drawn in the analysis depending on the model used. To
+P013 L071: investigate the effect of the different models the mould risk, the start
+P013 L072: of the germination process and the mould intensity were predicted
+P013 L073: for ﬁctitious
+P013 L074: conditions. It was shown that for some conditions no
+P013 L075: mould risk is predicted with the VTT model whereas according to
+P013 L076: the other models mould risk exists. Furthermore, a large spread was
+P013 L077: found for the germination times obtained with the different models.
+P013 L078: The largest germination times were found for the mould indices
+P013 L079: (VTT, WUFI-Bio), which can be due to the germination criterion used
+P013 L080: in this model ( M /C21 1). Also for the mould intensity some contra-
+P013 L081: dictions are found between the models. For example, in cases of
+P013 L082: cycles of 10 h 58% RH followed by 20 h 97% RH and a temperature of
+P013 L083: 20
+P013 L084: /C14 C an original and sensitive VTT mould index lower than 1 were
+P013 L085: obtained, whereas the WUFI-Bio mould index reached a value of 6.
+P013 L086: The course of the WUFI-Bio mould index in function of time was
+P013 L087: furthermore shown to differ also from the VTT mould index for the
+P013 L088: other conditions. Apparently, the BET-function given by Krus et al.
+P013 L089: [43] seems not reliable for every condition. Besides, no decline
+P013 L090: during unfavourable periods was found in the WUFI-Bio mould
+P013 L091: index. Latter absence could also be noticed in the biohygrothermal
+P013 L092: model and Moon ’s germination graph method. Consequently, also
+P013 L093: for these models a large mould growth was predicted. When
+P013 L094: comparing the biohygrothermal model with Moon’ s germination
+P013 L095: Table 10
+P013 L096: Overview of the different mould prediction methods: (1) temperature ratio, (2) time-of-wetness, (3) original VTT-model, (4) updated VTT-model, (5) ESP-r isopleth model
+P013 L097: (Clarke and Rowan), (6) isopleth curve Hens, (7) isopleth system Sedlbauer, (8) Moon ’s mould germination graph method, (9) biohygrothermal model.
+P013 L098: 12 3 4 5 6 7 8 9
+P013 L099: Ti n ﬂuence included? Yes No Yes Yes Yes Yes (long
+P013 L100: exposure time)
+P013 L101: No (short
+P013 L102: exposure time)
+P013 L103: Yes Yes Yes
+P013 L104: Growth at T < 0
+P013 L105: /C14 C? Yes No No No Yes No No Slight growth
+P013 L106: RH inﬂuence included? Indirectly Yes Yes Yes Yes Yes Yes Yes Yes
+P013 L107: Substrate taken into account? No No Yes (Wood) Yes No No Yes Yes Yes
+P013 L108: Estimation of growth
+P013 L109: (G) or only indication of start (S)?
+P013 L110: SS G G S S G S G
+P013 L111: Growth delay possible? Yes Yes No Yes (but no
+P013 L112: drying out)
+P013 L113: No (zero
+P013 L114: growth)
+P013 L115: Limit growth value? Yes Yes No No
+P013 L116: Corresponding simulation tool TCCC2D
+P013 L117: or Latenite
+P013 L118: TCCC2D
+P013 L119: or Latenite
+P013 L120: ESP-r WUFI-Bio
+P013 L121: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310308
+
+===== PAGE 14 =====
+P014 L001: graph method (based on Sedlbauer ’s isopleths) small till larger
+P014 L002: differences were found. For the steady state condition, more mould
+P014 L003: growth was obtained with the biohygrothermal model compared to
+P014 L004: Moon’s germination graph method. On the other hand, for the
+P014 L005: transient relative humidities an opposite result was found. Reason
+P014 L006: for this is the prolongation of the favourable spore conditions during
+P014 L007: unfavourable periods. However, for transient temperature condi-
+P014 L008: tions less mould growth was obtained with the biohygrothermal
+P014 L009: model since the assumption of an isothermal spore results in the
+P014 L010: absence of a prolongation of the favourable spore conditions.
+P014 L011: Furthermore it should be noticed that when using Moon’ s germi-
+P014 L012: nation graph method e or Sedlbauer ’s isopleth system in cases of
+P014 L013: constant conditions e an interpolation of the growth curves is
+P014 L014: preferable, which makes the method less user friendly. In this
+P014 L015: investigation a linear interpolation between the growth curves was
+P014 L016: assumed. Another interpolation can result in slightly different
+P014 L017: intensities. Though, the general conclusions will remain.
+P014 L018: The reader should furthermore keep in mind that the difference
+P014 L019: between the prediction methods can be caused by the difference in
+P014 L020: isopleth curves, the working principle of the model (only yes/no
+P014 L021: conclusion, with/without delay, use of a ﬁctitious spore, etc.) or the
+P014 L022: mould risk criterion ( M /C21 1, signal light, exceed of the critical
+P014 L023: moisture content, etc.).
+P014 L024: Since the temperature ratio is a performance indicator of
+P014 L025: a building detail, a comparison between this ratio and the other
+P014 L026: prediction models was not possible based on the ﬁctive conditions.
+P014 L027: A comparison of the mould risk for two thermal bridges based on
+P014 L028: the mould prediction models, including the temperature ratio
+P014 L029: criterion, can be found in [44].
+P014 L030: To end, Table 10 gives a concise overview of the different mould
+P014 L031: prediction models. Though, it should be noticed that a more in
+P014 L032: depth study of especially the mould growth under transient
+P014 L033: conditions is still necessary to be able to de ﬁne the most reliable
+P014 L034: prediction model and to solve current contradictions between the
+P014 L035: models. To do so, additional measurements in lab conditions as well
+P014 L036: as in situ are required.
+P014 L037: Furthermore, it must be noticed that until now all mould models
+P014 L038: are deterministic models. A further improvement could be to
+P014 L039: develop prediction models which include a spread in germination
+P014 L040: time and growth rate. Besides, a variation in material properties,
+P014 L041: moisture load, transfer coef ﬁcients, etc. or bad workmanship can
+P014 L042: result in mould growth in contradiction to a theoretical absence of
+P014 L043: mould growth in cases of a deterministic approach.
+P014 L044: Acknowledgements
+P014 L045: The results in this paper have been partially obtained within
+P014 L046: IWT 3E90050 ‘Global performance approach and economic analysis
+P014 L047: of interior insulation with regard to renovation projects ’ funded by
+P014 L048: the Flemish Government and KUL OT/09/23 ‘Towards a reliable
+P014 L049: application of interior insulation for the retroﬁ t of existing build-
+P014 L050: ings’ funded by the K.U. Leuven. These ﬁnancial supports are
+P014 L051: gratefully acknowledged.
+P014 L052: Nomenclature
+P014 L053: Symbols
+P014 L054: C decline coefﬁcient, e
+P014 L055: f daily frequency, /day
+P014 L056: M mould index, e
+P014 L057: mr
+P014 L058: medium resistnant
+P014 L059: r resistant
+P014 L060: RH relative humidity, %
+P014 L061: s sensitive
+P014 L062: SQ surface quality
+P014 L063: t time, h or day
+P014 L064: vs very sensitive
+P014 L065: W wood species
+P014 L066: Greek symbols
+P014 L067: s temperature ratio, e
+P014 L068: q temperature, /C14 C
+P014 L069: Subscripts
+P014 L070: crit critical
+P014 L071: e outside
+P014 L072: i inside
+P014 L073: mat material
+P014 L074: max maximum
+P014 L075: min minimum
+P014 L076: r recovery
+P014 L077: s surface
+P014 L078: T temperature
+P014 L079: Abbreviations
+P014 L080: A. Aspergillus
+P014 L081: IEA International Energy Agency
+P014 L082: LIM Lowest isopleth for mould
+P014 L083: TOW time-of-wetness
+P014 L084: References
+P014 L085: [1] Platt SD, Martin CJ, Hunt SM, Lewis CW. Damp housing, mould growth, and
+P014 L086: symptomatic health state. Br Med J 1989;298:1673 e8.
+P014 L087: [2] Lacey J. Indoor aerobiology and health. In: Singh J, editor. Building mycology.
+P014 L088: London: Chapman & Hall; 1994. p. 77 e129.
+P014 L089: [3] Baughman AV, Arens EA. Indoor humidity and human health e part I: liter-
+P014 L090: ature review of health effects of humidity-in ﬂuenced indoor pollutants.
+P014 L091: ASHRAE Trans 1996;102(1):193 e211.
+P014 L092: [4] Piecková E, Jesenská Z. Microscopic fungi in dwellings and their health
+P014 L093: implications. Ann Agric Environ Med 1999;6(1):1 e11.
+P014 L094: [5] Burr ML, Matthews IP, Arthur RA, Watson HL, Gregory CJ, Dunstan FDJ, et al.
+P014 L095: Effects on patients with asthma of eradicating visible indoor mould: a rand-
+P014 L096: omised controlled trial. Thorax 2007;62:767 e72.
+P014 L097: [6] Kort HSM. A structured approach to allergen avoidance in dwellings, with
+P014 L098: a special emphasis on the ecosystem of humid indoor walls and room parti-
+P014 L099: tions. Doctoral Thesis, The Netherlands; 1994.
+P014 L100: [7] WHO guidelines for indoor air quality: dampness and mould. World Health
+P014 L101: Organization, ISBN 978 92 890 4168 3; 2009.
+P014 L102: [8] IEA-Annex 14. Condensation and energy. Acco, Leuven: Source Book; 1990.
+P014 L103: [9] Moisture, microbes and health effects: indoor air quality and moisture in
+P014 L104: buildings. Conference Proceedings IAQ. San Francisco: ASHRAE; 2001.
+P014 L105: [10] Boutin-Forzano S, Charpin-Kadouch C, Chabbi S, Bennedjai N, Dumon H,
+P014 L106: Charpin D. Wall relative humidity: a simple and reliable index for predicting
+P014 L107: Stachybotrys chartarum infestation in dwellings. Indoor Air 2004;14:196 e9.
+P014 L108: [11] Rousseau J. Rain penetration and moisture damage in residential construction.
+P014 L109: NRCC; 1983.
+P014 L110: [12] HUD. Building moisture and durability: past, present and future. Washington,
+P014 L111: DC: U.S. Department of Housing and Urban Development; 2004.
+P014 L112: [13] Adan O. On the fungal defacement of interior ﬁnishes. Doctoral Thesis, The
+P014 L113: Netherlands; 1994.
+P014 L114: [14] Sedlbauer K. Beurteilung von Schimmelpilzbildung auf und in Bauteilen,
+P014 L115: Dissertation Universität Stuttgart; 2001.
+P014 L116: [15] Hens H. Fungal defacement in buildings, a performance related approach. Int J
+P014 L117: Heating Ventilation Air-Conditioning Refrigerat Res 1999;5(3):265 e89.
+P014 L118: [16] IEA-Annex 14. Condensation and energy. Guidelines and practice. Leuven:
+P014 L119: Acco; 1990.
+P014 L120: [17] Hens H. Mold in dwellings: ﬁeld studies in a moderate climate. Annex 41,
+P014 L121: Subtask 4, Kyoto meeting; 2006.
+P014 L122: [18] ISO 13788. Hygrothermal performance of building components and building
+P014 L123: elements (Internal surface temperature to avoid critical surface humidity and
+P014 L124: interstitial condensation); 2001.
+P014 L125: [19] Johansson S, Wadsö L, Sandin K. Estimation of mould growth levels on
+P014 L126: rendered façades on surface relative humidity and surface temperature
+P014 L127: measurements. Build Environ 2010;45:1153 e60.
+P014 L128: [20] Abe K, Nagao Y, Nakada T, Sakuma S. Assessment of indoor climate in an
+P014 L129: apartment by use of a fungal index. Appl Environ Microbiol 1996;62(3):
+P014 L130: 959e63.
+P014 L131: [21] Abe K. Assessment of home environments with a fungal index using hydro-
+P014 L132: philic and xerophilic fungi as biological sensors. Indoor Air; 2011.
+P014 L133: doi:10.1111/j.1600-0668.2011.00752.x
+P014 L134: .
+P014 L135: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310 309
+
+===== PAGE 15 =====
+P015 L001: [22] Abe K. Comparison of computed measured fungal index in ﬁeld. Proc Healthy
+P015 L002: Buildings 2006;II.
+P015 L003: [23] Abe K, Kawakami Y, Humano T, Imai Y, Iso K. Measured fungal index deter-
+P015 L004: mined using fungal growth and computed fungal index based on temperature
+P015 L005: and relative humidity in houses. In: Proceedings of the sixth international
+P015 L006: conference on indoor air quality, ventilation and energy in buildings, vol. 1;
+P015 L007: 2007. 296 e301.
+P015 L008: [24] Abe K. Assessment of the environmental conditions in a museum storehouse
+P015 L009: by use of a fungal index. Int Biodeteriorat Biodegrad 2010;64:32 e40.
+P015 L010: [25] Hukka A, Viitanen HA. A mathematical model for mould growth on wooden
+P015 L011: material. Wood Sci Technol 1999;33:475 e85.
+P015 L012: [26] Viitanen H. Factors affecting the development of mould growth and brown rot
+P015 L013: decay in wooden materials and wooden structures, effect of humidity,
+P015 L014: temperature and exposure time. PhD thesis, Uppsala, The Swedish University
+P015 L015: of Agrocultural Science, Departemnt of Forest Products; 1996.
+P015 L016: [27] Viitanen H, Vinha J, Salminen K, Ojanen T, Peuhkuri R, Paajanen L, et al.
+P015 L017: Moisture and bio-deterioration risk of building materials and structures. J
+P015 L018: Build Phys 2010;33(3):201 e23.
+P015 L019: [28] Ojanen T, Peuhkuri R, Viitanen H, Lähdesmäki K, Vinha J, Salminen K.
+P015 L020: Classiﬁcation of material sensitivity e new approach for mould growth
+P015 L021: modeling. In: 9th Nordic symposium on building physics, vol. 2; 2011.
+P015 L022: 867e874.
+P015 L023: [29] Vinha J. Hygrothermal performance of timber-framed external walls in
+P015 L024: Finnish climatic conditions: a method for determining the sufﬁ cient water
+P015 L025: vapour resistance of the interior lining of a wall assembly. Doctoral thesis,
+P015 L026: Tampere, Tampere University of Technology, Department of Civil Engi-
+P015 L027: neering; 2007.
+P015 L028: [30] Ojanen T, Viitanen H, Peuhkuri R, Lähdesmäki K, Vinha J, Salminen K. Mold
+P015 L029: growth modelling of building structures using sensitivity classes of materials.
+P015 L030: Proceedings Buildings XI, Florida; December 2010.
+P015 L031: [31] Lähdesmäki K, Vinha J, Viitanen H, Salminen K, Peuhkuri R, Ojanen T, et al.
+P015 L032: Development of an improved model for mould growth: Laboratory and ﬁeld
+P015 L033: experiments. Proceedings of 8th Nordic Symposium on building Physics,
+P015 L034: Copenhagen; 2008.
+P015 L035: [32] Viitanen J, Ojanen T. Improved model to predict mold growth in building
+P015 L036: materials. Thermal performance of the exterior envelopes of whole buildings
+P015 L037: X e proceedings; 2007.
+P015 L038: [33] Ayerst G. The effect of moisture and temperature on growth and spore
+P015 L039: germination in some fungi. J Stored Products Res 1969;5:127 e41.
+P015 L040: [34] Smith SL, Hill ST. In ﬂuence of temperature and water activity on germination
+P015 L041: and growth of Aspergillus restrictus and A. versicolor. Trans Br Mycol Soc 1982;
+P015 L042: 79:558e60.
+P015 L043: [35] Clarke JA, Johnstone CM, Kelly NJ, McLean RC, Anderson JA, Rowan NJ, et al. A
+P015 L044: technique for the prediction of the conditions leading to mould growth in
+P015 L045: buildings. Build Environ 1999;34:515 e21.
+P015 L046: [36] Rowan N, Johnstone C, Craig R, Anderson J, Clarke J. Prediction of toxigenic
+P015 L047: fungal growth in buildings by using a novel modelling system. Appl Environ
+P015 L048: Microbiol; 1999:4814 e21.
+P015 L049: [37] Krus M, Sedlbauer K. Brauchen wir Gefährdungsklassen für schimmelpilze zur
+P015 L050: Beurteilung von Baukonstruktionen? (Do we need hazardous classes of mould
+P015 L051: fungi for the assessment of building parts?), Tagungsbeitrag für das 11.
+P015 L052: Bauklimatische Symposium der TU Dresden; 2002. p. 790 e802.
+P015 L053: [38] Sedlbauer S, Martin K. US 2003/0187579 A1 Method for predicting the forma-
+P015 L054: tion of mould fungi. United States Patent Application Publication;. Oct. 2, 2003.
+P015 L055: [39] Moon HJ. Assessing mold risk in buildings uncertainty. Ph.D. thesis, Georgia
+P015 L056: Institute of Technology; 2005.
+P015 L057: [40] Krus M, Kilian R, Sedlbauer K. Mould growth prediction by computational
+P015 L058: simulation on historical buildings. In: Pad ﬁeld T, Borchersen K, editors.
+P015 L059: Museum microclimates. National Museum of Denmark; 2007.
+P015 L060: [41] WTA Merkblatt 6-3-05/D. Rechnerische Prognose des Schimmelpilzwach-
+P015 L061: stumsrisikos. Fraunhofer IRB Verslag; 2006.
+P015 L062: [42] WUFI, 2005. WUFI-Bio. Available from: http://www.hoki.ibp.fhg.de/wuﬁ/
+P015 L063: downloads_e.html.
+P015 L064: [43]
+P015 L065: Krus M, Seidler M, Sedlbauer K. Comparative evaluation of the predictions of
+P015 L066: two established mold growth models. Proceedings Buildings XI, Florida;,
+P015 L067: December 2010.
+P015 L068: [44] Vereecken E, Saelens D, Roels S. A comparison of different mould prediction
+P015 L069: models. Proceedings Building Simulation; 2011.
+P015 L070: E. Vereecken, S. Roels / Building and Environment 51 (2012) 296 e310310
