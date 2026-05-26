@@ -68,7 +68,6 @@ export function Sidebar({ currentPage, onPageChange, onLogout, recentAlerts = []
   const { t } = useTranslation();
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
-  const [bellOpen, setBellOpen] = useState(false);
   const userEmail = auth.currentUser?.email || 'admin@moldprev.io';
 
   const navItems = getNavItems(t);
@@ -164,7 +163,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout, recentAlerts = []
                 </Tooltip>
               </TooltipProvider>
 
-              <PopoverContent className="w-auto rounded-2xl border border-slate-200 bg-white p-3 text-slate-900 shadow-xl dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" side="top" align="center" sideOffset={8}>
+              <PopoverContent className="w-auto rounded-none border border-slate-200 bg-white p-3 text-slate-900 shadow-xl dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" side="top" align="center" sideOffset={8}>
                 <div className="flex flex-col gap-2">
                   <p className="text-center text-sm font-medium text-slate-900 dark:text-white">{t('nav.logoutConfirmMobile')}</p>
                   <div className="flex items-center gap-2">
@@ -254,87 +253,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout, recentAlerts = []
             </DropdownMenuContent>
           </DropdownMenu>
 
-            <Popover open={bellOpen} onOpenChange={setBellOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  className="relative rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:text-zinc-400 dark:hover:bg-zinc-800/60"
-                  aria-label={t('nav.notifications')}
-                >
-                  <Bell className="h-5 w-5" />
-                  {recentAlerts.length > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white">
-                      {recentAlerts.length > 9 ? '9+' : recentAlerts.length}
-                    </span>
-                  )}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                sideOffset={8}
-                className="w-80 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-0 shadow-2xl dark:border-white/10 dark:bg-zinc-950"
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-slate-200/60 px-4 py-3 dark:border-white/10">
-                  <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
-                    {t('nav.notifications')}
-                  </span>
-                  {recentAlerts.length > 0 && (
-                    <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-500">
-                      {recentAlerts.length}
-                    </span>
-                  )}
-                </div>
-
-                {/* Alert list */}
-                {recentAlerts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-                    <Bell className="h-8 w-8 text-slate-300 dark:text-zinc-600" />
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">{t('nav.noAlerts')}</p>
-                  </div>
-                ) : (
-                  <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
-                    {recentAlerts.slice(0, 5).map((alert) => {
-                      const maxProb = Math.max(alert.generalMoldProbability ?? 0, alert.blackMoldProbability ?? 0);
-                      const dotColor = maxProb >= 80 ? 'bg-red-500' : maxProb >= 40 ? 'bg-amber-500' : 'bg-emerald-500';
-                      return (
-                        <div key={alert.id} className="px-4 py-3 transition-colors hover:bg-slate-50 dark:hover:bg-zinc-800/40">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex min-w-0 items-center gap-2">
-                              <span className={`mt-0.5 h-2 w-2 flex-shrink-0 rounded-full ${dotColor}`} />
-                              <span className="truncate text-sm font-medium text-slate-900 dark:text-zinc-100">
-                                {alert.deviceID}
-                              </span>
-                            </div>
-                            <span className="flex-shrink-0 whitespace-nowrap text-xs text-zinc-400">
-                              {alertTimeAgo(alert.timestamp)}
-                            </span>
-                          </div>
-                          {alert.message && (
-                            <p className="mt-1 ml-4 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-400">
-                              {alert.message}
-                            </p>
-                          )}
-                          <div className="mt-1.5 ml-4 flex gap-3 text-xs text-zinc-400">
-                            <span>General: <strong className="text-zinc-600 dark:text-zinc-300">{(alert.generalMoldProbability ?? 0).toFixed(1)}%</strong></span>
-                            <span>Black: <strong className="text-zinc-600 dark:text-zinc-300">{(alert.blackMoldProbability ?? 0).toFixed(1)}%</strong></span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Footer */}
-                <div className="border-t border-slate-200/60 px-4 py-2.5 dark:border-white/10">
-                  <button
-                    onClick={() => { onPageChange('reports'); setBellOpen(false); }}
-                    className="text-xs font-medium text-emerald-500 transition-colors hover:text-emerald-600"
-                  >
-                    {t('nav.viewAllAlerts')} →
-                  </button>
-                </div>
-              </PopoverContent>
-            </Popover>
+            {/* Mobile notifications removed per request */}
           </div>
         </div>
       </header>
@@ -362,7 +281,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout, recentAlerts = []
 
       {/* Logout Alert Dialog */}
       <AlertDialog open={showLogoutAlert} onOpenChange={setShowLogoutAlert}>
-        <AlertDialogContent className="gap-3 border border-slate-200/80 bg-white text-slate-900 shadow-2xl w-[calc(100%-3rem)] max-w-[17rem] p-4 sm:w-[calc(100%-2.5rem)] sm:max-w-[18rem] md:w-full md:max-w-sm md:p-5 dark:border-white/10 dark:bg-zinc-950 dark:text-white">
+        <AlertDialogContent className="rounded-none gap-3 border border-slate-200/80 bg-white text-slate-900 shadow-2xl w-[calc(100%-3rem)] max-w-[17rem] p-4 sm:w-[calc(100%-2.5rem)] sm:max-w-[18rem] md:w-full md:max-w-sm md:p-5 dark:border-white/10 dark:bg-zinc-950 dark:text-white">
           <div className="text-center">
             <AlertDialogTitle className="text-lg font-semibold text-slate-900 md:text-xl dark:text-white">
               {t('nav.logoutConfirmWeb')}
