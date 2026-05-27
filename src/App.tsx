@@ -22,19 +22,6 @@ import { useTheme } from 'next-themes';
 import { useTranslation } from 'react-i18next';
 import type { RoomData } from '@/types';
 
-function chunkArr<T>(arr: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
-
-function toMs(ts: any): number {
-  if (!ts) return 0;
-  if (typeof ts.toMillis === 'function') return ts.toMillis();
-  if (typeof ts.toDate === 'function') return ts.toDate().getTime();
-  return new Date(ts).getTime();
-}
-
 // Navigation context to share between Sidebar and App
 export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings' | 'about';
 export type AuthPageId = 'login' | 'forgot-password' | 'signup';
@@ -133,7 +120,6 @@ function App() {
   const [roomData, setRoomData] = useState<RoomData | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [authPage, setAuthPage] = useState<AuthPageId>('login');
-  const [recentAlerts, setRecentAlerts] = useState<any[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const { setTheme } = useTheme();
 
@@ -239,35 +225,6 @@ function App() {
   useEffect(() => {
     setIsDataLoading(true);
   }, [roomData?.deviceID]);
-
-  // Lightweight alerts listener for the notification bell
-  useEffect(() => {
-    if (!isAuthenticated || availableRooms.length === 0) {
-      setRecentAlerts([]);
-      return;
-    }
-    const deviceIds = availableRooms.map((r) => r.deviceID).filter(Boolean);
-    if (deviceIds.length === 0) return;
-
-    const chunks = chunkArr(deviceIds, 10);
-    const byChunk: Record<number, any[]> = {};
-    const unsubs: (() => void)[] = [];
-
-    chunks.forEach((chunk, idx) => {
-      const q = query(collection(db, 'AnalyticsAlerts'), where('deviceID', 'in', chunk));
-      const unsub = onSnapshot(q, (snap) => {
-        byChunk[idx] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        const merged = Object.values(byChunk).flat();
-        merged.sort((a, b) => toMs(b.timestamp) - toMs(a.timestamp));
-        setRecentAlerts(merged.slice(0, 10));
-      }, (err: any) => {
-        if (err?.code !== 'permission-denied') console.error('[App] Alerts bell error:', err);
-      });
-      unsubs.push(unsub);
-    });
-
-    return () => unsubs.forEach((u) => u());
-  }, [availableRooms.map((r) => r.id).join(','), isAuthenticated]);
 
   // Handle room selection from Rooms page
   const handleRoomSelect = useCallback((roomId: string) => {
@@ -554,7 +511,7 @@ function App() {
 
       {/* Top bar + bottom nav - only show when authenticated */}
       {isAuthenticated && (
-        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} recentAlerts={recentAlerts} />
+        <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} />
       )}
 
       {/* Main Content */}
