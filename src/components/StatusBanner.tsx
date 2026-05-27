@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Shield, AlertTriangle, AlertCircle } from 'lucide-react';
 import type { RoomStatus } from '@/types';

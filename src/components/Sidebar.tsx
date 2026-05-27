@@ -9,7 +9,6 @@ import {
   LogOut,
   ChevronDown,
   Info,
-  Bell,
 } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { auth } from '@/lib/firebase';
@@ -52,19 +51,9 @@ interface SidebarProps {
   currentPage: PageId;
   onPageChange: (page: PageId) => void;
   onLogout?: () => void;
-  recentAlerts?: any[];
 }
 
-function alertTimeAgo(ts: any): string {
-  if (!ts) return '';
-  const d: Date = typeof ts.toDate === 'function' ? ts.toDate() : new Date(ts);
-  const secs = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (secs < 60) return `${secs}s ago`;
-  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
-  return `${Math.floor(secs / 3600)}h ago`;
-}
-
-export function Sidebar({ currentPage, onPageChange, onLogout, recentAlerts = [] }: Readonly<SidebarProps>) {
+export function Sidebar({ currentPage, onPageChange, onLogout }: Readonly<SidebarProps>) {
   const { t } = useTranslation();
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
