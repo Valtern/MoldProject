@@ -353,15 +353,34 @@
     "features": {
       "title": "Technology Highlights",
       "items": {
-        "Cloud-First Architecture": { "description": "Sensor data is processed and stored centrally in the cloud for real-time access from anywhere." },
-        "IoT Sensor Network": { "description": "A smart sensor network monitors humidity, temperature, and mold risk continuously." },
-        "AI-Powered Prevention": { "description": "Machine learning models predict mold growth risk before it is visible." },
-        "Proactive Control": { "description": "Automated control of devices like dehumidifiers and fans to maintain healthy environments." }
+        "cloudFirst": {
+          "title": "Cloud-First Architecture",
+          "description": "Sensor data is processed and stored centrally in the cloud for real-time access from anywhere."
+        },
+        "iotNetwork": {
+          "title": "IoT Sensor Network",
+          "description": "A smart sensor network monitors humidity, temperature, and mold risk continuously."
+        },
+        "aiPrevention": {
+          "title": "AI-Powered Prevention",
+          "description": "Machine learning models predict mold growth risk before it is visible."
+        },
+        "proactiveControl": {
+          "title": "Proactive Control",
+          "description": "Automated control of devices like dehumidifiers and fans to maintain healthy environments."
+        }
       }
     },
-    "team": { "title": "Development Team" },
+    "team": { "title": "Development Team", "group": "Group 2", "role": "Developer" },
     "lecturers": { "title": "Supervising Lecturers" },
-    "institution": { "title": "Institution" },
-    "cta": { "pilot": "We are seeking pilot customers for 1–3 month field trials. Schedule a 20-minute demo to get started." }
+    "institution": {
+      "title": "Institution",
+      "program": "D-IV Informatics Engineering Study Program",
+      "department": "Department of Information Technology",
+      "campus": "State Polytechnic of Malang",
+      "tagline": "Innovation through Cloud & IoT Integration"
+    },
+    "cta": { "pilot": "We are seeking pilot customers for 1–3 month field trials. Schedule a 20-minute demo to get started." },
+    "footer": "© 2026 MoldGuard — Smart Mold Prevention System"
   }
 }
