@@ -70,29 +70,20 @@ export function AboutPage() {
 
             <div className="relative">
               {/* Logo row */}
-              <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
                   <Shield className="h-5 w-5 text-white" strokeWidth={2} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold leading-tight text-white">MoldGuard</p>
-                  <p className="text-sm text-white/80">Smart Mold Prevention System</p>
+                <p className="text-2xl font-bold leading-tight text-white">{t('about.hero.title')}</p>
+                <p className="text-sm text-white/80">{t('about.hero.subtitle')}</p>
                 </div>
               </div>
 
               {/* Description */}
-              <p className="max-w-2xl text-sm leading-relaxed text-white/90 md:text-base">
-                MoldGuard adalah{' '}
-                <span className="font-semibold text-white">
-                  Smart Mold Prevention System berbasis IoT
-                </span>{' '}
-                dengan arsitektur{' '}
-                <span className="font-semibold text-white">cloud-first</span>{' '}
-                yang dirancang untuk mendeteksi, memantau, dan mencegah pertumbuhan jamur di ruangan
-                secara otomatis. Sistem ini menggabungkan kekuatan sensor IoT, komputasi awan, dan
-                kecerdasan buatan untuk menciptakan lingkungan hunian yang lebih sehat, nyaman, dan
-                terkendali.
-              </p>
+            <p className="max-w-2xl text-sm leading-relaxed text-white/90 md:text-base">
+              {t('about.hero.description')}
+            </p>
             </div>
           </div>
 
@@ -100,38 +91,20 @@ export function AboutPage() {
           <div className="rounded-2xl border border-zinc-100 bg-white px-7 py-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mb-4 flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-blue-500 flex-shrink-0" strokeWidth={2} />
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Tentang Proyek</h2>
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('about.project.title')}</h2>
             </div>
-            <p className="mb-3 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400 md:text-base">
-              MoldGuard merupakan bentuk{' '}
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                implementasi terintegrasi
-              </span>{' '}
-              dari mata kuliah{' '}
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                Cloud Computing
-              </span>{' '}
-              dan{' '}
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                Pemrograman Berbasis Framework (PBF)
-              </span>
-              . Proyek ini menggabungkan konsep komputasi awan untuk pemrosesan data sensor berskala
-              besar dengan praktik pengembangan aplikasi modern berbasis framework, menghasilkan
-              platform yang skalabel, responsif, dan siap digunakan di lingkungan nyata.
-            </p>
-            <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400 md:text-base">
-              Dengan pendekatan{' '}
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">cloud-first</span>
-              , seluruh data dari node sensor IoT dikirim, dianalisis, dan disajikan melalui
-              dashboard web dan mobile yang intuitif sehingga pengguna dapat melakukan monitoring
-              serta kontrol perangkat secara real-time dari perangkat apa pun.
-            </p>
+          <p className="mb-3 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400 md:text-base">
+            {t('about.project.p1')}
+          </p>
+          <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400 md:text-base">
+            {t('about.project.p2')}
+          </p>
           </div>
 
           {/* ── Keunggulan Teknologi ── */}
           <div>
             <h2 className="mb-4 text-lg font-bold text-zinc-900 dark:text-zinc-100">
-              Keunggulan Teknologi
+            {t('about.features.title')}
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {features.map(({ icon: Icon, title, description }) => (
@@ -150,9 +123,9 @@ export function AboutPage() {
                   <h3 className="mb-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">
                     {title}
                   </h3>
-                  <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                    {description}
-                  </p>
+                <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  {t(`about.features.items.${title}.description`, { defaultValue: description })}
+                </p>
                 </div>
               ))}
             </div>

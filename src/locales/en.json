@@ -338,4 +338,30 @@
     "switchToLight": "Switch to light mode",
     "switchToDark": "Switch to dark mode"
   }
+  ,
+  "about": {
+    "hero": {
+      "title": "MoldGuard",
+      "subtitle": "Smart Mold Prevention System",
+      "description": "MoldGuard is a cloud-first Smart Mold Prevention System using IoT sensors, cloud processing, and AI to detect, monitor, and prevent mold growth in indoor spaces. It provides real-time insights and automated alerts so facilities can act before damage occurs."
+    },
+    "project": {
+      "title": "About the Project",
+      "p1": "MoldGuard is an integrated implementation project for Cloud Computing and Framework-Based Programming (PBF) coursework. It combines cloud processing for large-scale sensor data with modern framework development practices to deliver a scalable, responsive platform ready for real-world use.",
+      "p2": "Using a cloud-first approach, sensor node data is sent, analyzed, and presented through an intuitive web and mobile dashboard so users can monitor and control devices in real-time from any device."
+    },
+    "features": {
+      "title": "Technology Highlights",
+      "items": {
+        "Cloud-First Architecture": { "description": "Sensor data is processed and stored centrally in the cloud for real-time access from anywhere." },
+        "IoT Sensor Network": { "description": "A smart sensor network monitors humidity, temperature, and mold risk continuously." },
+        "AI-Powered Prevention": { "description": "Machine learning models predict mold growth risk before it is visible." },
+        "Proactive Control": { "description": "Automated control of devices like dehumidifiers and fans to maintain healthy environments." }
+      }
+    },
+    "team": { "title": "Development Team" },
+    "lecturers": { "title": "Supervising Lecturers" },
+    "institution": { "title": "Institution" },
+    "cta": { "pilot": "We are seeking pilot customers for 1–3 month field trials. Schedule a 20-minute demo to get started." }
+  }
 }

@@ -338,4 +338,30 @@
     "switchToLight": "Beralih ke mode terang",
     "switchToDark": "Beralih ke mode gelap"
   }
+  ,
+  "about": {
+    "hero": {
+      "title": "MoldGuard",
+      "subtitle": "Smart Mold Prevention System",
+      "description": "MoldGuard adalah sistem pencegahan jamur berbasis cloud-first yang memanfaatkan sensor IoT, pemrosesan cloud, dan AI untuk mendeteksi, memantau, dan mencegah pertumbuhan jamur di ruang dalam. Memberikan wawasan real-time dan peringatan otomatis sehingga fasilitas dapat bertindak sebelum kerusakan terjadi."
+    },
+    "project": {
+      "title": "Tentang Proyek",
+      "p1": "MoldGuard adalah implementasi terintegrasi untuk mata kuliah Cloud Computing dan Pemrograman Berbasis Framework (PBF). Proyek ini menggabungkan pemrosesan cloud untuk data sensor berskala besar dengan praktik pengembangan framework modern untuk menghasilkan platform yang skalabel dan responsif.",
+      "p2": "Dengan pendekatan cloud-first, data node sensor dikirim, dianalisis, dan disajikan melalui dashboard web dan mobile yang intuitif sehingga pengguna dapat memantau dan mengontrol perangkat secara real-time dari perangkat apa pun."
+    },
+    "features": {
+      "title": "Keunggulan Teknologi",
+      "items": {
+        "Cloud-First Architecture": { "description": "Data sensor diproses dan disimpan secara terpusat di cloud untuk akses real-time dari mana saja." },
+        "IoT Sensor Network": { "description": "Jaringan sensor pintar memantau kelembapan, suhu, dan risiko jamur secara berkelanjutan." },
+        "AI-Powered Prevention": { "description": "Model pembelajaran mesin memprediksi risiko pertumbuhan jamur sebelum terlihat." },
+        "Proactive Control": { "description": "Kontrol otomatis perangkat seperti dehumidifier dan kipas untuk menjaga lingkungan sehat." }
+      }
+    },
+    "team": { "title": "Tim Pengembang" },
+    "lecturers": { "title": "Dosen Pembimbing" },
+    "institution": { "title": "Institusi" },
+    "cta": { "pilot": "Kami mencari pelanggan pilot untuk uji lapangan 1–3 bulan. Jadwalkan demo 20 menit untuk memulai." }
+  }
 }
