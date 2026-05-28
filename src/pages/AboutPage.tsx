@@ -10,6 +10,7 @@ import {
   BookOpen,
   Sparkles,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const teamMembers = [
   { number: 1, name: 'Antonius Kaharap Kautsar', role: 'Developer' },
@@ -52,6 +53,8 @@ const features = [
 ];
 
 export function AboutPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="w-full max-w-[1280px] mx-auto transition-all">
       <div className="px-3 py-3 md:p-6 lg:p-8">
