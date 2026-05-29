@@ -69,6 +69,16 @@ const authenticateESP32 = (req, res, next) => {
     next();
 };
 
+// 5.5. Root Health Check Route
+// Prevents "Cannot GET /" error and provides basic service status
+app.get('/', cors(corsOptions), (req, res) => {
+    res.status(200).json({
+        service: "MoldGuard ESP32 API",
+        status: "online",
+        region: "asia-southeast2"
+    });
+});
+
 // 6. Application Route
 app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async (req, res) => {
     try {
@@ -119,13 +129,13 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
                 firstSeen: admin.firestore.FieldValue.serverTimestamp(),
                 lastSeen: admin.firestore.FieldValue.serverTimestamp()
             });
-            console.log(`[esp32api] New unclaimed device registered: ${validatedData.deviceID}`);
+            logger.info(`[esp32api] New unclaimed device registered: ${validatedData.deviceID}`);
         } else {
             // Device exists — only update the heartbeat timestamp.
             // CRITICAL: Never overwrite status, userId, or name to protect ownership state.
-            await devicesQuery.docs[0].ref.set({
+            await devicesQuery.docs[0].ref.update({
                 lastSeen: admin.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            });
 
             // Extract control fields from the device document for the response
             const deviceData = devicesQuery.docs[0].data();
@@ -158,7 +168,7 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
             });
         }
 
-        console.error("Firestore push error:", error);
+        logger.error("Firestore push error:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -220,7 +230,7 @@ app.get('/api/run-backup', cors(corsOptions), async (req, res) => {
         ];
         const snapshotCollections = ['Devices', 'Settings'];
 
-        console.log(`[Backup] Starting backup cycle at ${new Date(now).toISOString()}`);
+        logger.info(`[Backup] Starting backup cycle`, { timestamp: new Date(now).toISOString() });
 
         for (const col of incrementalCollections) {
             const lastTimestamp = state[`last_${col.name}_ts`] || new admin.firestore.Timestamp(0, 0);
@@ -260,11 +270,11 @@ app.get('/api/run-backup', cors(corsOptions), async (req, res) => {
             lastManifest: backupManifest
         }, { merge: true });
 
-        console.log(`[Backup] SUCCESS: Backed up ${Object.keys(backupManifest).join(', ')}`);
+        logger.info(`[Backup] SUCCESS: Backed up ${Object.keys(backupManifest).join(', ')}`);
         return res.status(200).send(`Backup successful: ${Object.keys(backupManifest).join(', ')}`);
 
     } catch (error) {
-        console.error("[Backup] CRITICAL ERROR:", error.message);
+        logger.error("[Backup] CRITICAL ERROR", { message: error.message });
         return res.status(500).send('Backup failed. Check logs.');
     }
 });
@@ -288,18 +298,18 @@ exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', regi
     const logData = event.data.data();
 
     if (!logData) {
-        console.warn('[checkMoldRisk] Abort: Trigger fired but event data is null/undefined.');
+        logger.warn('[checkMoldRisk] Abort: Trigger fired but event data is null/undefined.');
         return;
     }
 
-    console.log(`[checkMoldRisk] Trigger fired for document SensorLogs/${event.params.logId}, deviceID: ${logData.deviceID}, humidity: ${logData.humidity}`);
+    logger.info(`[checkMoldRisk] Trigger fired`, { logId: event.params.logId, deviceID: logData.deviceID, humidity: logData.humidity });
 
     const deviceID = logData.deviceID;
     // Query by deviceID field since documents use auto-generated IDs
     const devicesQuery = await db.collection('Devices').where('deviceID', '==', deviceID).limit(1).get();
 
     if (devicesQuery.empty) {
-        console.warn(`[checkMoldRisk] Abort: No device document found for deviceID: ${deviceID}`);
+        logger.warn(`[checkMoldRisk] Abort: No device document found for deviceID: ${deviceID}`);
         return;
     }
 
@@ -309,18 +319,18 @@ exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', regi
     const userId = deviceData.userId;
 
     if (!userId) {
-        console.warn(`[checkMoldRisk] Abort: Device ${deviceID} has no assigned userId field.`);
+        logger.warn(`[checkMoldRisk] Abort: Device ${deviceID} has no assigned userId field.`);
         return;
     }
 
-    console.log(`[checkMoldRisk] Resolved userId: ${userId} from device: ${deviceID} (docId: ${deviceSnap.id})`);
+    logger.info(`[checkMoldRisk] Resolved userId: ${userId} from device: ${deviceID}`);
 
     // Query the exact Settings document for this user
     const settingsRef = db.collection('Settings').doc(userId);
     const settingsSnap = await settingsRef.get();
 
     if (!settingsSnap.exists) {
-        console.warn(`[checkMoldRisk] Abort: No Settings document found for userId: ${userId}`);
+        logger.warn(`[checkMoldRisk] Abort: No Settings document found for userId: ${userId}`);
         return;
     }
 
@@ -333,7 +343,7 @@ exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', regi
 
     // Abort if email is missing/invalid or alerts disabled
     if (!alertsEnabled || !alertEmail || alertEmail.trim() === '') {
-        console.warn(`[checkMoldRisk] Abort: Alerts disabled or email missing for userId: ${userId} (alertsEnabled=${alertsEnabled}, alertEmail=${alertEmail})`);
+        logger.warn(`[checkMoldRisk] Abort: Alerts disabled or email missing`, { userId, alertsEnabled, alertEmail });
         return;
     }
 
@@ -342,11 +352,11 @@ exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', regi
 
     // Only proceed if humidity exceeds the critical threshold
     if (logData.humidity <= threshold) {
-        console.log(`[checkMoldRisk] No alert needed: humidity ${logData.humidity}% is within safe threshold of ${threshold}%.`);
+        logger.info(`[checkMoldRisk] No alert needed: humidity ${logData.humidity}% is safe.`);
         return;
     }
 
-    console.log(`[checkMoldRisk] THRESHOLD EXCEEDED: humidity ${logData.humidity}% > ${threshold}% for device ${deviceID}. Proceeding to hysteresis check.`);
+    logger.info(`[checkMoldRisk] THRESHOLD EXCEEDED`, { humidity: logData.humidity, threshold, deviceID });
 
     const lastAlertSent = deviceData.lastAlertSent;
     // Hysteresis: Check if an alert was sent in the last 3 hours
@@ -354,21 +364,21 @@ exports.checkMoldRisk = onDocumentCreated({ document: 'SensorLogs/{logId}', regi
         const threeHoursAgo = Date.now() - (3 * 60 * 60 * 1000);
         const timeSinceLastAlert = Date.now() - lastAlertSent.toMillis();
         if (lastAlertSent.toMillis() > threeHoursAgo) {
-            console.warn(`[checkMoldRisk] Abort: Alert for ${deviceID} suppressed by hysteresis. Last alert was ${Math.round(timeSinceLastAlert / 60000)} minutes ago.`);
+            logger.warn(`[checkMoldRisk] Abort: Alert suppressed by hysteresis`, { deviceID, minutesAgo: Math.round(timeSinceLastAlert / 60000) });
             return;
         }
-        console.log(`[checkMoldRisk] Hysteresis passed: last alert for ${deviceID} was ${Math.round(timeSinceLastAlert / 60000)} minutes ago.`);
+        logger.info(`[checkMoldRisk] Hysteresis passed for device ${deviceID}`);
     } else {
-        console.log(`[checkMoldRisk] No previous alert found for ${deviceID}. First alert dispatch.`);
+        logger.info(`[checkMoldRisk] First alert dispatch for device ${deviceID}`);
     }
 
     // ── PUBLISHER: Enqueue email task to Cloud Tasks instead of sending inline ──
     // Optimistic lastAlertSent update BEFORE enqueue to prevent duplicate tasks
     // from rapid-fire sensor logs arriving during queue processing delay.
     try {
-        await deviceRef.set({
+        await deviceRef.update({
             lastAlertSent: admin.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        });
         logger.info(`[checkMoldRisk] Optimistically updated lastAlertSent for device ${deviceID}`);
 
         // Explicit region targeting — prevents silent failure from implicit us-central1 resolution
@@ -407,18 +417,18 @@ exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{
     const alertData = event.data.data();
 
     if (!alertData) {
-        console.warn('[notifyPredictiveAlert] Abort: Trigger fired but event data is null/undefined.');
+        logger.warn('[notifyPredictiveAlert] Abort: Trigger fired but event data is null/undefined.');
         return;
     }
 
-    console.log(`[notifyPredictiveAlert] Trigger fired for AnalyticsAlerts/${event.params.alertId}, deviceID: ${alertData.deviceID}, riskLevel: ${alertData.riskLevel}`);
+    logger.info(`[notifyPredictiveAlert] Trigger fired`, { alertId: event.params.alertId, deviceID: alertData.deviceID, riskLevel: alertData.riskLevel });
 
     const deviceID = alertData.deviceID;
     // Query by deviceID field since documents use auto-generated IDs
     const devicesQuery = await db.collection('Devices').where('deviceID', '==', deviceID).limit(1).get();
 
     if (devicesQuery.empty) {
-        console.warn(`[notifyPredictiveAlert] Abort: No device document found for deviceID: ${deviceID}`);
+        logger.warn(`[notifyPredictiveAlert] Abort: No device document found for deviceID: ${deviceID}`);
         return;
     }
 
@@ -427,18 +437,18 @@ exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{
     const userId = deviceData.userId;
 
     if (!userId) {
-        console.warn(`[notifyPredictiveAlert] Abort: Device ${deviceID} has no assigned userId field.`);
+        logger.warn(`[notifyPredictiveAlert] Abort: Device ${deviceID} has no assigned userId field.`);
         return;
     }
 
-    console.log(`[notifyPredictiveAlert] Resolved userId: ${userId} from device: ${deviceID} (docId: ${deviceSnap.id})`);
+    logger.info(`[notifyPredictiveAlert] Resolved userId: ${userId} from device: ${deviceID}`);
 
     // Query the exact Settings document for this user
     const settingsRef = db.collection('Settings').doc(userId);
     const settingsSnap = await settingsRef.get();
 
     if (!settingsSnap.exists) {
-        console.warn(`[notifyPredictiveAlert] Abort: No Settings document found for userId: ${userId}`);
+        logger.warn(`[notifyPredictiveAlert] Abort: No Settings document found for userId: ${userId}`);
         return;
     }
 
@@ -449,7 +459,7 @@ exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{
 
     // Early exit if disabled or no email
     if (!alertsEnabled || !alertEmail || alertEmail.trim() === '') {
-        console.warn(`[notifyPredictiveAlert] Abort: Alerts disabled or email missing for userId: ${userId} (alertsEnabled=${alertsEnabled}, alertEmail=${alertEmail})`);
+        logger.warn(`[notifyPredictiveAlert] Abort: Alerts disabled or email missing`, { userId });
         return;
     }
 
@@ -467,11 +477,11 @@ exports.notifyPredictiveAlert = onDocumentCreated({ document: 'AnalyticsAlerts/{
     }
 
     if (!emailAlertLevels.includes(riskLevel)) {
-        console.log(`[SKIPPED] Email suppressed for device ${deviceID}. Alert level (${riskLevel}) is not in user's selected levels [${emailAlertLevels.join(', ')}].`);
+        logger.info(`[SKIPPED] Email suppressed for device ${deviceID}. Risk level ${riskLevel} not in user preferences.`);
         return;
     }
 
-    console.log(`[notifyPredictiveAlert] Severity gate passed: alert (${riskLevel}) is in user's selected levels [${emailAlertLevels.join(', ')}]. Proceeding to enqueue email task.`);
+    logger.info(`[notifyPredictiveAlert] Severity gate passed for riskLevel: ${riskLevel}`);
 
     // ── PUBLISHER: Enqueue email task to Cloud Tasks instead of sending inline ──
     try {
@@ -552,6 +562,11 @@ exports.sendAlertEmail = onTaskDispatched(
         if (!type || !to || !deviceID) {
             logger.error('[sendAlertEmail] Malformed task payload — missing required fields', { data: req.data });
             return; // Don't retry malformed payloads (returning normally = task acknowledged)
+        }
+
+        if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+            logger.error('[sendAlertEmail] Missing SMTP credentials in environment variables.');
+            return;
         }
 
         logger.info(`[sendAlertEmail] Processing ${type} alert for device ${deviceID} → ${to}`);
@@ -652,7 +667,7 @@ exports.sendAlertEmail = onTaskDispatched(
             `;
 
         } else {
-            console.error(`[sendAlertEmail] Unknown alert type: "${type}" — skipping.`);
+            logger.error(`[sendAlertEmail] Unknown alert type: "${type}" — skipping.`);
             return; // Don't retry unknown types
         }
 
