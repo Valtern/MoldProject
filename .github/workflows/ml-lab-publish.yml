@@ -3,8 +3,10 @@ name: Build and Publish ML Lab Image
 on:
   workflow_dispatch:
   push:
+    branches: [main, experimental]
     paths:
       - 'deep-learning/**'
+      - '.github/workflows/ml-lab-publish.yml'
 
 permissions:
   contents: read
@@ -32,9 +34,20 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set image name
+      - name: Set image repository
+        id: image
         shell: bash
-        run: echo "IMAGE_REPO=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/moldproject-ml-lab" >> "$GITHUB_ENV"
+        run: echo "repo=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/moldproject-ml-lab" >> "$GITHUB_OUTPUT"
+
+      - name: Generate Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.repo }}
+          tags: |
+            type=ref,event=branch
+            type=sha,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push ML image
         uses: docker/build-push-action@v5
@@ -43,6 +56,7 @@ jobs:
           file: ./deep-learning/docker/Dockerfile
           push: true
           platforms: linux/amd64
-          tags: |
-            ${{ env.IMAGE_REPO }}:latest
-            ${{ env.IMAGE_REPO }}:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ steps.image.outputs.repo }}:buildcache
+          cache-to: type=registry,ref=${{ steps.image.outputs.repo }}:buildcache,mode=max

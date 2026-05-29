@@ -177,26 +177,36 @@ This repository now includes a Docker container build for the frontend app.
 Build locally:
 
 ```bash
-docker build -t moldproject:local .
+npm run docker:build
 ```
 
 Run locally:
 
 ```bash
-docker run --rm -p 4173:80 moldproject:local
+npm run docker:run
 ```
 
 Or use the root docker-compose setup:
 
 ```bash
-docker compose up --build
+npm run docker:up
 ```
 
-Published image link (after GitHub Actions runs on `main`):
+Published image links:
 
-- `ghcr.io/Valtern/moldproject:latest`
+- Package page: `https://github.com/Valtern/MoldProject/pkgs/container/moldproject`
+- Experimental image: `ghcr.io/valtern/moldproject:experimental`
+- Production image: `ghcr.io/valtern/moldproject:latest`
 
-> Note: This is a Docker image registry link. GitHub Actions will publish the image to GitHub Container Registry on every push to `main`.
+GitHub Actions publishes the frontend image to GitHub Container Registry on pushes to `experimental` and `main`. The `latest` tag is only produced from the default branch, while `experimental` and SHA tags are used for branch testing.
+
+### 5. Continuous Delivery
+
+CI runs on every branch and builds the frontend on `experimental` and `main`. The CD workflow deploys Firebase Hosting and Cloud Functions only when changes reach `main`.
+
+Required GitHub repository secret:
+
+- `FIREBASE_TOKEN` — used by `.github/workflows/deploy.yml` for `firebase deploy`
 
 ---
 

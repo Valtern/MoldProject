@@ -8,6 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "docker:build": "docker build -t moldproject:local .",
+    "docker:run": "docker run --rm -p 4173:80 moldproject:local",
+    "docker:up": "docker compose up --build",
     "shell": "npm --prefix functions run shell",
     "serve:backend": "npm --prefix functions run serve",
     "deploy:functions": "npm --prefix functions run deploy"
