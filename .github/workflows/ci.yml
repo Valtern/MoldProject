@@ -114,18 +114,20 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Check if PR already exists
-          EXISTING=$(gh pr list --base main --head experimental --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+          EXISTING=$(gh pr list \
+            --base main \
+            --head experimental \
+            --state open \
+            --json number \
+            --jq '.[0].number')
 
           if [ -n "$EXISTING" ]; then
             echo "PR #$EXISTING already exists from experimental → main. Skipping."
             exit 0
           fi
 
-          # Create new PR
           gh pr create \
             --base main \
             --head experimental \
-            --title "feat: merge experimental into main" \
-            --body "Automated PR from experimental to main" \
-            --label "auto-pr" 2>/dev/null || echo "PR creation may have failed or PR already exists"
+            --title "Merge experimental into main" \
+            --body "Automated PR from experimental to main after CI build passed."
