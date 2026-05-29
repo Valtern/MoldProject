@@ -23,3 +23,5 @@ docker-compose up --build
 ```
 \n\nTriggered ML workflow: 
 2026-05-30 03:23:24Z
+\n\nRetrigger ML workflow: 
+2026-05-30 03:25:07Z
