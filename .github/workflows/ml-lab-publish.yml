@@ -40,5 +40,5 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ghcr.io/${{ github.repository_owner }}/moldproject-ml-lab:latest
-            ghcr.io/${{ github.repository_owner }}/moldproject-ml-lab:${{ github.sha }}
+            ghcr.io/${{ toLower(github.repository_owner) }}/moldproject-ml-lab:latest
+            ghcr.io/${{ toLower(github.repository_owner) }}/moldproject-ml-lab:${{ github.sha }}
