@@ -21,3 +21,5 @@ python training/train.py
 ```bash
 docker-compose up --build
 ```
+\n\nTriggered ML workflow: 
+2026-05-30 03:23:24Z
