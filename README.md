@@ -170,6 +170,34 @@ cp .env.example .env
 
 > **Security:** Environment files (`.env`) are excluded from version control via `.gitignore`. Never commit credentials to the repository.
 
+### 4. Docker Containerization
+
+This repository now includes a Docker container build for the frontend app.
+
+Build locally:
+
+```bash
+docker build -t moldproject:local .
+```
+
+Run locally:
+
+```bash
+docker run --rm -p 4173:80 moldproject:local
+```
+
+Or use the root docker-compose setup:
+
+```bash
+docker compose up --build
+```
+
+Published image link (after GitHub Actions runs on `main`):
+
+- `ghcr.io/Valtern/moldproject:latest`
+
+> Note: This is a Docker image registry link. GitHub Actions will publish the image to GitHub Container Registry on every push to `main`.
+
 ---
 
 ## System Architecture Diagrams

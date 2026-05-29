@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   ml-lab:
     build:
@@ -28,9 +26,7 @@ services:
     #         - driver: nvidia
     #           count: 1
     #           capabilities: [gpu]
-    command: >
-      sh -c "jupyter lab --ip=0.0.0.0 --allow-root --no-browser
-      && python api/main.py"
+    command: sh -c "jupyter lab --ip=0.0.0.0 --allow-root --no-browser & python api/main.py"
 
 networks:
   default:
