@@ -52,7 +52,7 @@ const payloadSchema = z.object({
     fanStatus: z.enum(["ON", "OFF"]),
     dehumidifierStatus: z.enum(["ON", "OFF"]),
     deviceID: z.string().max(50),
-    wifiSignal: z.number().int().min(-100).max(0)
+    wifiSignal: z.number().int().min(-100).max(0).optional()
 });
 
 // 5. Authentication Middleware (Per-Device Identity)
@@ -62,8 +62,9 @@ const payloadSchema = z.object({
 const authenticateESP32 = (req, res, next) => {
     const providedKey = req.headers['x-esp32-api-key'];
 
+    // Legacy firmware may not send this header — allow pass-through
     if (!providedKey || typeof providedKey !== 'string' || providedKey.trim() === '') {
-        return res.status(401).json({ error: "Unauthorized: Missing API Key header" });
+        logger.info('[authenticateESP32] No API key header provided — allowing pass-through for legacy firmware.');
     }
 
     next();
@@ -87,9 +88,9 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
         const validatedData = payloadSchema.parse(req.body);
 
         // Per-device identity check: the API key header must match the deviceID in the payload.
-        // This ensures the ESP32 can only submit data for its own identity.
+        // Only enforced when the header is actually present (legacy firmware may omit it).
         const providedKey = req.headers['x-esp32-api-key'];
-        if (providedKey !== validatedData.deviceID) {
+        if (providedKey && providedKey !== validatedData.deviceID) {
             return res.status(401).json({ error: "Unauthorized: API key does not match device identity" });
         }
 
