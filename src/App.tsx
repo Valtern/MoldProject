@@ -40,11 +40,13 @@ function DashboardPage({
   onApplianceStateChange,
   isLoadingData = false,
   predictiveRiskScore = 0,
+  blackPredictiveRiskScore = 0,
 }: {
   roomData: RoomData;
   onApplianceStateChange: (id: string, turnOn: boolean) => void;
   isLoadingData?: boolean;
   predictiveRiskScore?: number;
+  blackPredictiveRiskScore?: number;
 }) {
   return (
     <div className="w-full max-w-[1920px] mx-auto transition-all">
@@ -92,12 +94,26 @@ function DashboardPage({
                   index={2}
                   status="safe"
                 />
-                <MoldRiskGauge
-                  humidity={roomData.humidity.value}
-                  criticalLimit={roomData.criticalLimit}
-                  riskScore={predictiveRiskScore}
-                  index={3}
-                />
+                {/* Unified Mold Risk Container — both gauges side-by-side */}
+                <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 md:p-5 h-28 md:h-32 flex flex-col md:flex-row gap-3 md:gap-4">
+                  <MoldRiskGauge
+                    humidity={roomData.humidity.value}
+                    criticalLimit={roomData.criticalLimit}
+                    riskScore={predictiveRiskScore}
+                    title="General Mold Risk"
+                    embedded
+                    index={3}
+                  />
+                  <div className="hidden md:block w-px bg-slate-200/60 dark:bg-white/5 self-stretch" />
+                  <MoldRiskGauge
+                    humidity={roomData.humidity.value}
+                    criticalLimit={roomData.criticalLimit}
+                    riskScore={blackPredictiveRiskScore}
+                    title="Black Mold Risk"
+                    embedded
+                    index={4}
+                  />
+                </div>
               </>
             )}
           </div>
@@ -134,6 +150,7 @@ function App() {
   const [authPage, setAuthPage] = useState<AuthPageId>('login');
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [predictiveRiskScore, setPredictiveRiskScore] = useState(0);
+  const [blackPredictiveRiskScore, setBlackPredictiveRiskScore] = useState(0);
   const { setTheme } = useTheme();
 
   // ── Auth state listener ── keep current theme on login, reset on logout
@@ -363,6 +380,7 @@ function App() {
   useEffect(() => {
     if (!roomData?.deviceID) {
       setPredictiveRiskScore(0);
+      setBlackPredictiveRiskScore(0);
       return;
     }
 
@@ -381,8 +399,10 @@ function App() {
 
         const latest = sorted[0];
         setPredictiveRiskScore(latest.generalMoldProbability ?? 0);
+        setBlackPredictiveRiskScore(latest.blackMoldProbability ?? 0);
       } else {
         setPredictiveRiskScore(0);
+        setBlackPredictiveRiskScore(0);
       }
     }, (error: any) => {
       if (error?.code === 'permission-denied') {
@@ -393,6 +413,7 @@ function App() {
         console.error('[App] AnalyticsAlerts listener error:', error);
       }
       setPredictiveRiskScore(0);
+      setBlackPredictiveRiskScore(0);
     });
 
     return () => unsubscribe();
@@ -480,6 +501,7 @@ function App() {
             onApplianceStateChange={handleApplianceStateChange}
             isLoadingData={isDataLoading}
             predictiveRiskScore={predictiveRiskScore}
+            blackPredictiveRiskScore={blackPredictiveRiskScore}
           />
         );
       case 'rooms':
@@ -499,6 +521,7 @@ function App() {
             roomData={roomData}
             onApplianceStateChange={handleApplianceStateChange}
             predictiveRiskScore={predictiveRiskScore}
+            blackPredictiveRiskScore={blackPredictiveRiskScore}
           />
         ) : null;
     }
