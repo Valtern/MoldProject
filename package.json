@@ -8,6 +8,13 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "deploy:hosting": "npm run build && firebase deploy --project moldymoldbase --only hosting",
+    "deploy:firebase": "npm run build && firebase deploy --project moldymoldbase --only hosting,functions",
+    "deploy:cloudrun": "gcloud run deploy moldproject --project moldymoldbase --region asia-southeast2 --source . --port 80 --allow-unauthenticated",
+    "deploy:hosting:cloudrun": "firebase deploy --project moldymoldbase --config firebase.cloudrun.json --only hosting",
+    "docker:build": "docker build -t moldproject:local .",
+    "docker:run": "docker run --rm -p 4173:80 moldproject:local",
+    "docker:up": "docker compose up --build",
     "shell": "npm --prefix functions run shell",
     "serve:backend": "npm --prefix functions run serve",
     "deploy:functions": "npm --prefix functions run deploy"

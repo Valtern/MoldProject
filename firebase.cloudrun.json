@@ -1,0 +1,21 @@
+{
+  "hosting": {
+    "public": "public-cloudrun",
+    "ignore": [
+      "firebase.json",
+      "firebase.cloudrun.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "moldproject",
+          "region": "asia-southeast2",
+          "pinTag": true
+        }
+      }
+    ]
+  }
+}

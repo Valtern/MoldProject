@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+dist
+.DS_Store
+.git
+.gitignore
+.env*
+firebase-debug.*
+functions
+MoldProject.worktrees
+temp_git_backup
+docs
+deep-learning
+DeepLearningLab
