@@ -6,6 +6,8 @@ interface MoldRiskGaugeProps {
   humidity: number;
   criticalLimit: number;
   riskScore?: number;
+  title?: string;
+  embedded?: boolean;
   index?: number;
 }
 
@@ -19,7 +21,7 @@ function calcScore(humidity: number, criticalLimit: number): number {
   return Math.min(100, Math.round((humidity / Math.max(criticalLimit, 1)) * 100));
 }
 
-export function MoldRiskGauge({ humidity, criticalLimit, riskScore, index = 3 }: MoldRiskGaugeProps) {
+export function MoldRiskGauge({ humidity, criticalLimit, riskScore, title, embedded = false, index = 3 }: MoldRiskGaugeProps) {
   const { t } = useTranslation();
   const cardRef = useRef<HTMLDivElement>(null);
   const circleRef = useRef<SVGCircleElement>(null);
@@ -77,13 +79,17 @@ export function MoldRiskGauge({ humidity, criticalLimit, riskScore, index = 3 }:
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [humidity, criticalLimit, riskScore]);
 
+  const cardClass = embedded
+    ? 'flex flex-col justify-between flex-1 min-w-0'
+    : 'bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 md:p-5 flex flex-col justify-between h-28 md:h-32';
+
   return (
     <div
       ref={cardRef}
-      className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 md:p-5 flex flex-col justify-between h-28 md:h-32"
+      className={cardClass}
     >
       <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-        {t('dashboard.moldRisk.label')}
+        {title || t('dashboard.moldRisk.label')}
       </span>
 
       <div className="flex items-center gap-2.5">
