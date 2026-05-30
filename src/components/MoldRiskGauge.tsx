@@ -6,6 +6,8 @@ interface MoldRiskGaugeProps {
   humidity: number;
   criticalLimit: number;
   riskScore?: number;
+  title?: string;
+  embedded?: boolean;
   index?: number;
 }
 
@@ -19,7 +21,7 @@ function calcScore(humidity: number, criticalLimit: number): number {
   return Math.min(100, Math.round((humidity / Math.max(criticalLimit, 1)) * 100));
 }
 
-export function MoldRiskGauge({ humidity, criticalLimit, riskScore, index = 3 }: MoldRiskGaugeProps) {
+export function MoldRiskGauge({ humidity, criticalLimit, riskScore, title, embedded = false, index = 3 }: MoldRiskGaugeProps) {
   const { t } = useTranslation();
   const cardRef = useRef<HTMLDivElement>(null);
   const circleRef = useRef<SVGCircleElement>(null);
@@ -77,23 +79,27 @@ export function MoldRiskGauge({ humidity, criticalLimit, riskScore, index = 3 }:
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [humidity, criticalLimit, riskScore]);
 
+  const cardClass = embedded
+    ? 'flex flex-col justify-between flex-1 min-w-0'
+    : 'bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 md:p-5 flex flex-col justify-between h-28 md:h-32';
+
   return (
     <div
       ref={cardRef}
-      className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 md:p-5 flex flex-col justify-between h-28 md:h-32"
+      className={cardClass}
     >
-      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-        {t('dashboard.moldRisk.label')}
-      </span>
+      <div className="text-xs md:text-sm font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide text-center break-words w-full">
+        {title || t('dashboard.moldRisk.label')}
+      </div>
 
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center justify-center gap-4 md:gap-6 my-2 flex-1 w-full">
         {/* mini arc gauge */}
-        <div className="relative flex-shrink-0" style={{ width: 48, height: 48 }}>
+        <div className="relative flex-shrink-0 w-12 h-12 md:w-16 md:h-16">
           <svg
-            width={48}
-            height={48}
+            width="100%"
+            height="100%"
             viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
-            style={{ transform: 'rotate(135deg)' }}
+            style={{ transform: 'rotate(135deg)', overflow: 'visible' }}
           >
             <circle
               cx={VIEWBOX / 2}
@@ -120,17 +126,18 @@ export function MoldRiskGauge({ humidity, criticalLimit, riskScore, index = 3 }:
           </svg>
         </div>
 
-        <div className="flex items-baseline gap-0.5">
-          <span className={`text-2xl md:text-3xl font-semibold ${riskTextClass}`}>
-            {displayScore}
-          </span>
-          <span className="text-sm md:text-base text-zinc-500 dark:text-zinc-400">%</span>
+        <div className="flex flex-col justify-center min-w-0">
+          <div className="flex items-baseline gap-0.5">
+            <span className={`text-3xl md:text-4xl font-semibold ${riskTextClass}`}>
+              {displayScore}
+            </span>
+            <span className="text-sm md:text-base text-zinc-500 dark:text-zinc-400 ml-1">%</span>
+          </div>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${riskDotClass}`} />
+            <span className={`text-xs md:text-sm font-medium ${riskTextClass} break-words`}>{riskLabel}</span>
+          </div>
         </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <span className={`w-1.5 h-1.5 rounded-full ${riskDotClass}`} />
-        <span className={`text-xs ${riskTextClass}`}>{riskLabel}</span>
       </div>
     </div>
   );

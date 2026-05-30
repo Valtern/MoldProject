@@ -103,6 +103,8 @@
     }
   },
   "dashboard": {
+    "generalMoldRisk": "Risiko Jamur Umum",
+    "blackMoldRisk": "Risiko Jamur Hitam Beracun",
     "status": {
       "safe": "Aman",
       "warning": "Peringatan",
