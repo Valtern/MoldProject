@@ -1,6 +1,7 @@
 # Node/React
 node_modules/
 dist/
+.firebase/
 .env
 
 # Deep Learning Module Artifacts

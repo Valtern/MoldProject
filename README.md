@@ -125,6 +125,8 @@ Regardless of user-configured thresholds, the analytics pipeline enforces a stri
 
 - **Node.js** (v18 or higher recommended)
 - **npm** (bundled with Node.js)
+- **Firebase CLI** (`npm install -g firebase-tools`) authenticated with access to the Firebase project
+- **Google Cloud CLI** (`gcloud`) for optional Cloud Run Docker deployment
 - A configured **Firebase** project with Firestore, Authentication, and Hosting enabled
 
 ### 1. Frontend Dashboard (SaaS)
@@ -143,7 +145,29 @@ npm run dev
 
 The application will launch locally at `http://localhost:5173`. All device data, room configurations, and user settings are synchronized in real-time with Google Firebase.
 
-### 2. Cloud Functions (Serverless Middleware)
+### 2. Firebase Hosting Deployment
+
+The production frontend is deployed to **Firebase Hosting**, not served from localhost. The app is already configured in `firebase.json` to publish the Vite build output from `dist/` and route all SPA paths back to `index.html`.
+
+Deploy only the frontend hosting site:
+
+```bash
+npm run deploy:hosting
+```
+
+This command builds the React app and deploys `dist/` to the Firebase project configured in `.firebaserc` (`moldymoldbase`). After deployment, Firebase Hosting serves the app publicly from the project's Hosting URL, for example:
+
+```text
+https://moldymoldbase.web.app
+```
+
+To deploy both Firebase Hosting and Cloud Functions together:
+
+```bash
+npm run deploy:firebase
+```
+
+### 3. Cloud Functions (Serverless Middleware)
 
 Navigate into the Cloud Functions directory:
 
@@ -155,12 +179,12 @@ npm install
 To deploy the functions to Firebase:
 
 ```bash
-firebase deploy --only functions
+npm run deploy:functions
 ```
 
 > **Note:** Cloud Functions require environment variables (`ESP32_API_KEY`, `SMTP_USER`, `SMTP_PASS`, `ALERT_FROM_EMAIL`) to be configured in the `functions/.env` file. Copy `functions/.env.example` and populate with your credentials. These are automatically loaded by the Firebase runtime.
 
-### 3. Firebase Configuration
+### 4. Firebase Configuration
 
 Copy the root-level `.env.example` to `.env` and populate your Firebase project credentials:
 
@@ -170,9 +194,9 @@ cp .env.example .env
 
 > **Security:** Environment files (`.env`) are excluded from version control via `.gitignore`. Never commit credentials to the repository.
 
-### 4. Docker Containerization
+### 5. Optional Docker Containerization
 
-This repository now includes a Docker container build for the frontend app.
+This repository includes a Docker container build for local container testing and image publishing. Docker is not the public website deployment path for this project. The public web app is deployed through **Firebase Hosting** using `npm run deploy:hosting`.
 
 Build locally:
 
@@ -186,21 +210,43 @@ Run locally:
 npm run docker:run
 ```
 
+This maps the container to `http://localhost:4173`, so it is expected to be local only. Use Firebase Hosting for the deployed public app.
+
 Or use the root docker-compose setup:
 
 ```bash
 npm run docker:up
 ```
 
-Published image links:
+Published Docker image links:
 
 - Package page: `https://github.com/Valtern/MoldProject/pkgs/container/moldproject`
 - Experimental image: `ghcr.io/valtern/moldproject:experimental`
 - Production image: `ghcr.io/valtern/moldproject:latest`
 
-GitHub Actions publishes the frontend image to GitHub Container Registry on pushes to `experimental` and `main`. The `latest` tag is only produced from the default branch, while `experimental` and SHA tags are used for branch testing.
+GitHub Actions publishes the frontend image to GitHub Container Registry on pushes to `experimental` and `main`. This GHCR package proves that the Docker image exists and can be pulled, but it is still just a container image registry, not a public hosted website. The public website should be checked from the Firebase Hosting URL, for example `https://moldymoldbase.web.app`.
 
-### 5. Continuous Delivery
+### 6. Public Docker Deployment Through Firebase Hosting
+
+If the project must prove that the Docker container itself is publicly hosted, deploy the container to **Cloud Run** and use **Firebase Hosting** as the public front door. This keeps the Firebase URL while serving traffic from the Docker container.
+
+Build this repository's Dockerfile and deploy it to Cloud Run:
+
+```bash
+npm run deploy:cloudrun
+```
+
+Then point Firebase Hosting to that Cloud Run service:
+
+```bash
+npm run deploy:hosting:cloudrun
+```
+
+This uses `firebase.cloudrun.json`, which rewrites Firebase Hosting traffic to the Cloud Run service named `moldproject` in `asia-southeast2`.
+
+Use this path only when the requirement is specifically "Docker container must be public through Firebase Hosting." For the normal React/Vite frontend, `npm run deploy:hosting` is simpler and cheaper because Firebase Hosting can serve the static `dist/` files directly.
+
+### 7. Continuous Delivery
 
 CI runs on every branch and builds the frontend on `experimental` and `main`. The CD workflow deploys Firebase Hosting and Cloud Functions only when changes reach `main`.
 
