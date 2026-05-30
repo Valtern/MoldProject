@@ -48,6 +48,7 @@ function DashboardPage({
   predictiveRiskScore?: number;
   blackPredictiveRiskScore?: number;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="w-full max-w-[1920px] mx-auto transition-all">
       <div className="px-3 py-3 md:p-6 lg:p-8 2xl:p-10">
@@ -61,14 +62,14 @@ function DashboardPage({
           />
         </section>
 
-        {/* Stats Row - 2-col on mobile/md, 4-col on lg+ */}
+        {/* Stats Row - 2-col on mobile/md, 5-col on lg+ */}
         <section className="mb-4 md:mb-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 2xl:gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 lg:gap-6 2xl:gap-8">
             {isLoadingData ? (
               [0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg rounded-lg p-3 md:p-5 h-28 md:h-32 flex flex-col justify-between"
+                  className={`bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg rounded-lg p-3 md:p-5 h-28 md:h-32 flex flex-col justify-between ${i === 3 ? 'col-span-2' : ''}`}
                 >
                   <Skeleton className="h-3 w-20" />
                   <Skeleton className="h-8 w-16" />
@@ -95,12 +96,12 @@ function DashboardPage({
                   status="safe"
                 />
                 {/* Unified Mold Risk Container — both gauges side-by-side */}
-                <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-3 md:p-5 h-28 md:h-32 flex flex-col md:flex-row gap-3 md:gap-4">
+                <div className="col-span-2 bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/5 shadow-lg dark:shadow-xl rounded-lg p-4 md:p-6 h-auto md:h-32 flex flex-col md:flex-row gap-4 md:gap-6 min-w-0">
                   <MoldRiskGauge
                     humidity={roomData.humidity.value}
                     criticalLimit={roomData.criticalLimit}
                     riskScore={predictiveRiskScore}
-                    title="General Mold Risk"
+                    title={t('dashboard.generalMoldRisk')}
                     embedded
                     index={3}
                   />
@@ -109,7 +110,7 @@ function DashboardPage({
                     humidity={roomData.humidity.value}
                     criticalLimit={roomData.criticalLimit}
                     riskScore={blackPredictiveRiskScore}
-                    title="Black Mold Risk"
+                    title={t('dashboard.blackMoldRisk')}
                     embedded
                     index={4}
                   />

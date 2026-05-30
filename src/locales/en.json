@@ -103,6 +103,8 @@
     }
   },
   "dashboard": {
+    "generalMoldRisk": "General Mold Risk",
+    "blackMoldRisk": "Black Mold Risk",
     "status": {
       "safe": "Safe",
       "warning": "Warning",
