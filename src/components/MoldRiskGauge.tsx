@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 interface MoldRiskGaugeProps {
   humidity: number;
   criticalLimit: number;
+  riskScore?: number;
   index?: number;
 }
 
@@ -18,14 +19,17 @@ function calcScore(humidity: number, criticalLimit: number): number {
   return Math.min(100, Math.round((humidity / Math.max(criticalLimit, 1)) * 100));
 }
 
-export function MoldRiskGauge({ humidity, criticalLimit, index = 3 }: MoldRiskGaugeProps) {
+export function MoldRiskGauge({ humidity, criticalLimit, riskScore, index = 3 }: MoldRiskGaugeProps) {
   const { t } = useTranslation();
   const cardRef = useRef<HTMLDivElement>(null);
   const circleRef = useRef<SVGCircleElement>(null);
   const scoreRef = useRef(0);
   const [displayScore, setDisplayScore] = useState(0);
 
-  const score = calcScore(humidity, criticalLimit);
+  // Use the direct predictive riskScore when provided; otherwise fall back to the humidity-based calculation
+  const score = riskScore != null
+    ? Math.min(100, Math.max(0, Math.round(riskScore)))
+    : calcScore(humidity, criticalLimit);
 
   const riskColor    = score >= 75 ? '#ef4444' : score >= 40 ? '#f59e0b' : '#10b981';
   const riskTextClass = score >= 75 ? 'text-red-500' : score >= 40 ? 'text-amber-500' : 'text-emerald-500';
@@ -71,7 +75,7 @@ export function MoldRiskGauge({ humidity, criticalLimit, index = 3 }: MoldRiskGa
       onUpdate: () => setDisplayScore(Math.round(scoreRef.current)),
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [humidity, criticalLimit]);
+  }, [humidity, criticalLimit, riskScore]);
 
   return (
     <div
