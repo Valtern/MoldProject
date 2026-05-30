@@ -338,9 +338,12 @@ export function ReportsPage({ availableRooms }: ReportsPageProps) {
                   {/* Header Row: Device ID, Time, Dismiss */}
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {alert.deviceID}
+                      <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100">
+                        {availableRooms.find(r => r.deviceID === alert.deviceID)?.name || 'Unknown Room'}
                       </h3>
+                      <span className="text-xs text-zinc-500/80 dark:text-zinc-400/80">
+                        {alert.deviceID}
+                      </span>
                       <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
                         {alert.message}
                       </p>

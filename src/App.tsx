@@ -26,14 +26,25 @@ import type { RoomData } from '@/types';
 export type PageId = 'dashboard' | 'rooms' | 'devices' | 'reports' | 'settings' | 'about';
 export type AuthPageId = 'login' | 'forgot-password' | 'signup';
 
+// Safely convert a Firestore Timestamp (or Date-like value) to epoch ms for sorting.
+// Mirrors the same helper used in ReportsPage.
+function toEpoch(timestamp: any): number {
+  if (!timestamp) return 0;
+  if (typeof timestamp.toMillis === 'function') return timestamp.toMillis();
+  if (typeof timestamp.toDate === 'function') return timestamp.toDate().getTime();
+  return new Date(timestamp).getTime();
+}
+
 function DashboardPage({
   roomData,
   onApplianceStateChange,
   isLoadingData = false,
+  predictiveRiskScore = 0,
 }: {
   roomData: RoomData;
   onApplianceStateChange: (id: string, turnOn: boolean) => void;
   isLoadingData?: boolean;
+  predictiveRiskScore?: number;
 }) {
   return (
     <div className="w-full max-w-[1920px] mx-auto transition-all">
@@ -84,6 +95,7 @@ function DashboardPage({
                 <MoldRiskGauge
                   humidity={roomData.humidity.value}
                   criticalLimit={roomData.criticalLimit}
+                  riskScore={predictiveRiskScore}
                   index={3}
                 />
               </>
@@ -121,6 +133,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [authPage, setAuthPage] = useState<AuthPageId>('login');
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [predictiveRiskScore, setPredictiveRiskScore] = useState(0);
   const { setTheme } = useTheme();
 
   // ── Auth state listener ── keep current theme on login, reset on logout
@@ -343,6 +356,48 @@ function App() {
     return () => unsubscribe();
   }, [currentPage, roomData?.deviceID]);
 
+  // ── Predictive mold-risk score from AnalyticsAlerts ──
+  // NOTE: We intentionally omit orderBy to avoid requiring a composite index
+  // (deviceID + timestamp). Sorting is performed client-side instead.
+  // This matches the proven pattern used in ReportsPage.
+  useEffect(() => {
+    if (!roomData?.deviceID) {
+      setPredictiveRiskScore(0);
+      return;
+    }
+
+    const alertsRef = collection(db, 'AnalyticsAlerts');
+    const q = query(
+      alertsRef,
+      where('deviceID', '==', roomData.deviceID)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        // Sort client-side to find the most recent alert
+        const sorted = snapshot.docs
+          .map(doc => doc.data())
+          .sort((a, b) => toEpoch(b.timestamp) - toEpoch(a.timestamp));
+
+        const latest = sorted[0];
+        setPredictiveRiskScore(latest.generalMoldProbability ?? 0);
+      } else {
+        setPredictiveRiskScore(0);
+      }
+    }, (error: any) => {
+      if (error?.code === 'permission-denied') {
+        console.warn('[App] AnalyticsAlerts listener permission denied:', error.message);
+      } else if (error?.message?.includes('index') || error?.code === 'failed-precondition') {
+        console.warn('[App] AnalyticsAlerts query requires Firestore index:', error.message);
+      } else {
+        console.error('[App] AnalyticsAlerts listener error:', error);
+      }
+      setPredictiveRiskScore(0);
+    });
+
+    return () => unsubscribe();
+  }, [roomData?.deviceID]);
+
   // Handle logout — clear all user data before signing out
   const handleLogout = useCallback(async () => {
     setAvailableRooms([]);
@@ -424,6 +479,7 @@ function App() {
             roomData={roomData}
             onApplianceStateChange={handleApplianceStateChange}
             isLoadingData={isDataLoading}
+            predictiveRiskScore={predictiveRiskScore}
           />
         );
       case 'rooms':
@@ -442,6 +498,7 @@ function App() {
           <DashboardPage
             roomData={roomData}
             onApplianceStateChange={handleApplianceStateChange}
+            predictiveRiskScore={predictiveRiskScore}
           />
         ) : null;
     }
