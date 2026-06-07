@@ -7,8 +7,7 @@ Folder ini berisi dokumentasi utama proyek.
 - `deploy.md` — panduan deploy.
 - `architecture.md` — ringkasan arsitektur sistem.
 - `user-manual.md` — panduan pengguna.
+- `README_LAPORAN_AKHIR_PBL_ID.md` — laporan akhir PBL Bahasa Indonesia.
+- `README_LAPORAN_AKHIR_PBL_EN.md` — laporan akhir PBL English.
 - `CHANGELOG.md` — catatan perubahan.
 - `CONTRIBUTING.md` — panduan kontribusi.
-
-## Aset
-- Simpan screenshot, diagram, dan ilustrasi di `assets/`.

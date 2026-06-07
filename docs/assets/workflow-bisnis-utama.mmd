@@ -1,0 +1,15 @@
+flowchart TD
+  A[Login] --> B[Validasi akun]
+  B --> C[Load data ruangan dan perangkat]
+  C --> D[Dashboard realtime]
+  D --> E{Pilih menu utama}
+  E --> F[Rooms]
+  E --> G[Devices]
+  E --> H[Reports]
+  E --> I[Settings]
+  F --> D
+  G --> D
+  H --> D
+  I --> D
+  D --> J[Logout]
+  J --> K[Sesi berakhir]

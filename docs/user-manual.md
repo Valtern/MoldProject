@@ -118,6 +118,56 @@ Aplikasi ini digunakan untuk memantau perangkat, ruangan, laporan, dan pengatura
 - `assets/user-manual-mobile-sidebar.png` — sidebar mobile.
 - `assets/user-manual-mobile-logout.png` — logout mobile.
 
+## 15. Menjalankan Aplikasi (Pengembangan Lokal)
+
+Bagian ini menjelaskan cara menjalankan aplikasi secara lokal untuk keperluan pengujian atau demo. Ikuti langkah di bawah pada mesin pengembang.
+
+### Prasyarat
+- Node.js dan npm terpasang (disarankan Node.js modern; fungsi Cloud Functions menggunakan Node 22 sesuai `functions/package.json`).
+- Firebase CLI jika ingin menjalankan emulator backend (opsional): `npm install -g firebase-tools` dan login `firebase login`.
+
+### Instalasi Dependensi
+Jalankan perintah berikut dari root proyek:
+
+```bash
+npm install
+npm --prefix functions install
+```
+
+### Menjalankan Backend (Emulator Firebase) — Opsional
+Untuk menjalankan emulator Firebase (functions, firestore, storage, pubsub):
+
+```bash
+npm run serve:backend
+```
+
+Perintah ini memanggil `npm --prefix functions run serve` yang men-start emulator sesuai konfigurasi `functions/package.json`.
+
+### Menjalankan Frontend (Development)
+Jalankan server development Vite dari root proyek:
+
+```bash
+npm run dev
+```
+
+Setelah `vite` berjalan, buka browser ke `http://localhost:5173` (atau alamat/port yang ditampilkan pada terminal).
+
+### Build dan Preview Produksi
+Untuk membangun artefak produksi dan melihat preview lokal:
+
+```bash
+npm run build
+npm run preview
+```
+
+### Catatan Pengujian
+- Jika emulator backend tidak dijalankan, sebagian fitur yang bergantung ke Firebase (seperti autentikasi, penyimpanan, atau fungsi server) mungkin tidak bekerja penuh.
+- Untuk menghubungkan ke proyek Firebase nyata, pastikan `src/lib/firebase.ts` memiliki konfigurasi yang sesuai dan kredensial yang benar.
+
+## 16. Panduan Pembuatan Screenshot dan Lampiran
+
+Simpan screenshot akhir di `docs/assets/` dengan nama file konsisten, lalu masukkan ke laporan Word sebagaimana disebutkan pada bagian Catatan Screenshot.
+
 ## 12. Diagram Alur Penggunaan
 
 ```mermaid
