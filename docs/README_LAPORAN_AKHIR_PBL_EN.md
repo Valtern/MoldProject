@@ -192,12 +192,116 @@ Cloud Functions are used because some processes should not live on the frontend.
 ### 9.1 Impact of These Strengths on Users
 These strengths are not only technical advantages on paper; they directly improve the user experience. Realtime data allows faster response to changes. Responsive desktop and mobile layouts keep the system usable across devices. Internationalization makes the presentation more flexible. Threshold-based support helps non-technical users understand the status without reading raw numbers. The cloud-first architecture helps scale the system when more rooms or devices are added.
 
+### 9.2 Proposed High Availability Architecture
+
+#### What Is High Availability
+High Availability (HA) is an infrastructure design approach that aims to keep a system or service running continuously for a targeted percentage of uptime. In the context of IoT monitoring like MoldGuard, HA matters because delayed sensor data or an inaccessible dashboard means mold risk goes undetected.
+
+Although this PBL does not fully implement production-grade HA at the infrastructure layer, the final report should still include a High Availability architecture plan to show how MoldGuard can evolve into a more resilient service.
+
+#### Key HA Concepts Applied
+| Concept | Explanation | MoldGuard Application |
+|---|---|---|
+| **Redundancy** | Providing more than one instance of the same component so that if one fails, the other continues serving. | Two application zones (Zone A and Zone B) run in parallel. |
+| **Failover** | Automatically shifting traffic from a failed component to a healthy backup. | The load balancer routes traffic to the healthy zone when one zone experiences an issue. |
+| **Data Replication** | Continuously copying data to another location so it remains available even if one location is disrupted. | Firestore multi-region replicates data across regions automatically. |
+| **Health Monitoring** | Periodically checking the status of every component to detect failures as early as possible. | Monitoring / Alerting watches the load balancer, Cloud Functions, and Firestore. |
+| **Backup and Recovery** | Periodically backing up data so it can be restored after an incident. | Cloud Storage stores backup data from Firestore and Cloud Functions. |
+
+#### RTO and RPO Targets
+- **RTO (Recovery Time Objective)**: The maximum time the system needs to resume operation after a disruption. In this plan the target RTO is under 5 minutes because failover between zones is handled automatically by the load balancer.
+- **RPO (Recovery Point Objective)**: The maximum amount of data that can be lost due to a disruption. With synchronous Firestore multi-region replication, the target RPO approaches zero, meaning almost no data is lost during failover.
+
+#### HA Architecture Diagram
+
+The HA architecture diagram has been rendered from PlantUML to a PNG image ready for insertion into the Word report. The image file is located at `docs/assets/uml-ha-architecture.png`.
+
+```mermaid
+flowchart TB
+  U[User / Browser] --> DNS[DNS or Traffic Manager]
+
+  subgraph L1[Access Layer]
+    DNS --> H[Firebase Hosting / CDN]
+    H --> LB[Global Load Balancer]
+  end
+
+  subgraph L2[Application Layer]
+    LB --> A[Zone A\nWeb App Instance]
+    LB --> B[Zone B\nWeb App Instance]
+    A -. failover .-> B
+  end
+
+  subgraph L3[Identity and Logic Layer]
+    A --> AUTH[Firebase Authentication]
+    B --> AUTH
+    A --> CF[Cloud Functions]
+    B --> CF
+  end
+
+  subgraph L4[Data and Recovery Layer]
+    A --> DB[(Firestore Multi-Region)]
+    B --> DB
+    DB -. replication .-> DB
+    CF --> ST[(Cloud Storage Backup)]
+    DB --> ST
+  end
+
+  subgraph L5[Operations Layer]
+    MON[Monitoring / Alerting] --> LB
+    MON --> CF
+    MON --> DB
+  end
+```
+
+#### 9.2.1 HA Design Goals
+1. Reduce the risk of single points of failure in access, application, and data layers.
+2. Keep the service running even if one zone or instance fails.
+3. Support automatic failover and health monitoring.
+4. Provide a roadmap for future production-grade deployment.
+
+#### 9.2.2 Per-Layer Explanation
+
+**Access Layer (L1)** — This layer is the first entry point for users. DNS or a traffic manager directs requests to Firebase Hosting or a CDN. The CDN distributes static assets (HTML, CSS, JS) from the location closest to the user, reducing latency. The global load balancer then forwards requests to the application layer. If one CDN edge point fails, traffic is automatically rerouted to another edge point. This layer eliminates single points of failure on the access side.
+
+**Application Layer (L2)** — Two application instances are placed in different zones (Zone A and Zone B) using an active-active pattern. This means both zones serve traffic simultaneously under normal conditions. If one zone experiences a disruption (e.g., a regional infrastructure issue), the load balancer automatically routes all traffic to the healthy zone. This pattern differs from active-passive, which only activates the standby when a failure occurs.
+
+**Identity and Logic Layer (L3)** — Firebase Authentication and Cloud Functions are managed services whose availability is guaranteed by the cloud provider. Both application zones share the same Firebase Authentication service, so user login state is consistent across all zones. Cloud Functions handle server-side processes such as alert evaluation, sensor data ingestion, and device heartbeat updates.
+
+**Data and Recovery Layer (L4)** — Firestore multi-region automatically replicates data across multiple regions so data remains available even if one region fails. Cloud Storage is used for periodic backups so data can be recovered in case of corruption or loss. The combination of real-time replication and periodic backups provides two layers of data protection.
+
+**Operations Layer (L5)** — Monitoring and alerting continuously check the health of the load balancer, Cloud Functions, and Firestore. If any component enters an unhealthy state, the team receives a notification so it can investigate and take corrective action. This layer is critical for detecting problems before they impact end users.
+
+#### 9.2.3 Proposed Components
+- DNS or traffic manager for request routing.
+- Firebase Hosting or CDN for stable frontend delivery.
+- Global load balancer for traffic distribution.
+- Two application instances in different zones for active-active behavior.
+- Firestore multi-region for data replication.
+- Cloud Functions for server-side validation, alerts, and backup workflows.
+- Cloud Storage for backups.
+- Monitoring / alerting for health checks and notifications.
+
+#### 9.2.4 Mapping HA Components to MoldGuard
+| HA Component | Current MoldGuard Implementation | Planned HA Enhancement |
+|---|---|---|
+| Frontend hosting | Firebase Hosting (single region) | Firebase Hosting + global CDN |
+| Backend logic | Cloud Functions (single region) | Cloud Functions multi-region |
+| Database | Firestore | Firestore multi-region (nam5 or eur3) |
+| Authentication | Firebase Auth | Firebase Auth (already managed multi-region) |
+| Backup | Not yet implemented | Scheduled Cloud Storage backup |
+| Monitoring | Not yet implemented | Cloud Monitoring + alerting policies |
+| Load balancing | Not yet implemented | Google Cloud Load Balancer |
+
+#### 9.2.5 Why This Design Was Chosen
+This design matches the cloud-first, web-based nature of the project. The frontend remains simple, while the report still shows how the system can be extended into a more resilient architecture if it is later moved into a stricter production environment. Additionally, all proposed components are available within the Google Cloud and Firebase ecosystem, so no platform migration is required.
+
 ## 10. Diagram and Visual Evidence
 
 This section is written as plain text instead of markdown image links so it can be copied into Word easily and does not rely on clickable paths.
 
 ### Recommended Images to Insert into Word
 - architecture.png
+- uml-ha-architecture.png
 - uml-use-case.png
 - uml-system-activity.png
 - uml-deployment.png

@@ -72,7 +72,6 @@ flowchart TD
   H --> D
   I --> D
   D --> J[Logout]
-  J --> K[Sesi berakhir]
 ```
 
 Diagram ini menunjukkan bahwa dashboard menjadi pusat navigasi, sedangkan halaman Rooms, Devices, Reports, dan Settings berfungsi sebagai cabang yang kembali ke dashboard setelah selesai digunakan. Dengan pola ini, alur aplikasi lebih mudah dibaca saat laporan dicopas ke Word maupun saat dipresentasikan.
@@ -194,12 +193,116 @@ Cloud Functions dipakai karena beberapa proses sebaiknya tidak diletakkan di fro
 ### 10.1 Dampak Kelebihan Ini bagi Pengguna
 Kelebihan teknis di atas bukan hanya nilai teknis di atas kertas, tetapi juga memberi dampak langsung ke pengalaman pengguna. Realtime data membuat pengguna lebih cepat merespons perubahan. Responsif desktop dan mobile membuat sistem tetap nyaman dipakai dari perangkat apa pun. Internationalization membuat presentasi lebih fleksibel. Threshold-based support membantu pengguna non-teknis memahami status tanpa harus membaca angka mentah. Arsitektur cloud-first memudahkan skalabilitas ketika jumlah ruangan atau perangkat bertambah.
 
+### 10.2 Rencana Arsitektur High Availability
+
+#### Pengertian High Availability
+High Availability (HA) adalah pendekatan desain infrastruktur yang bertujuan memastikan suatu sistem atau layanan tetap beroperasi secara kontinu dalam kurun waktu yang telah ditargetkan, biasanya dinyatakan sebagai persentase uptime. Dalam konteks monitoring IoT seperti MoldGuard, HA menjadi penting karena data sensor yang terlambat masuk atau dashboard yang tidak bisa diakses berarti risiko jamur tidak terdeteksi tepat waktu.
+
+Walaupun PBL ini tidak mengimplementasikan HA secara penuh di level infrastruktur produksi, laporan akhir tetap perlu menampilkan rencana arsitektur yang mengusung konsep High Availability. Rencana ini penting untuk menunjukkan bahwa sistem MoldGuard dapat dikembangkan ke arah layanan yang tetap berjalan ketika ada komponen yang gagal.
+
+#### Konsep Utama HA yang Diterapkan
+| Konsep | Penjelasan | Penerapan di MoldGuard |
+|---|---|---|
+| **Redundansi** | Menyediakan lebih dari satu instance untuk komponen yang sama agar jika satu gagal, yang lain tetap melayani. | Dua zona aplikasi (Zone A dan Zone B) berjalan secara paralel. |
+| **Failover** | Perpindahan layanan secara otomatis dari komponen utama ke komponen cadangan saat terjadi kegagalan. | Load balancer mengarahkan trafik ke zona yang sehat apabila salah satu zona mengalami gangguan. |
+| **Replikasi Data** | Menyalin data secara terus-menerus ke lokasi lain sehingga data tetap tersedia meskipun satu lokasi terganggu. | Firestore multi-region mereplikasi data di beberapa region secara otomatis. |
+| **Health Monitoring** | Pemantauan status setiap komponen secara berkala untuk mendeteksi kegagalan sedini mungkin. | Monitoring / Alerting memantau load balancer, Cloud Functions, dan Firestore. |
+| **Backup dan Recovery** | Pencadangan data secara berkala agar data dapat dipulihkan setelah insiden. | Cloud Storage digunakan untuk menyimpan backup data dari Firestore dan Cloud Functions. |
+
+#### Target RTO dan RPO
+- **RTO (Recovery Time Objective)**: Waktu maksimal yang dibutuhkan sistem untuk kembali beroperasi setelah gangguan. Dalam rencana ini, target RTO adalah kurang dari 5 menit karena failover antar zona dilakukan secara otomatis oleh load balancer.
+- **RPO (Recovery Point Objective)**: Jumlah maksimal data yang dapat hilang akibat gangguan. Dengan replikasi Firestore multi-region yang bersifat sinkron, target RPO mendekati nol, artinya hampir tidak ada data yang hilang saat terjadi failover.
+
+#### Diagram Arsitektur HA
+
+Diagram arsitektur HA dalam format PlantUML sudah dirender menjadi file gambar yang siap disisipkan ke laporan Word. File gambar tersedia di `docs/assets/uml-ha-architecture.png`.
+
+```mermaid
+flowchart TB
+  U[Pengguna / Browser] --> DNS[DNS atau Traffic Manager]
+
+  subgraph L1[Access Layer]
+    DNS --> H[Firebase Hosting / CDN]
+    H --> LB[Global Load Balancer]
+  end
+
+  subgraph L2[Application Layer]
+    LB --> A[Zona A\nWeb App Instance]
+    LB --> B[Zona B\nWeb App Instance]
+    A -. failover .-> B
+  end
+
+  subgraph L3[Identity and Logic Layer]
+    A --> AUTH[Firebase Authentication]
+    B --> AUTH
+    A --> CF[Cloud Functions]
+    B --> CF
+  end
+
+  subgraph L4[Data and Recovery Layer]
+    A --> DB[(Firestore Multi-Region)]
+    B --> DB
+    DB -. replikasi .-> DB
+    CF --> ST[(Cloud Storage Backup)]
+    DB --> ST
+  end
+
+  subgraph L5[Operations Layer]
+    MON[Monitoring / Alerting] --> LB
+    MON --> CF
+    MON --> DB
+  end
+```
+
+#### 10.2.1 Tujuan Desain HA
+1. Mengurangi risiko single point of failure pada lapisan akses, aplikasi, dan data.
+2. Menjaga layanan tetap berjalan walaupun salah satu zona atau instance bermasalah.
+3. Mempermudah failover otomatis dan pemantauan kesehatan sistem.
+4. Memberikan arah pengembangan lanjutan bila proyek ingin dipakai sebagai sistem yang lebih siap produksi.
+
+#### 10.2.2 Penjelasan Per Lapisan
+
+**Access Layer (L1)** — Lapisan ini menjadi pintu masuk pertama bagi pengguna. DNS atau traffic manager mengarahkan permintaan ke Firebase Hosting atau CDN. CDN mendistribusikan aset statis (HTML, CSS, JS) dari lokasi terdekat dengan pengguna sehingga latensi berkurang. Global load balancer kemudian meneruskan permintaan ke lapisan aplikasi. Jika salah satu edge point CDN gagal, trafik otomatis dialihkan ke edge point lain. Lapisan ini menghilangkan single point of failure di sisi akses.
+
+**Application Layer (L2)** — Dua instance aplikasi ditempatkan di zona berbeda (Zone A dan Zone B) dengan pola active-active. Artinya, kedua zona melayani trafik secara bersamaan dalam kondisi normal. Jika salah satu zona mengalami gangguan (misalnya masalah infrastruktur regional), load balancer secara otomatis mengarahkan seluruh trafik ke zona yang masih sehat. Pola ini berbeda dari active-passive yang hanya mengaktifkan cadangan saat terjadi kegagalan.
+
+**Identity and Logic Layer (L3)** — Firebase Authentication dan Cloud Functions bersifat managed service sehingga ketersediaannya dijamin oleh penyedia cloud. Kedua zona aplikasi menggunakan satu layanan Firebase Authentication yang sama, maka status login pengguna konsisten di semua zona. Cloud Functions menangani proses server-side seperti evaluasi alert, penerimaan data sensor, dan pembaruan heartbeat perangkat.
+
+**Data and Recovery Layer (L4)** — Firestore multi-region melakukan replikasi data secara otomatis ke beberapa region sehingga data tetap tersedia walaupun satu region mengalami kegagalan. Cloud Storage dipakai untuk menyimpan backup periodik agar data dapat dipulihkan jika terjadi kerusakan atau kehilangan data. Kombinasi replikasi real-time dan backup periodik memberikan dua lapis perlindungan data.
+
+**Operations Layer (L5)** — Monitoring dan alerting memantau kesehatan load balancer, Cloud Functions, dan Firestore secara terus-menerus. Jika salah satu komponen memasuki status tidak sehat, tim mendapat notifikasi sehingga dapat melakukan investigasi dan tindakan korektif. Lapisan ini penting agar masalah terdeteksi sebelum berdampak ke pengguna akhir.
+
+#### 10.2.3 Komponen yang Diusulkan
+- DNS atau traffic manager untuk mengarahkan trafik.
+- Firebase Hosting atau CDN untuk melayani frontend dengan distribusi yang stabil.
+- Global load balancer untuk membagi trafik ke dua zona aplikasi.
+- Dua instance aplikasi di zona berbeda untuk pola active-active.
+- Firestore multi-region untuk replikasi data.
+- Cloud Functions untuk proses server-side seperti validasi, alert, dan backup.
+- Cloud Storage untuk cadangan data.
+- Monitoring / alerting untuk health check dan notifikasi.
+
+#### 10.2.4 Pemetaan Komponen HA ke MoldGuard
+| Komponen HA | Implementasi MoldGuard Saat Ini | Rencana Peningkatan HA |
+|---|---|---|
+| Frontend hosting | Firebase Hosting (single region) | Firebase Hosting + CDN global |
+| Backend logic | Cloud Functions (single region) | Cloud Functions multi-region |
+| Database | Firestore | Firestore multi-region (nam5 atau eur3) |
+| Authentication | Firebase Auth | Firebase Auth (sudah managed multi-region) |
+| Backup | Belum ada | Cloud Storage backup terjadwal |
+| Monitoring | Belum ada | Cloud Monitoring + alerting policy |
+| Load balancing | Belum ada | Google Cloud Load Balancer |
+
+#### 10.2.5 Alasan Desain Ini Dipilih
+Desain ini dipilih karena selaras dengan karakter proyek PBL yang berbasis web dan cloud-first. Frontend dapat tetap sederhana, tetapi laporan tetap memperlihatkan bagaimana sistem dapat ditingkatkan ke arsitektur yang lebih andal jika suatu saat dipindahkan ke lingkungan produksi yang menuntut ketersediaan tinggi. Selain itu, seluruh komponen yang diusulkan tersedia di ekosistem Google Cloud dan Firebase sehingga tidak memerlukan migrasi ke platform lain.
+
 ## 11. Penjelasan Diagram dan Bukti Visual
 
 Bagian ini sengaja ditulis sebagai daftar teks, bukan markdown image, supaya mudah dipindahkan ke Word dan tidak tergantung pada link file. Jika ingin memasukkan gambar ke laporan Word, cukup gunakan file yang sudah tersedia di folder dokumentasi proyek.
 
 ### Gambar yang Disarankan untuk Dimasukkan ke Word
 - architecture.png
+- uml-ha-architecture.png
 - uml-use-case.png
 - uml-system-activity.png
 - uml-deployment.png

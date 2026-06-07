@@ -1,0 +1,34 @@
+flowchart TB
+  U[User / Browser] --> DNS[DNS or Traffic Manager]
+
+  subgraph L1[Access Layer]
+    DNS --> H[Firebase Hosting / CDN]
+    H --> LB[Global Load Balancer]
+  end
+
+  subgraph L2[Application Layer]
+    LB --> A[Zone A\nWeb App Instance]
+    LB --> B[Zone B\nWeb App Instance]
+    A -. failover .-> B
+  end
+
+  subgraph L3[Identity and Logic Layer]
+    A --> AUTH[Firebase Authentication]
+    B --> AUTH
+    A --> CF[Cloud Functions]
+    B --> CF
+  end
+
+  subgraph L4[Data and Recovery Layer]
+    A --> DB[(Firestore Multi-Region)]
+    B --> DB
+    DB -. replication .-> DB
+    CF --> ST[(Cloud Storage Backup)]
+    DB --> ST
+  end
+
+  subgraph L5[Operations Layer]
+    MON[Monitoring / Alerting] --> LB
+    MON --> CF
+    MON --> DB
+  end

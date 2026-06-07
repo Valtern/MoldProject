@@ -14,9 +14,10 @@ Folder ini disiapkan untuk menyimpan screenshot, diagram, dan gambar pendukung d
 - `uml-activity-settings.png` — swimlane activity diagram
 - `uml-activity-language-theme.png` — swimlane activity diagram
 - `uml-activity-logout.png` — swimlane activity diagram
-- `architecture.png`
- - `uml-deployment.png` — deployment topology (ESP32, Hosting, Firestore, Functions, Analytics)
- - `uml-system-activity.png` — system activity/workflow (edge → functions → storage → frontend → analytics)
+- `architecture.png` — main architecture illustration
+- `uml-ha-architecture.png` — proposed high availability architecture for MoldGuard
+- `uml-deployment.png` — deployment topology (ESP32, Hosting, Firestore, Functions, Analytics)
+- `uml-system-activity.png` — system activity/workflow (edge → functions → storage → frontend → analytics)
 
 ## Catatan
 - Gunakan nama file yang konsisten dan deskriptif.

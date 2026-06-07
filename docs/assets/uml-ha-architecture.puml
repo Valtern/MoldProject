@@ -1,0 +1,56 @@
+@startuml
+!theme plain
+top to bottom direction
+
+node "User / Browser" as U
+node "DNS or Traffic Manager" as DNS
+
+U --> DNS
+
+package "Access Layer" as L1 {
+  node "Firebase Hosting / CDN" as H
+  node "Global Load Balancer" as LB
+}
+
+DNS --> H
+H --> LB
+
+package "Application Layer" as L2 {
+  node "Zone A\nWeb App Instance" as A
+  node "Zone B\nWeb App Instance" as B
+}
+
+LB --> A
+LB --> B
+A ..> B : failover
+
+package "Identity and Logic Layer" as L3 {
+  node "Firebase Authentication" as AUTH
+  node "Cloud Functions" as CF
+}
+
+A --> AUTH
+B --> AUTH
+A --> CF
+B --> CF
+
+package "Data and Recovery Layer" as L4 {
+  database "Firestore Multi-Region" as DB
+  database "Cloud Storage Backup" as ST
+}
+
+A --> DB
+B --> DB
+DB ..> DB : replication
+CF --> ST
+DB --> ST
+
+package "Operations Layer" as L5 {
+  node "Monitoring / Alerting" as MON
+}
+
+MON --> LB
+MON --> CF
+MON --> DB
+
+@enduml
