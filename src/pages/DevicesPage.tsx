@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wifi, AlertCircle, CheckCircle2, Thermometer, Droplets, Plus, Search, Loader2 } from 'lucide-react';
-import { db, auth } from '@/lib/firebase';
+import { Wifi, AlertCircle, CheckCircle2, Thermometer, Droplets, Sun, Plus, Search, Loader2 } from 'lucide-react';
+import { db, auth, rtdb } from '@/lib/firebase';
 import { collection, query, where, orderBy, limit, onSnapshot, getDocs, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, onValue } from 'firebase/database';
 import { toast } from 'sonner';
 
 const wifiConfig = {
@@ -25,6 +26,7 @@ function DeviceTableRow({ room }: { room: any }) {
   const { t } = useTranslation();
   const [latestLog, setLatestLog] = useState<any>(null);
   const [status, setStatus] = useState<'online' | 'warning' | 'offline'>('offline');
+  const [realtimeData, setRealtimeData] = useState<{ lastSeen: number; temperature: number | null; humidity: number | null; wifiSignal: number | null; lightLevel: number | null } | null>(null);
   const statusConfig = getStatusConfig(t);
 
   // Fetch the 1 most recent log for this device
@@ -56,21 +58,39 @@ function DeviceTableRow({ room }: { room: any }) {
     return () => unsubscribe();
   }, [room.deviceID]);
 
-  // Calculate status natively every 30 seconds internally to keep "Unstable / Offline" accurate even if DB is quiet
+  // Listen to RTDB heartbeat for real-time online status and live sensor readings
+  useEffect(() => {
+    if (!room.deviceID) return;
+    const deviceRef = ref(rtdb, `device-status/${room.deviceID}`);
+    const unsubscribe = onValue(deviceRef, (snapshot) => {
+      const val = snapshot.val();
+      if (val && typeof val.lastSeen === 'number') {
+        setRealtimeData({
+          lastSeen: val.lastSeen,
+          temperature: typeof val.temperature === 'number' ? val.temperature : null,
+          humidity: typeof val.humidity === 'number' ? val.humidity : null,
+          wifiSignal: typeof val.wifiSignal === 'number' ? val.wifiSignal : null,
+          lightLevel: typeof val.lightLevel === 'number' ? val.lightLevel : null,
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, [room.deviceID]);
+
+  // Evaluate device status every 30 seconds based on RTDB heartbeat timestamp
   useEffect(() => {
     const evaluateStatus = () => {
-      if (!latestLog || !latestLog.timestamp) {
+      if (!realtimeData?.lastSeen) {
         setStatus('offline');
         return;
       }
 
-      const logTime = latestLog.timestamp?.toDate ? latestLog.timestamp.toDate().getTime() : new Date(latestLog.timestamp).getTime();
-      const diffMs = Date.now() - logTime;
-      const diffMinutes = diffMs / 1000 / 60;
+      const diffMs = Date.now() - realtimeData.lastSeen;
+      const diffSeconds = diffMs / 1000;
 
-      if (diffMinutes < 5) {
+      if (diffSeconds < 30) {
         setStatus('online');
-      } else if (diffMinutes < 15) {
+      } else if (diffSeconds < 60) {
         setStatus('warning');
       } else {
         setStatus('offline');
@@ -80,13 +100,14 @@ function DeviceTableRow({ room }: { room: any }) {
     evaluateStatus();
     const interval = setInterval(evaluateStatus, 30000);
     return () => clearInterval(interval);
-  }, [latestLog]);
+  }, [realtimeData]);
 
-  // Derive Wifi Strength
+  // Derive Wifi Strength — prefer RTDB realtime data, fall back to Firestore latestLog
+  const displayWifiSignal = realtimeData?.wifiSignal ?? latestLog?.wifiSignal ?? undefined;
   let wifiStrengthKey: keyof typeof wifiConfig = 'Offline';
   let wifiSignalText = '--';
-  if (status !== 'offline' && latestLog?.wifiSignal !== undefined) {
-    const sig = Number(latestLog.wifiSignal);
+  if (status !== 'offline' && displayWifiSignal !== undefined) {
+    const sig = Number(displayWifiSignal);
     wifiSignalText = `${sig} dBm`;
     if (sig >= -60) wifiStrengthKey = 'Excellent';
     else if (sig >= -70) wifiStrengthKey = 'Good';
@@ -115,7 +136,7 @@ function DeviceTableRow({ room }: { room: any }) {
         <span className="text-sm text-zinc-500 dark:text-zinc-400">{room.name}</span>
       </td>
       <td className="px-4 py-3.5">
-        {latestLog ? (
+        {(realtimeData || latestLog) ? (
           <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-md ${wifi.bg}`}>
             <WifiIcon className={`w-3.5 h-3.5 ${wifi.color}`} />
             <span className={`text-xs font-medium ${wifi.color}`}>
@@ -127,15 +148,19 @@ function DeviceTableRow({ room }: { room: any }) {
         )}
       </td>
       <td className="px-4 py-3.5">
-        {latestLog ? (
+        {(realtimeData || latestLog) ? (
           <div className="flex items-center gap-3 text-zinc-500 dark:text-zinc-400">
             <div className="flex items-center gap-1">
               <Thermometer className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
-              <span className="text-sm">{latestLog.temperature ?? '--'}°C</span>
+              <span className="text-sm">{(realtimeData?.temperature ?? latestLog?.temperature) ?? '--'}°C</span>
             </div>
             <div className="flex items-center gap-1">
               <Droplets className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
-              <span className="text-sm">{latestLog.humidity ?? '--'}%</span>
+              <span className="text-sm">{(realtimeData?.humidity ?? latestLog?.humidity) ?? '--'}%</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Sun className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+              <span className="text-sm">{(realtimeData?.lightLevel ?? latestLog?.lightLevel) ?? '--'} lux</span>
             </div>
           </div>
         ) : (
@@ -161,6 +186,7 @@ function DeviceMobileCard({ room }: { room: any }) {
   const { t } = useTranslation();
   const [latestLog, setLatestLog] = useState<any>(null);
   const [status, setStatus] = useState<'online' | 'warning' | 'offline'>('offline');
+  const [realtimeData, setRealtimeData] = useState<{ lastSeen: number; temperature: number | null; humidity: number | null; wifiSignal: number | null; lightLevel: number | null } | null>(null);
   const statusConfig = getStatusConfig(t);
 
   useEffect(() => {
@@ -185,20 +211,39 @@ function DeviceMobileCard({ room }: { room: any }) {
     return () => unsubscribe();
   }, [room.deviceID]);
 
+  // Listen to RTDB heartbeat for real-time online status and live sensor readings
+  useEffect(() => {
+    if (!room.deviceID) return;
+    const deviceRef = ref(rtdb, `device-status/${room.deviceID}`);
+    const unsubscribe = onValue(deviceRef, (snapshot) => {
+      const val = snapshot.val();
+      if (val && typeof val.lastSeen === 'number') {
+        setRealtimeData({
+          lastSeen: val.lastSeen,
+          temperature: typeof val.temperature === 'number' ? val.temperature : null,
+          humidity: typeof val.humidity === 'number' ? val.humidity : null,
+          wifiSignal: typeof val.wifiSignal === 'number' ? val.wifiSignal : null,
+          lightLevel: typeof val.lightLevel === 'number' ? val.lightLevel : null,
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, [room.deviceID]);
+
+  // Evaluate device status every 30 seconds based on RTDB heartbeat timestamp
   useEffect(() => {
     const evaluateStatus = () => {
-      if (!latestLog || !latestLog.timestamp) {
+      if (!realtimeData?.lastSeen) {
         setStatus('offline');
         return;
       }
 
-      const logTime = latestLog.timestamp?.toDate ? latestLog.timestamp.toDate().getTime() : new Date(latestLog.timestamp).getTime();
-      const diffMs = Date.now() - logTime;
-      const diffMinutes = diffMs / 1000 / 60;
+      const diffMs = Date.now() - realtimeData.lastSeen;
+      const diffSeconds = diffMs / 1000;
 
-      if (diffMinutes < 5) {
+      if (diffSeconds < 30) {
         setStatus('online');
-      } else if (diffMinutes < 15) {
+      } else if (diffSeconds < 60) {
         setStatus('warning');
       } else {
         setStatus('offline');
@@ -208,12 +253,14 @@ function DeviceMobileCard({ room }: { room: any }) {
     evaluateStatus();
     const interval = setInterval(evaluateStatus, 30000);
     return () => clearInterval(interval);
-  }, [latestLog]);
+  }, [realtimeData]);
 
+  // Derive Wifi Strength — prefer RTDB realtime data, fall back to Firestore latestLog
+  const displayWifiSignal = realtimeData?.wifiSignal ?? latestLog?.wifiSignal ?? undefined;
   let wifiStrengthKey: keyof typeof wifiConfig = 'Offline';
   let wifiSignalText = '--';
-  if (status !== 'offline' && latestLog?.wifiSignal !== undefined) {
-    const sig = Number(latestLog.wifiSignal);
+  if (status !== 'offline' && displayWifiSignal !== undefined) {
+    const sig = Number(displayWifiSignal);
     wifiSignalText = `${sig} dBm`;
     if (sig >= -60) wifiStrengthKey = 'Excellent';
     else if (sig >= -70) wifiStrengthKey = 'Good';
@@ -247,7 +294,7 @@ function DeviceMobileCard({ room }: { room: any }) {
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{t('devices.table.wifiSignal')}</p>
-              {latestLog ? (
+              {(realtimeData || latestLog) ? (
                 <div className={`mt-1 inline-flex items-center gap-2 rounded-md px-2.5 py-1 ${wifi.bg}`}>
                   <WifiIcon className={`w-3.5 h-3.5 ${wifi.color}`} />
                   <span className={`text-xs font-medium ${wifi.color}`}>{wifiSignalText}</span>
@@ -259,7 +306,7 @@ function DeviceMobileCard({ room }: { room: any }) {
             <div>
               <p className="text-[11px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{t('devices.table.sensors')}</p>
               <p className="text-sm text-zinc-700 dark:text-zinc-300">
-                {latestLog ? `${latestLog.temperature ?? '--'}°C · ${latestLog.humidity ?? '--'}%` : '--'}
+                {(realtimeData || latestLog) ? `${(realtimeData?.temperature ?? latestLog?.temperature) ?? '--'}°C · ${(realtimeData?.humidity ?? latestLog?.humidity) ?? '--'}% · ${(realtimeData?.lightLevel ?? latestLog?.lightLevel) ?? '--'} lux` : '--'}
               </p>
             </div>
             <div>
