@@ -4,6 +4,7 @@ import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getDatabase } from "firebase/database";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -13,6 +14,7 @@ import { getStorage } from "firebase/storage";
 const firebaseConfig = {
     apiKey: "AIzaSyAqTvLjbLeiFKWU039mMYR9ucJVCqkkC9A",
     authDomain: "moldymoldbase.firebaseapp.com",
+    databaseURL: "https://moldymoldbase-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "moldymoldbase",
     storageBucket: "moldymoldbase.firebasestorage.app",
     messagingSenderId: "54731132506",
@@ -26,5 +28,6 @@ const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const rtdb = getDatabase(app);
 
-export { app, analytics, auth, db, storage };
+export { app, analytics, auth, db, storage, rtdb };
