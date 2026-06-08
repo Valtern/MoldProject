@@ -17,6 +17,7 @@ const { getFunctions } = require("firebase-admin/functions");
 // Running natively in Google Cloud, default credentials are automatically used.
 admin.initializeApp();
 const db = admin.firestore();
+const rtdb = admin.database();
 
 // 2. Express Configuration & Basic Hardening
 const app = express();
@@ -194,6 +195,18 @@ app.get('/api/status/:deviceId', cors(corsOptions), async (req, res) => {
         }
 
         const deviceData = devicesQuery.docs[0].data();
+
+        // Write heartbeat + live sensor readings to RTDB (fire-and-forget, non-blocking)
+        const heartbeatData = {
+            lastSeen: admin.database.ServerValue.TIMESTAMP,
+            temperature: req.query.t ? parseFloat(req.query.t) : null,
+            humidity: req.query.h ? parseFloat(req.query.h) : null,
+            wifiSignal: req.query.s ? parseFloat(req.query.s) : null,
+            lightLevel: (req.query.l && req.query.l !== 'nan') ? Number(req.query.l) : null,
+        };
+        rtdb.ref(`device-status/${deviceId}`)
+            .update(heartbeatData)
+            .catch(err => logger.warn('[status] RTDB heartbeat write failed:', err.message));
 
         return res.status(200).json({
             mode: deviceData.mode || 'auto',

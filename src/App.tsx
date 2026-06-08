@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { db, auth } from '@/lib/firebase';
+import { ref, onValue } from 'firebase/database';
+import { db, auth, rtdb } from '@/lib/firebase';
 import { Sidebar } from '@/components/Sidebar';
 import { StatusBanner } from '@/components/StatusBanner';
 import { StatCard } from '@/components/StatCard';
@@ -372,6 +373,52 @@ function App() {
     });
 
     return () => unsubscribe();
+  }, [currentPage, roomData?.deviceID]);
+
+  // ── RTDB live sensor overlay (10-second cadence) ──
+  // Overlays temperature, humidity, and "Updated at" on top of the
+  // Firestore SensorLogs baseline which only refreshes every 5 minutes.
+  useEffect(() => {
+    if (currentPage !== 'dashboard' || !roomData?.deviceID) return;
+
+    const deviceRef = ref(rtdb, `device-status/${roomData.deviceID}`);
+    const unsubscribeRtdb = onValue(deviceRef, (snapshot) => {
+      const val = snapshot.val();
+      if (!val || typeof val.lastSeen !== 'number') return;
+
+      setRoomData((prev) => {
+        if (!prev) return prev;
+
+        const tsDate = new Date(val.lastSeen);
+        const formattedTime = tsDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
+        return {
+          ...prev,
+          lastUpdated: formattedTime,
+          lastUpdatedTimestamp: tsDate,
+          temperature: {
+            ...prev.temperature,
+            value: typeof val.temperature === 'number'
+              ? Math.round(val.temperature * 10) / 10
+              : prev.temperature.value,
+          },
+          humidity: {
+            ...prev.humidity,
+            value: typeof val.humidity === 'number'
+              ? Math.round(val.humidity)
+              : prev.humidity.value,
+          },
+          lightLevel: {
+            ...prev.lightLevel,
+            value: typeof val.lightLevel === 'number'
+              ? Math.round(val.lightLevel)
+              : prev.lightLevel.value,
+          },
+        };
+      });
+    });
+
+    return () => unsubscribeRtdb();
   }, [currentPage, roomData?.deviceID]);
 
   // ── Predictive mold-risk score from AnalyticsAlerts ──
