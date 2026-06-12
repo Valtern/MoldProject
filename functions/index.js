@@ -175,8 +175,10 @@ app.post('/api/sensorlogs', cors(corsOptions), limiter, authenticateESP32, async
     }
 });
 
-// 7. Lightweight Fast-Polling Status Endpoint (Read-Only Heartbeat)
-// Returns only control fields — no writes to SensorLogs or timestamp updates.
+// 7. Lightweight Fast-Polling Status Endpoint (Fire-and-Forget Heartbeat)
+// Returns control fields immediately. If ?h=, ?t=, ?l= query params are
+// present, a validated liveReading is written to Firestore WITHOUT blocking
+// the HTTP response — eliminating the stall on the ESP32's http.GET().
 app.get('/api/status/:deviceId', cors(corsOptions), async (req, res) => {
     try {
         const { deviceId } = req.params;
@@ -194,7 +196,8 @@ app.get('/api/status/:deviceId', cors(corsOptions), async (req, res) => {
             return res.status(404).json({ error: `Device not found: ${deviceId}` });
         }
 
-        const deviceData = devicesQuery.docs[0].data();
+        const deviceDoc = devicesQuery.docs[0];
+        const deviceData = deviceDoc.data();
 
         // Write heartbeat + live sensor readings to RTDB (fire-and-forget, non-blocking)
         const heartbeatData = {
@@ -208,16 +211,66 @@ app.get('/api/status/:deviceId', cors(corsOptions), async (req, res) => {
             .update(heartbeatData)
             .catch(err => logger.warn('[status] RTDB heartbeat write failed:', err.message));
 
-        return res.status(200).json({
+        // ── Fire-and-forget Firestore liveReading write ──
+        // Only attempt if at least one sensor query param is present.
+        let firestoreWritePromise = null;
+        const hasQueryParams = req.query.h !== undefined || req.query.t !== undefined || req.query.l !== undefined;
+
+        if (hasQueryParams) {
+            const humidity = parseFloat(req.query.h);
+            const temperature = parseFloat(req.query.t);
+            const lightLevel = Number(req.query.l);
+
+            // Validate bounds: humidity 0–100, temperature -10–60, lightLevel 0–4095
+            const isValid =
+                !isNaN(humidity) && humidity >= 0 && humidity <= 100 &&
+                !isNaN(temperature) && temperature >= -10 && temperature <= 60 &&
+                !isNaN(lightLevel) && Number.isInteger(lightLevel) && lightLevel >= 0 && lightLevel <= 4095;
+
+            if (isValid) {
+                // Kick off the write but do NOT await yet — store the promise
+                firestoreWritePromise = deviceDoc.ref.update({
+                    liveReading: {
+                        humidity,
+                        temperature,
+                        lightLevel,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    }
+                });
+            } else {
+                logger.warn('[status] Skipping liveReading write — values out of range or NaN', {
+                    deviceId,
+                    raw: { h: req.query.h, t: req.query.t, l: req.query.l },
+                    parsed: { humidity, temperature, lightLevel }
+                });
+            }
+        }
+
+        // ── Send response to ESP32 immediately (unblocks http.GET()) ──
+        res.status(200).json({
             mode: deviceData.mode || 'auto',
             fanOverride: deviceData.fanOverride || 'OFF',
             dehumidifierOverride: deviceData.dehumidifierOverride || 'OFF',
             fanThreshold: deviceData.fanThreshold ?? 70.0,
             dehumidifierThreshold: deviceData.dehumidifierThreshold ?? 85.0
         });
+
+        // ── Await the Firestore write AFTER the response has been sent ──
+        if (firestoreWritePromise) {
+            try {
+                await firestoreWritePromise;
+            } catch (writeErr) {
+                logger.error('[status] Firestore liveReading write failed (post-response):', {
+                    deviceId,
+                    error: writeErr.message
+                });
+            }
+        }
     } catch (error) {
-        console.error('[status] Firestore read error:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+        logger.error('[status] Firestore read error:', error);
+        if (!res.headersSent) {
+            return res.status(500).json({ error: 'Internal server error' });
+        }
     }
 });
 
